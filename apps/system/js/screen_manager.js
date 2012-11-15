@@ -69,6 +69,7 @@ var ScreenManager = {
             if (self._screenWakeLocked) {
               // Turn screen on if wake lock is acquire
               self.turnScreenOn();
+              self.setIdleTimeout(0);
             } else if (self.screenEnabled) {
               self.reconfigScreenTimeout();
             }
@@ -321,8 +322,9 @@ var ScreenManager = {
     // Reset the idled state back to false.
     this._idled = false;
 
-    // 0 is the value used to disable idle timer by user and by us.
-    if (time === 0)
+    // - 0 is the value used to disable idle timer by user and by us.
+    // - Timeout requests will be invalid if screen is wake-locked.
+    if (time === 0 || this._screenWakeLocked)
       return;
 
     var self = this;
