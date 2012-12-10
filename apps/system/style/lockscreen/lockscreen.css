@@ -1,9 +1,9 @@
 #lockscreen {
   position: absolute;
-  /* 20px = height of status bar */
-  top: 20px;
+  /* 2rem = height of status bar */
+  top: 2rem;
   width: -moz-calc(100%);
-  height: -moz-calc(100% - 20px);
+  height: -moz-calc(100% - 2rem);
   overflow: hidden;
   background-color: #000;
 
@@ -18,8 +18,8 @@
 }
 
 #screen.active-statusbar > #lockscreen {
-  top: 40px;
-  height: -moz-calc(100% - 40px);
+  top: 4rem;
+  height: -moz-calc(100% - 4rem);
 }
 
 #screen:not(.locked) > #lockscreen,
@@ -299,6 +299,7 @@ button::-moz-focus-inner {
 
 #lockscreen-area-unlock > div {
   background-image: url('./images/icon-unlock.png');
+  background-size: 1.8rem;
   background-position: center;
   background-repeat: no-repeat;
   margin-left: 6rem;
@@ -306,6 +307,7 @@ button::-moz-focus-inner {
 
 #lockscreen-area-camera > div {
   background-image: url('./images/icon-camera.png');
+  background-size: 1.8rem;
   background-position: center;
   background-repeat: no-repeat;
   margin-left: 4rem;

@@ -88,11 +88,11 @@ button {
    outline: none;
 }
 
-@media screen and (min-width: 480px) {
+/* @media screen and (min-width: 480px) {
   html {
     font-size: 13.3px;
   }
-}
+} */
 
 html[dir=rtl] .apps ol > li {
   float: right;

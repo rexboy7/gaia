@@ -30,9 +30,9 @@
 #cards-view .card {
   display: inline-block;
   width: 100%;
-  height: -moz-calc(100% - 20px);
+  height: -moz-calc(100% - 2rem);
   margin: 0;
-  margin-top: 20px;
+  margin-top: 2rem;
   margin-left: -25%;
   position: relative;
   background-size: contain;
@@ -47,7 +47,7 @@
   left: 4rem;
   z-index: 99999;
   text-align: left;
-  font-size: 2em;
+  font-size: 3.2rem;
 }
 
 #cards-view .card header {

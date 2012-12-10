@@ -106,7 +106,7 @@
 
 /* Alternative icons when an app is being installed */
 .loading:after {
-  margin: 8px;
+  margin: .8rem;
   content: "";
   position: absolute;
   left: 0px;

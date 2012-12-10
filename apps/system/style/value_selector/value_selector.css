@@ -1,14 +1,14 @@
 #value-selector {
   width: 100%;
   height: -moz-calc(100% - 20px);
-  top: 20px;
+  top: 2rem; 
   left: 0;
   position: absolute;
 }
 
 #screen.active-statusbar #value-selector {
-  height: -moz-calc(100% - 40px);
-  top: 40px;
+  height: -moz-calc(100% - 4rem);
+  top: 4rem;
 }
 
 #screen:-moz-full-screen-ancestor #value-seletcor,
@@ -118,7 +118,7 @@ button.affirmative.active {
     font-family: 'MozTT', Sans-serif;
     font-weight: normal;
     font-size: 1.6rem;
-    line-height: 1em;
+    line-height: 1.6rem; 
     color: #fff;
     border-bottom: 0.1rem solid #686868;
     margin: 0 0 1.5rem;

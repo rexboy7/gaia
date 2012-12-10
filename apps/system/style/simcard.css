@@ -10,12 +10,12 @@
   right: 0;
 }
 #simpin-dialog .container {
-  padding-left: 20px;
-  font-size: 1.5em;
+  padding-left: 2rem;
+  font-size: 2.4rem;
 }
 
 #simpin-dialog .container > div {
-  padding-top: 10px;
+  padding-top: 1rem;
 }
 
 #simpin-dialog .error #messageHeader {
@@ -27,7 +27,7 @@
 }
 
 #simpin-dialog .input-wrapper input {
-  font-size: 2.0em;
+  font-size: 3.2rem;
   display: block;
 }
 
