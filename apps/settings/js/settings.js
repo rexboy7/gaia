@@ -133,9 +133,6 @@ var Settings = {
         };
       }
     }
-
-    // display panel if required
-    panel.hidden = false;
   },
 
   presetPanel: function settings_presetPanel(panel) {
@@ -337,6 +334,29 @@ var Settings = {
     req.open('GET', GAIA_COMMIT, true); // async
     req.responseType = 'text';
     req.send();
+  },
+
+  loadLastUpdated: function settings_loadLastUpdated() {
+    var settings = this.mozSettings;
+    if (!settings) {
+      return;
+    }
+
+    var lastUpdateDate = document.getElementById('last-update-date');
+    var lock = settings.createLock();
+    var key = 'deviceinfo.last_updated';
+    var request = lock.get(key);
+    request.onsuccess = function() {
+      var lastUpdated = request.result[key];
+      if (!lastUpdated) {
+        return;
+      }
+
+      var f = new navigator.mozL10n.DateTimeFormat();
+      var _ = navigator.mozL10n.get;
+      lastUpdateDate.textContent = f.localeFormat(new Date(lastUpdated),
+                                                  _('shortDateTimeFormat'));
+    };
   },
 
   openDialog: function settings_openDialog(dialogID) {
@@ -627,6 +647,7 @@ window.addEventListener('load', function loadSettings() {
         document.getElementById('ftuLauncher').onclick =
           Settings.launchFTU.bind(Settings);
         Settings.loadGaiaCommit();
+        Settings.loadLastUpdated();
         break;
       case 'help':                // handle specific link
         Settings.getUserGuide(function userGuideCallback(url) {
@@ -655,6 +676,7 @@ window.addEventListener('load', function loadSettings() {
 
     // load panel (+ dependencies) if necessary -- this should be synchronous
     lazyLoad(newPanel);
+    newPanel.hidden = false;
 
     // switch previous/current classes -- the timeout is required to make the
     // transition smooth after lazy-loading a panel
@@ -677,6 +699,17 @@ window.addEventListener('load', function loadSettings() {
 
       setTimeout(function setInit() {
         document.body.classList.remove('uninit');
+      });
+
+      // Bug 818056 - When multiple visible panels are present,
+      // they are not painted correctly. This appears to fix the issue.
+      // Only do this after the first load
+      if (oldPanel.className === 'current')
+        return;
+
+      oldPanel.addEventListener('transitionend', function onTransitionEnd() {
+        oldPanel.removeEventListener('transitionend', onTransitionEnd);
+        oldPanel.hidden = true;
       });
     });
   }

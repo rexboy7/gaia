@@ -233,6 +233,11 @@ var LockScreen = {
           if (!this.locked) {
             this._screenOffTime = new Date().getTime();
           }
+
+          // Remove camera once screen turns off
+          if (this.camera.firstElementChild)
+            this.camera.removeChild(this.camera.firstElementChild);
+
         } else {
           var _screenOffInterval = new Date().getTime() - this._screenOffTime;
           if (_screenOffInterval > this.passCodeRequestTimeout * 1000) {
@@ -708,7 +713,7 @@ var LockScreen = {
     var timeFormat = _('shortTimeFormat') || '%H:%M';
     var dateFormat = _('longDateFormat') || '%A %e %B';
     var time = f.localeFormat(d, timeFormat);
-    this.clockNumbers.textContent = time.match(/([01]?\d):[0-5]\d/g);
+    this.clockNumbers.textContent = time.match(/([012]?\d):[0-5]\d/g);
     this.clockMeridiem.textContent = (time.match(/AM|PM/i) || []).join('');
     this.date.textContent = f.localeFormat(d, dateFormat);
 

@@ -134,9 +134,20 @@ body.hidden *[data-l10n-id] {
 }
 
 #main-container {
-  position: relative;
+  position: absolute;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8) no-repeat center top/cover;
+  width: 100%;
+  background: #000 no-repeat center top/cover;
+}
+
+#main-container:before {
+  content: "";
+  position: absolute;
+  top: 9rem;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  width: 100%;
+  height: calc(100% - 9rem);
 }
 
 #actions-container {
@@ -156,7 +167,7 @@ body.hidden *[data-l10n-id] {
 }
 
 .co-advanced-option {
-  background: rgba(0,0,0,.8);
+  background: rgba(0,0,0,.45);
   height: 9.5rem;
   width: 100%;
   border: 0;

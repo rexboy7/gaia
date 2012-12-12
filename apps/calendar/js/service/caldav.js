@@ -65,6 +65,7 @@ Calendar.ns('Service').Caldav = (function() {
       req.addResource('calendar', Resource);
       req.prop(['ical', 'calendar-color']);
       req.prop(['caldav', 'calendar-description']);
+      req.prop('current-user-privilege-set');
       req.prop('displayname');
       req.prop('resourcetype');
       req.prop(['calserver', 'getctag']);
@@ -127,6 +128,7 @@ Calendar.ns('Service').Caldav = (function() {
       result.color = cal.color;
       result.description = cal.description;
       result.syncToken = cal.ctag;
+      result.privilegeSet = cal.privilegeSet;
 
       return result;
     },
@@ -158,9 +160,20 @@ Calendar.ns('Service').Caldav = (function() {
         for (key in calendars) {
           if (calendars.hasOwnProperty(key)) {
             item = calendars[key];
-            results[key] = self._formatCalendar(
+            var formattedCal = self._formatCalendar(
               item
             );
+
+            // If privilegeSet is not present we will assume full permissions.
+            // Its highly unlikey that it is missing however.
+            if (('privilegeSet' in formattedCal) &&
+                (formattedCal.privilegeSet.indexOf('read') === -1)) {
+
+              // skip calendars without read permissions
+              continue;
+            }
+
+            results[key] = formattedCal;
           }
         }
         callback(null, results);
@@ -563,6 +576,7 @@ Calendar.ns('Service').Caldav = (function() {
 
         if (err) {
           callback(err);
+          console.log('ERR', ical);
           return;
         }
 
@@ -624,6 +638,11 @@ Calendar.ns('Service').Caldav = (function() {
       }
 
       function handleResponse(url, data) {
+        if (!data) {
+          // throw some error;
+          console.log('Could not sync: ', url);
+          return;
+        }
         var etag = data.getetag.value;
         if (url in cache) {
           // don't need to track this for missing events.
