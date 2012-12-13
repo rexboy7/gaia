@@ -227,7 +227,7 @@ var Browser = {
   // We want to ensure the current page preview on the tabs screen is in
   // a consistently sized gutter on the left
   handleWindowResize: function browser_handleWindowResize() {
-    var leftPos = 'translate(' + -(window.innerWidth - 50) + 'px)';
+    var leftPos = 'translate(calc( ' + -(window.innerWidth) + 'px + 5rem))';
     if (!this.gutterPosRule) {
       var css = '.tabs-screen #main-screen { transform: ' + leftPos + '; }';
       var insertId = this.styleSheet.cssRules.length - 1;

@@ -27,8 +27,8 @@
 
 .authentication-dialog-message-container {
   width: 100%;
-  height: -moz-calc(100% - 40px);
-  padding: rem;
+  height: -moz-calc(100% - 4rem);
+  padding: .8rem;
 }
 
 #authentication-dialog-http-authentication-message.error {

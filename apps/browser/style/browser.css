@@ -43,6 +43,7 @@ input[type="image"] {
 
 #awesomescreen-cancel-button {
   background-image: url('./images/close.png');
+  background-size: 2.7rem;
   background-position: center;
   background-repeat: no-repeat;
   background-color: transparent;
@@ -77,6 +78,7 @@ input[type="image"] {
   color: white;
   z-index: 40;
   background-image: url('./images/drawer-header-background.png');
+  background-size: 19.3rem;
   background-repeat: repeat-x;
   background-position: top;
 }
@@ -101,6 +103,7 @@ input[type="image"] {
   left: 0;
   right: 0;
   background-image: url('./images/tabs-list-background.png');
+  background-size: 4rem;
 }
 
 #tabs-list ul {
@@ -254,6 +257,7 @@ input[type="image"] {
 
 .page-screen #toolbar-start {
   background-image: url('./images/tabs-badge-background.png');
+  background-size: 7.4rem;
   background-repeat: no-repeat;
   background-position: right;
   padding-right: 6.5rem;
@@ -261,6 +265,7 @@ input[type="image"] {
 
 .tabs-screen #toolbar-start {
   background-image: url('./images/iconaction_back_50x50.png'), url('./images/tabs-badge-background.png');
+  background-size: 5rem, 7.4rem;
   background-repeat: no-repeat, no-repeat;
   background-position: top right, right;
   padding-right: 6.5rem;
@@ -311,10 +316,12 @@ input[type="image"] {
 
 #ssl-indicator[value=secure] {
   background-image: url(images/site_security_verified.png);
+  background-size: 2.4rem;
 }
 
 #ssl-indicator[value=broken] {
   background-image: url(images/site_security_broken.png);
+  background-size: 2.4rem;
 }
 
 #ssl-indicator[value=insecure], #ssl-indicator[value=''] {
@@ -361,15 +368,18 @@ menu[type="toolbar"] button {
 
 #back-button {
   background-image: url("images/iconaction_browser_back_30x30.png");
+  background-size: 3rem;
 }
 
 #forward-button {
   background-image: url("images/iconaction_browser_forward_30x30.png");
+  background-size: 3rem;
 }
 
 
 #back-button:active {
   background-image: url("images/iconaction_browser_backpressed_30x30.png");
+  background-size: 3rem;
 }
 
 input::-moz-focus-inner {
@@ -378,6 +388,7 @@ input::-moz-focus-inner {
 
 #back-button[disabled] {
   background-image: url("images/back-disabled.png");
+  background-size: 3rem;
 }
 
 #forward-button[disabled] {
@@ -387,10 +398,12 @@ input::-moz-focus-inner {
 #bookmark-button {
   float: right;
   background-image: url("images/iconaction_bookmark_30x30.png");
+  background-size: 3rem;
 }
 
 #bookmark-button.bookmarked {
  background-image: url("images/bookmarked.png");
+ background-size: 2.2rem;
 }
 
 #frames {
@@ -432,6 +445,7 @@ input::-moz-focus-inner {
   height: 100%;
   width: 100%;
   background-image: url('images/start-page-logo.png'), -moz-linear-gradient(#f8f8fa, #cadce6);
+  background-size: 16.5rem, auto;
   background-repeat: no-repeat, no-repeat;
   background-position: top right;
   overflow: hidden;
@@ -507,6 +521,7 @@ input::-moz-focus-inner {
 #crashscreen {
   background-color: #4f4f4f;
   background-image: url('images/crashed-tab-background.png');
+  background-size: 28.6rem;
   color: #fff;
   z-index: 59;
   text-align: center;
@@ -549,6 +564,7 @@ input::-moz-focus-inner {
   white-space: nowrap;
   overflow: hidden;
   background: #fafafa url('images/button-background.png') repeat-x left bottom;
+  background-size: auto 100%;
   border: 0.1rem solid #9f9f9f;
   border-radius: 0.3rem;
   font-size: 1.7rem;
@@ -640,7 +656,9 @@ li[role="tab"]:first-child a {
 
 li[role="tab"] a.selected {
   background-image: url('images/tab-background.png');
+  background-size: auto 100%;
   background-image: url('images/tab-left.png'), url('images/tab-right.png'), url('images/tab-background.png');
+  background-size: 4.1rem, 4.1rem, auto 100%;
   background-position: left, right, center;
   background-repeat: no-repeat, no-repeat, repeat-x;
   background-origin: padding-box;
@@ -824,6 +842,7 @@ li[role="listitem"] small {
 
 #refresh a {
   background-image: url('images/refresh.png');
+  background-size: 3.2rem;
 }
 
 .hidden {
@@ -844,12 +863,14 @@ li[role="listitem"] small {
 
 #settings-button {
   background-image: url('images/iconaction_settings_30x30.png');
+  background-size: 3rem;
   float: right;
   height: 5rem;
 }
 
 #new-tab-button {
   background-image: url('images/iconaction_new_30x30.png'), url('images/header-divider.png');
+  background-size: 3rem, auto 100%;
   float: right;
   height: 5rem;
 }
