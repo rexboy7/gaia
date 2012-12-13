@@ -146,6 +146,7 @@
 }
 .msg-header-star-starred {
   background: url("images/icons/message-list-star.png") no-repeat scroll center transparent;
+  background-size: 2rem;
   position: absolute;
   width: 2rem;
   height: 2rem;
@@ -156,6 +157,7 @@
 }
 .msg-header-attachments-yes {
   background: url("images/icons/message-list-attachment.png") no-repeat scroll center transparent;
+  background-size: 2rem;
   position: absolute;
   width: 2rem;
   height: 2rem;
@@ -244,6 +246,7 @@
 }
 .msg-attachment-icon {
   background: url("images/icons/message-list-attachment.png") no-repeat scroll center transparent;
+  background-size: 2rem;
   display: inline-block;
   width: 2rem;
   height: 2rem;
@@ -356,16 +359,19 @@
 
 .msg-refresh-btn {
   background: url("images/icons/refresh.png") no-repeat scroll center transparent;
+  background-size: 3rem;
 }
 
 .msg-search-btn {
   background: url("images/icons/search.png") no-repeat scroll center transparent;
+  background-size: 3rem;
   position: absolute;
   right: 0px;
 }
 
 .msg-edit-btn {
   background: url("images/icons/edit-mode.png") no-repeat scroll center transparent;
+  background-size: 3rem;
   position: absolute;
   left: calc((100% - 6rem)/2);
 }
@@ -376,22 +382,27 @@
 
 .msg-star-btn {
   background: url("images/icons/star.png") no-repeat scroll center transparent;
+  background-size: 3rem;
 }
 
 .msg-mark-read-btn {
   background: url("images/icons/mark.png") no-repeat scroll center transparent;
+  background-size: 3rem;
 }
 
 .msg-delete-btn {
   background: url("images/icons/delete.png") no-repeat scroll center transparent;
+  background-size: 3rem;
 }
 
 .msg-move-btn {
   background: url("images/icons/move.png") no-repeat scroll center transparent;
+  background-size: 3rem;
 }
 
 .msg-forward-btn {
   background: url("images/icons/forward.png") no-repeat scroll center transparent;
+  background-size: 3rem;
 }
 
 /* Message list edit mode layout control */
@@ -418,6 +429,7 @@
 */
 .msg-list-empty-container {
   background-image: url('images/mail_watermark.png');
+  background-size: 19rem; 
   background-repeat:no-repeat;
   background-position: 50% 40%;
   height: 20rem;

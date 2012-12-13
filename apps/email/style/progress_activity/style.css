@@ -21,38 +21,45 @@ progress:not([value])::-moz-progress-bar {
 progress:not([value]).skin-dark,
 p[role="status"].skin-dark progress:not([value]) {
   background-image: url(images/ui/dark/default.png);
+  background-size: 6.4rem;
 }
 
 /* Opposite */
 progress:not([value]).opposite {
   background-image: url(images/ui/opposite.png);
+  background-size: 6.4rem; 
 }
 
 progress:not([value]).opposite.skin-dark,
 p[role="status"].skin-dark progress:not([value]).opposite {
   background-image: url(images/ui/default.png);
+  background-size: 6.4rem;
 }
 
 /* Small */
 progress:not([value]).small {
-  width: 3.2em;
-  height: 3.2em;
+  width: 3.2rem;
+  height: 3.2rem;
   background-image: url(images/ui/default-small.png);
+  background-size: 3.2rem;
 }
 
 progress:not([value]).small.opposite {
   background-image: url(images/ui/opposite-small.png);
+  background-size: 3.2rem;
 }
 
 /* Dark skin */
 progress:not([value]).skin-dark.small,
 p[role="status"].skin-dark progress:not([value]).small {
   background-image: url(images/ui/dark/default-small.png);
+  background-size: 3.2rem;
 }
 
 progress:not([value]).skin-dark.small.opposite,
 p[role="status"].skin-dark progress:not([value]).small.opposite {
   background-image: url(images/ui/default-small.png);
+  background-size:3.2rem;
 }
 
 /* Progress bar */

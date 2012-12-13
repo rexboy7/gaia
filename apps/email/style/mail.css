@@ -85,11 +85,11 @@ body {
 }
 
 .card.center.card-folder-picker {
-  width: calc(100% - 4.3em);
+  width: calc(100% - 6.8rem) 
 }
 
 .card.center.card-folder-picker + .card.after {
-  transform: translateX(calc(100% - 4.3em));
+  transform: translateX(calc(100% - 6.8rem));
 }
 
 .form-card {
@@ -218,6 +218,7 @@ body {
 
 .icon-download {
   background: url("images/icons/download.png") no-repeat scroll center transparent;
+  background-size: 3rem;
   top: 0;
   left: 0;
   position: absolute;
