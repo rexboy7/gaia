@@ -480,7 +480,7 @@ button[disabled] .icon-keypad-visibility {
   border-radius:.3rem;
   display: block;
   text-align: center;
-  font-size: 1.5em;
+  font-size: 2.4rem;
   line-height: 4rem;
   font-weight: 700;
 }
@@ -512,7 +512,7 @@ button[disabled] .icon-keypad-visibility {
 
 #incoming-info > span {
   display: block;
-  font-size: 1.8em;
+  font-size: 2.8rem;
   font-weight: 300;
   line-height: 6rem;
   margin: 0 1.5rem;

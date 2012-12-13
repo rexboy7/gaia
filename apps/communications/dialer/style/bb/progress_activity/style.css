@@ -35,8 +35,8 @@ p[role="status"].skin-dark progress:not([value]).opposite {
 
 /* Small */
 progress:not([value]).small {
-  width: 3.2em;
-  height: 3.2em;
+  width: 3.2rem;
+  height: 3.2rem;
   background-image: url(images/ui/default-small.png);
 }
 

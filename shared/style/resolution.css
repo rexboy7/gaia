@@ -1,0 +1,20 @@
+/* 320x480 phones */
+@media screen and (min-width: 320px) and (max-width:479px) {
+  html, body {
+    font-size: 10px;
+  }
+}
+
+/* 480x800 phones */
+@media screen and (min-width: 480px) and (max-width: 539px) {
+  html, body {
+    font-size: 14px;
+  }
+}
+
+/* 576x1024 phones */
+@media screen and (min-width: 540px) {
+  html, body {
+    font-size: 16px;
+  }
+}
