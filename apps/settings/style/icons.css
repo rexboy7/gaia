@@ -15,106 +15,132 @@
 
 #menuItem-airplaneMode {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 30, 30, 0);
+  background-size: 3rem;
 }
 
 #menuItem-gps {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 60, 30, 30);
+  background-size: 3rem;
 }
 
 #menuItem-wifi {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 90, 30, 60);
+  background-size: 3rem;
 }
 
 #menuItem-cellularAndData {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 120, 30, 90);
+  background-size: 3rem;
 }
 
 #menuItem-bluetooth {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 150, 30, 120);
+  background-size: 3rem;
 }
 
 #menuItem-internetSharing {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 30, 30, 60, 0);
+  background-size: 3rem;
 }
 
 #menuItem-sound {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 30, 60, 60, 30);
+  background-size: 3rem;
 }
 
 #menuItem-display {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 30, 90, 60, 60);
+  background-size: 3rem;
 }
 
 #menuItem-notifications {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 30, 120, 60, 90);
+  background-size: 3rem;
 }
 
 #menuItem-dateAndTime {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 30, 150, 60, 120);
+  background-size: 3rem;
 }
 
 #menuItem-languageAndRegion {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 60, 30, 90, 0);
+  background-size: 3rem;
 }
 
 #menuItem-keyboard {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 60, 60, 90, 30);
+  background-size: 3rem;
 }
 
 #menuItem-persona {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 60, 90, 90, 60);
+  background-size: 3rem;
 }
 
 #menuItem-mail {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 60, 120, 90, 90);
+  background-size: 3rem;
 }
 
 #menuItem-phoneLock {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 60, 150, 90, 120);
+  background-size: 3rem;
 }
 
 #menuItem-simSecurity {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 90, 30, 120, 0);
+  background-size: 3rem;
 }
 
 #menuItem-appPermissions {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 90, 60, 120, 30);
+  background-size: 3rem;
 }
 
 #menuItem-doNotTrack {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 90, 90, 120, 60);
+  background-size: 3rem;
 }
 
 #menuItem-deviceInfo {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 90, 120, 120, 90);
+  background-size: 3rem;
 }
 
 #menuItem-battery {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 90, 150, 120, 120);
+  background-size: 3rem;
 }
 
 #menuItem-deviceStorage {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 30, 150, 0);
+  background-size: 3rem;
 }
 
 #menuItem-mediaStorage {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 60, 150, 30);
+  background-size: 3rem;
 }
 
 #menuItem-accessibility {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 90, 150, 60);
+  background-size: 3rem;
 }
 
 #menuItem-improveBrowserOS {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 120, 150, 90);
+  background-size: 3rem;
 }
 
 #menuItem-help {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 120, 150, 90);
+  background-size: 3rem;
 }
 
 #menuItem-icc {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 150, 150, 120);
+  background-size: 3rem;
 }
 
 
@@ -131,22 +157,27 @@
 
 .wifi-signal0 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 32, 32, 0);
+  background-size: 3.2rem;
 }
 
 .wifi-signal1 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 64, 32, 32);
+  background-size: 3.2rem;
 }
 
 .wifi-signal2 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 96, 32, 64);
+  background-size: 3.2rem;
 }
 
 .wifi-signal3 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 128, 32, 96);
+  background-size: 3.2rem;
 }
 
 .wifi-signal4 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 160, 32, 128);
+  background-size: 3.2rem;
 }
 
 /* secured networks */
@@ -154,6 +185,7 @@
   background-repeat: no-repeat;
   background-position: right 1.5rem top 50%;
   background-image: url(images/wifi_lock.png);
+  background-size: 5.6rem;
 }
 
 
@@ -170,107 +202,133 @@
 /* device icons */
 .bluetooth-type-audio-card {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 30, 30, 0);
+  background-size: 3rem;
 }
 
 .bluetooth-type-audio-input-microphone {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 60, 30, 30);
+  background-size: 3rem;
 }
 
 .bluetooth-type-battery {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 90, 30, 60);
+  background-size: 3rem;
 }
 
 .bluetooth-type-camera-photo {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 120, 30, 90);
+  background-size: 3rem;
 }
 
 .bluetooth-type-camera-video {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 150, 30, 120);
+  background-size: 3rem;
 }
 
 .bluetooth-type-camera-web {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 180, 30, 150);
+  background-size: 3rem;
 }
 
 .bluetooth-type-computer {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 210, 30, 180);
+  background-size: 3rem;
 }
 
 .bluetooth-type-drive-harddisk {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 240, 30, 210);
+  background-size: 3rem;
 }
 
 .bluetooth-type-drive-optical {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 270, 30, 240);
+  background-size: 3rem;
 }
 
 .bluetooth-type-drive-removable-media {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 300, 30, 270);
+  background-size: 3rem;
 }
 
 .bluetooth-type-input-gaming {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 330, 30, 300);
+  background-size: 3rem;
 }
 
 .bluetooth-type-input-keyboard {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 360, 30, 330);
+  background-size: 3rem;
 }
 
 .bluetooth-type-input-mouse {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 0, 390, 30, 360);
+  background-size: 3rem;
 }
 
 .bluetooth-type-input-tablet {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 30, 60, 0);
+  background-size: 3rem;
 }
 
 .bluetooth-type-media-flash {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 60, 60, 30);
+  background-size: 3rem;
 }
 
 .bluetooth-type-media-floppy {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 90, 60, 60);
+  background-size: 3rem;
 }
 
 .bluetooth-type-media-optical {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 120, 60, 90);
+  background-size: 3rem;
 }
 
 .bluetooth-type-media-tape {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 150, 60, 120);
+  background-size: 3rem;
 }
 
 .bluetooth-type-modem {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 180, 60, 150);
+  background-size: 3rem;
 }
 
 .bluetooth-type-multimedia-player {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 210, 60, 180);
+  background-size: 3rem;
 }
 
 .bluetooth-type-network-wired {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 240, 60, 210);
+  background-size: 3rem;
 }
 
 .bluetooth-type-network-wireless {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 270, 60, 240);
+  background-size: 3rem;
 }
 
 .bluetooth-type-pda,
 .bluetooth-type-phone {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 300, 60, 270);
+  background-size: 3rem;
 }
 
 .bluetooth-type-printer {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 330, 60, 300);
+  background-size: 3rem;
 }
 
 .bluetooth-type-scanner {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 360, 60, 330);
+  background-size: 3rem;
 }
 
 .bluetooth-type-video-display {
   background-image: -moz-image-rect(url(images/bluetooth_sprite.png), 30, 390, 60, 360);
+  background-size: 3rem;
 }
 
 
@@ -286,14 +344,17 @@
 
 .privacy-browserOS {
   background-image: -moz-image-rect(url(images/privacy_sprite.png), 0, 32, 32, 0);
+  background-size: 3.2rem;
 }
 
 .privacy-everythingME {
   background-image: -moz-image-rect(url(images/privacy_sprite.png), 0, 64, 32, 32);
+  background-size: 3.2rem;
 }
 
 .privacy-marketPlace {
   background-image: -moz-image-rect(url(images/privacy_sprite.png), 0, 96, 32, 64);
+  background-size: 3.2rem;
 }
 
 /******************************************************************************

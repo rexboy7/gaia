@@ -250,6 +250,7 @@ section[role="region"] > header:first-child > a .icon:after {
   width: 2rem;
   height: 4.9rem;
   background: #9d3d26 url(headers/images/ui/negative.png) repeat-x 0 0;
+  background-size: auto 100%;
 }
 
 section[role="region"] > header > a .icon.icon-menu,
@@ -263,6 +264,7 @@ section[role="region"] > header > button .icon.icon-menu {
 
 section[role="region"] > header {
   background: url(headers/images/ui/subheader.png) repeat left bottom;
+  background-size: auto 100%;
   border-bottom: solid 0.1rem #e6e6e6;
   z-index: 0;
   padding: 0.4rem 0;
@@ -288,6 +290,7 @@ section[role="region"] > header h2 {
 section[role="region"].skin-dark > header:first-child,
 .skin-dark section[role="region"] > header:first-child {
   background: url(headers/images/ui/dark/header.png) repeat-x 0 0;
+  background-size: auto 100%;
 }
 
 /* Navigation links (back, cancel, etc) */
@@ -296,6 +299,7 @@ section[role="region"].skin-dark > header:first-child > a .icon:after,
 section[role="region"].skin-dark > header:first-child > button .icon:after,
 .skin-dark section[role="region"] > header:first-child > button .icon:after {
   background: #26272c url(headers/images/ui/dark/negative.png) repeat-x 0 0;
+  background-size: auto 100%;
 }
 
 section[role="region"].skin-dark > header:first-child menu[type="toolbar"] a:last-child,
@@ -308,6 +312,7 @@ section[role="region"].skin-dark > header:first-child menu[type="toolbar"] butto
 section[role="region"].skin-dark > header,
 .skin-dark section[role="region"] > header {
   background: #7f7f7f url(headers/images/ui/dark/subheader.png) repeat-x left bottom;
+  background-size: auto 100%;
   color: #c5c5c5;
 }
 
@@ -318,6 +323,7 @@ section[role="region"].skin-dark > header,
 section[role="region"].skin-organic > header:first-child,
 .skin-organic section[role="region"] > header:first-child {
   background: url(headers/images/ui/organic/header.png) repeat-x 0 0,  url(headers/images/ui/organic/pattern.png) repeat 0 0;
+  background-size: auto 100%;
 }
 
 section[role="region"].skin-organic > header:first-child:after,
@@ -331,6 +337,7 @@ section[role="region"].skin-organic > header:first-child > a .icon:after,
 section[role="region"].skin-organic > header:first-child > button .icon:after,
 .skin-organic section[role="region"] > header > button .icon:after {
   background: url(headers/images/ui/organic/negative.png) repeat-x 0 0;
+  background-size: auto 100%;
 }
 
 section[role="region"].skin-organic > header:first-child menu[type="toolbar"] a:last-child,
@@ -343,6 +350,7 @@ section[role="region"].skin-organic > header:first-child menu[type="toolbar"] bu
 section[role="region"].skin-organic > header,
 .skin-organic section[role="region"] > header {
   background: #7f7f7f url(headers/images/ui/organic/subheader.png) repeat-x left bottom;
+  background-size: auto 100%;
   color: #fff;
 }
 

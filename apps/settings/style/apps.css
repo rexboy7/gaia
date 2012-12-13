@@ -6,13 +6,13 @@
   float: left;
   margin-top: calc(3rem - 15px);
   margin-right: 1.4rem;
-  width: 30px;
-  height: 30px;
+  width: 3rem;
+  height: 3rem;
 }
 
 #permissionsListHeader + ul li select {
   width: 25%;
-  padding: 5px;
+  padding: .5rem;
   border: 0;
   background: #367fa2;
   text-align: center;
@@ -34,7 +34,7 @@
   position: relative;
   top: 1rem;
   font-size: 1.4rem;
-  line-height: 1em;
+  line-height: 1.6rem;
   width: calc(100% - 5rem);
   height: calc(60px - 2rem);
 }
