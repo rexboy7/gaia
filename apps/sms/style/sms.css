@@ -1,30 +1,3 @@
-/*
-Currently media queries with min/max resolution are not working
-in Firefox until fixing:
-https://bugzilla.mozilla.org/show_bug.cgi?id=779527
-That's why in SII or Nexus SMS App is not rendered properly.
-*/
-
-@media screen and (min-resolution: 230dpi) {
-
-  html {
-    font-size: 14.7px;
-  }
-}
-
-@media screen and (max-resolution: 220dpi) {
-
-  html {
-    font-size: 13.5px;
-  }
-}
-
-@media screen and (max-resolution: 200dpi) {
-
-  html {
-    font-size: 10px;
-  }
-}
 
 html, body {
   height: 100%;
@@ -39,6 +12,7 @@ html, body {
 /* Override Building Block [Header] styles */
 section[role="region"] > header:first-child .icon.icon-clear {
   background-image: url(images/icons/clear.png);
+  background-size: 1.7rem;
   right: calc(-50% + 7rem);
   width: 2rem;
   margin: 0;
@@ -328,6 +302,7 @@ a.unread .unread-mark .icon-unread-mark {
   top: 2rem;
   left: 1rem;
   background: url(../style/images/unread.png);
+  background-size: 1rem;
   transition: opacity 0.25s ease;
 }
 
@@ -462,6 +437,7 @@ a.unread .unread-mark .icon-unread-mark {
   width: .9rem;
   height: 1rem;
   background-image: url('images/outgoing_9x10.png');
+  background-size: 0.9rem;
   position: absolute;
   right: 0;
   margin-right: -0.9rem;
@@ -481,6 +457,7 @@ a.unread .unread-mark .icon-unread-mark {
   width: .9rem;
   height: 1rem;
   background-image: url('images/incoming_9x10.png');
+  background-size: 0.9rem;
   position: absolute;
   left: 0;
   margin-left: -0.9rem;
@@ -492,6 +469,7 @@ a.unread .unread-mark .icon-unread-mark {
 }
 .selected .received .bubble:after {
   background-image: url('images/selected-incoming_9x10.png');
+  background-size: 0.9rem;
 }
 
 .selected .sent .bubble {
@@ -499,6 +477,7 @@ a.unread .unread-mark .icon-unread-mark {
 }
 .selected .sent .bubble:after {
   background-image: url('images/selected-outgoing_9x10.png');
+  background-size: 0.9rem;
 }
 
 /*
