@@ -17,18 +17,18 @@
 .authentication-dialog-buttons {
   text-align: center;
   background: #f4f4f4;
-  height: 40px;
+  height: 4rem;
   position: relative;
 }
 
 .authentication-dialog-buttons h3 {
-  line-height: 40px;
+  line-height: 4rem;
 }
 
 .authentication-dialog-message-container {
   width: 100%;
   height: -moz-calc(100% - 40px);
-  padding: 0.5em;
+  padding: rem;
 }
 
 #authentication-dialog-http-authentication-message.error {
@@ -36,24 +36,24 @@
 }
 
 #authentication-dialog button {
-  height: 25px;
+  height: 2.5rem;
 }
 
 #authentication-dialog input {
-  width: -moz-calc(100% - 2em);
-  height: 30px;
+  width: -moz-calc(100% - 3.2rem);
+  height: 3rem;
 }
 
 #authentication-dialog-http-authentication-ok {
   position: absolute;
-  top: 1em;
-  right: 1em;
+  top: 1.6rem;
+  right: 1.6rem;
 }
 
 #authentication-dialog-http-authentication-cancel {
   position: absolute;
-  top: 1em;
-  left: 1em;
+  top: 1.6rem;
+  left: 1.6rem;
 }
 
 #screen.authentication-dialog #authentication-dialog {
