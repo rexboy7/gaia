@@ -69,6 +69,7 @@ form p textarea + button[type="reset"] {
   opacity: 0;
   pointer-events: none;
   background: url(input_areas/images/icons/clear.png) no-repeat 50% 50%;
+  background-size: 1.7rem;
 }
 
 form p input + button[type="reset"],

@@ -31,10 +31,12 @@ label:not([for]) input + span {
 
 label:not([for]) input[type="checkbox"] + span {
   background: url(switches/images/check/default.png) no-repeat center top;
+  background-size: 2.2rem;
 }
 
 label:not([for]) input[type="radio"] + span {
   background: url(switches/images/radio/default.png) no-repeat center top;
+  background-size: 2.2rem;
 }
 
 label:not([for]) input:checked + span {
@@ -45,10 +47,12 @@ label:not([for]) input:checked + span {
 
 label:not([for]).danger input[type="checkbox"] + span {
   background-image: url(switches/images/check/danger.png);
+  background-size: 2.2rem;
 }
 
 label:not([for]).danger input[type="radio"] + span {
   background-image: url(switches/images/radio/danger.png);
+  background-size: 2.2rem;
 }
 
 

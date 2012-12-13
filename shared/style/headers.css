@@ -74,6 +74,7 @@ section[role="region"] > header:first-child form button[type="reset"] {
   display: none;
   border: none;
   background: url(headers/images/icons/clear.png) no-repeat center center;
+  background-size: 1.7rem;
 }
 
 section[role="region"] > header:first-child input[type="text"]:valid + button[type="reset"] {
@@ -173,6 +174,7 @@ section[role="region"] > header:first-child .icon {
   overflow: hidden;
   position: relative;
   height: 4.9rem;
+  background-size: 3rem;
 }
 
 section[role="region"] > header:first-child .icon.icon-add {

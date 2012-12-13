@@ -160,11 +160,13 @@ li a[role="button"].icon:before {
 li button.icon-view:before,
 li a[role="button"].icon-view:before {
   background-image: url(buttons/images/icons/view.png);
+  background-size: 3rem;
 }
 
 li button.icon-dialog:before,
 li a[role="button"].icon-dialog:before {
   background-image: url(buttons/images/icons/dialog.png);
+  background-size: 3rem;
 }
 
 
