@@ -47,8 +47,8 @@ body {
   margin-left: 10%;
   margin-right: 10%;
   padding: 10%;
-  border: solid black 4px;
-  border-radius: 10px;
+  border: solid black .4rem;
+  border-radius: 1rem;
   background-color: rgba(0, 0, 0, 0.6);
   font-family: "MozTT", sans-serif;
   color: #fff;
@@ -58,11 +58,11 @@ body {
 #overlay-title {
   text-align: center;
   font-weight: bold;
-  font-size: 26px;
+  font-size: 2.6rem;
 }
 
 #overlay-text {
-  font-size: 18px;
+  font-size: 1.8rem;
 }
 
 /* the indeterminate progress bar displayed while scanning */
@@ -78,8 +78,9 @@ body {
 }
 
 #throbber {
-  height: 24px;
+  height: 2.4rem;
   background-image: url(images/progress.png);
+  background-size: 100%;
 }
 
 #throbber.throb {
@@ -91,7 +92,7 @@ body {
     transform: translateY(0px);
   }
   to {
-    transform: translateY(-21px);
+    transform: translateY(-2.1rem);
   }
 }
 
@@ -245,10 +246,12 @@ body.player-mode #views {
 
 #views-sublist-controls-play {
   background-image: url("./images/IconAction_Media_Play_30x30.png");
+  background-size: 3rem;
 }
 
 #views-sublist-controls-shuffle {
   background-image: url("./images/IconAction_Media_ShuffleOn_30x30.png");
+  background-size: 3rem;
 }
 
 .album-controls-button {
@@ -271,16 +274,16 @@ body.player-mode #views {
 }
 
 .main-tile {
-  width: 318px;
-  height: 318px;
+  width: 31.8rem;
+  height: 31.8rem;
   border: 1px solid rgba(0, 0, 0, 1);
   background-color: black;
   overflow: hidden;
 }
 
 .sub-tile {
-  width: 158px;
-  height: 158px;
+  width: 15.8rem;
+  height: 15.8rem;
   border: 1px solid rgba(0, 0, 0, 1);
   font-weight: lighter;
   background-color: #303030;
@@ -446,6 +449,20 @@ body.player-mode #views {
   }
 }
 
+@media (orientation: portrait) and (width: 540px),
+       (orientation: landscape) and (width: 960px) {
+
+  .main-tile {
+    width: 358px;
+    height: 358px;
+  }
+
+  .sub-tile {
+    width: 178px;
+    height: 178px;
+  }
+}
+
 #player-cover {
   position: relative;
   width: 100%;
@@ -537,11 +554,11 @@ body.player-mode #views {
 #player-album-shuffle, 
 #player-album-repeat {
   top: 10%;
-  width: calc(25% - 20px);
-  height: 80%;
+  width: calc(25% - 2rem);
+  height: 80%
   padding: 0px;
-  border-radius: 35px;
-  margin: 0 10px;
+  border-radius: 3.5rem;
+  margin: 0 1rem;
   font-weight: bold;
   background-position: center center;
   background-repeat: no-repeat;
@@ -549,22 +566,27 @@ body.player-mode #views {
 
 #player-album-shuffle {
   background-image: url("./images/IconAction_Media_ShuffleOff_30x30.png");
+  background-size: 3rem;
 }
 
 #player-album-shuffle.shuffle-on {
   background-image: url("./images/IconAction_Media_ShuffleOn_30x30.png");
+  background-size: 3rem;
 }
 
 #player-album-repeat.repeat-off {
   background-image: url("./images/IconAction_Media_RepeatOff_30x30.png");
+  background-size: 3rem;
 }
 
 #player-album-repeat.repeat-list {
   background-image: url("./images/IconAction_Media_RepeatList_30x30.png");
+  background-size: 3rem;
 }
 
 #player-album-repeat.repeat-song {
   background-image: url("./images/IconAction_Media_RepeatSong_30x30.png");
+  background-size: 3rem;
 }
 
 #player-album-rating {
@@ -588,6 +610,7 @@ button::-moz-focus-inner {
   border: 0;
   outline: none;
   background-image: url('./images/star_off.png');
+  background-size: 2.4rem;
   background-position: center center;
   background-repeat: no-repeat;
   background-color: transparent;
@@ -595,6 +618,7 @@ button::-moz-focus-inner {
 
 .star-on {
   background-image: url('./images/star_on.png');
+  background-size: 2.4rem;
 }
 
 #player-seek {
@@ -675,18 +699,22 @@ button::-moz-focus-inner {
 
 #player-controls-previous {
   background-image: url("./images/IconAction_Media_SkipBackwards_30x30.png");
+  background-size: 3rem;
 }
 
 #player-controls-play {
   background-image: url("./images/IconAction_Media_Pause_30x30.png");
+  background-size: 3rem;
 }
 
 #player-controls-play.is-pause {
   background-image: url("./images/IconAction_Media_Play_30x30.png");
+  background-size: 3rem;
 }
 
 #player-controls-next {
   background-image: url("./images/IconAction_Media_SkipForward_30x30.png");
+  background-size: 3rem;
 }
 
 .player-controls-button {
@@ -729,18 +757,22 @@ button::-moz-focus-inner {
 
 #tabs-mix {
   background-image: url("./images/IconAction_Camera_GridView_30x30.png");
+  background-size: 3rem;
 }
 
 #tabs-playlists {
   background-image: url("./images/IconAction_Media_PlayList_30x30.png");
+  background-size: 3rem;
 }
 
 #tabs-artists {
   background-image: url("./images/IconAction_Media_ArtistFilter_30x30.png");
+  background-size: 3rem;
 }
 
 #tabs-albums {
   background-image: url("./images/IconAction_Media_AlbumFilter_30x30.png");
+  background-size: 3rem;
 }
 
 .tabs-button {
@@ -887,6 +919,7 @@ li.list-item a:active {
   background-position: center center;
   background-repeat: no-repeat;
   background-image: url("./images/IconAction_Media_ShuffleOn_30x30.png");
+  background-size: 3rem;
   pointer-events: none;
 }
 
