@@ -17,7 +17,7 @@ html, body {
   bottom: 0;
   right: 0;
   left: 0;
-  height: 45px;
+  height: 4.5rem;
   z-index: 50;
   background-color: rgba(0, 0, 0, 0.8);
   overflow: hidden;
@@ -28,7 +28,7 @@ html, body {
 }
 
 #switch-button, #misc-button {
-  height: 45px;
+  height: 4.5rem;
   width: 33%;
 }
 
@@ -41,10 +41,10 @@ html, body {
   position: absolute;
   top: 50%;
   left: 50%;
-  margin-left: -15px;
-  margin-top: -15px;
-  width: 30px;
-  height: 30px;
+  margin-left: -1.5rem;
+  margin-top: -1.5rem;
+  width: 3rem;
+  height: 3rem;
 }
 
 #switch-button {
@@ -59,7 +59,7 @@ html, body {
 #video-timer {
   position:relative;
   top:50%;
-  margin-top:-0.5em;
+  margin-top:-.8rem;
 }
 
 #gallery-button {
@@ -69,6 +69,7 @@ html, body {
 }
 #gallery-button span {
   background-image: url(images/grid.png);
+  background-size: 3rem;
 }
 
 #gallery-button[disabled=disabled] {
@@ -85,11 +86,11 @@ html, body {
 
 #capture-button {
   background-color: #03a2b4;
-  border-radius: 100px;
+  border-radius: 10rem;
   left: 33%;
-  height: 100px;
+  height: 10rem;
   width: 33%;
-  top: -28px;
+  top: -2.8rem;
 }
 
 #video-timer {
@@ -113,36 +114,41 @@ html, body {
 
 .video.capturing #capture-button span {
   background-image: url(images/stop.png);
+  background-size: 2rem;
 }
 
 /* Swap the camera and video icons depending on mode */
 .video #switch-button span {
   background-image: url(images/camera.png);
+  background-size: 3rem;
 }
 
 .camera #switch-button span {
   background-image: url(images/video.png);
+  background-size: 3rem;
 }
 
 .camera #capture-button span {
   background-image: url(images/camera.png);
+  background-size: 3rem;
 }
 
 .video #capture-button span {
   background-image: url(images/video.png);
+  background-size: 3rem;
 }
 
 #focus-ring {
   position: absolute;
   z-index: 100;
   display: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50px;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 5rem;
   top: 50%;
   left: 50%;
-  margin-top: -30px;
-  margin-left: -30px;
+  margin-top: -3rem;
+  margin-left: -3rem;
 }
 
 #focus-ring[data-state=focused] {
@@ -190,7 +196,7 @@ html, body {
   margin-right: 10%;
   padding: 10%;
   border: solid black 4px;
-  border-radius: 10px;
+  border-radius: 1rem;
   background-color: rgba(0, 0, 0, 0.6);
   font-family: "MozTT", sans-serif;
   color: #fff;
@@ -200,11 +206,11 @@ html, body {
 #overlay-title {
   text-align: center;
   font-weight: bold;
-  font-size: 26px;
+  font-size: 2.6rem;
 }
 
 #overlay-text {
-  font-size: 18px;
+  font-size: 1.8rem;
 }
 
 .hidden {
@@ -213,8 +219,8 @@ html, body {
 
 #hud {
   position: absolute;
-  top: 20px;
-  height: 75px;
+  top: 2rem;
+  height: 7.5rem;
   left: 0;
   right: 0;
   z-index: 50;
@@ -223,12 +229,13 @@ html, body {
 #hud a {
   position: absolute;
   z-index: 50;
-  height: 75px;
-  width: 75px;
+  height: 7.5rem;
+  width: 7.5rem;
   border: 0;
   background-position: center center;
   background-repeat: no-repeat;
   background-image: url(images/hud_button_underlay.png);
+  background-size: 4.5rem;
 }
 
 #hud a:after {
@@ -236,8 +243,8 @@ html, body {
   display: block;
   position: relative;
   z-index: 60;
-  height: 75px;
-  width: 75px;
+  height: 7.5rem;
+  width: 7.5rem;
   background: transparent;
   background-position: center center;
   background-repeat: no-repeat;
@@ -245,32 +252,39 @@ html, body {
 
 #hud a:active {
   background-image: url(images/hud_button_underlay_focus.png);
+  background-size: 4.5rem;
 }
 
 #toggle-camera {
-  right: 20px;
+  right: 2rem;
 }
 
 #toggle-flash {
-  left: 20px;
+  left: 2rem;
 }
 
 #toggle-camera[data-mode=back]:after {
   background-image: url(images/toggle_front.png);
+  background-size: 3rem;
 }
 #toggle-camera[data-mode=front]:after {
   background-image: url(images/toggle_back.png);
+  background-size: 3rem;
 }
 
 #toggle-flash[data-mode=on]:after {
   background-image: url(images/flash_on.png);
+  background-size: 3rem;
 }
 #toggle-flash[data-mode=off]:after {
   background-image: url(images/flash_off.png);
+  background-size: 3rem;
 }
 #toggle-flash[data-mode=auto]:after {
   background-image: url(images/flash_auto.png);
+  background-size: 3rem;
 }
 #toggle-flash[data-mode=torch]:after {
   background-image: url(images/flash_torch.png);
+  background-size: 3rem;
 }
