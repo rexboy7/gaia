@@ -92,15 +92,18 @@ a:active {
 
 #frequency[data-seek-dir="up"] {
   background: url("images/spinner-right.png") no-repeat center 8.5rem transparent;
+  background-size: 6rem;
 }
 
 
 #frequency[data-seek-dir="down"] {
   background: url("images/spinner-left.png") no-repeat center 8.5rem transparent;
+  background-size: 6rem;
 }
 
 #bookmark-button {
   background: url("images/toggle-fav-star-off.png") no-repeat scroll center center transparent;
+  background-size: 4rem;
 }
 
 #bookmark-button:focus {
@@ -110,10 +113,12 @@ a:active {
 #bookmark-button:active,
 #bookmark-button[data-bookmarked="true"]:active {
   background: url("images/toggle-fav-star-pressed.png") no-repeat scroll center center #00ABCD;
+  background-size: 4rem;
 }
 
 #bookmark-button[data-bookmarked="true"] {
   background: url("images/toggle-fav-star-on.png") no-repeat scroll center center transparent;
+  background-size: 4rem;
 }
 /*****  end  *****/
 
@@ -144,6 +149,7 @@ a:active {
   position: absolute;
   z-index: 1;
   background: url(images/selector.png) no-repeat center center transparent;
+  background-size: 1.6rem;
   top: 0;
 }
 
@@ -163,6 +169,7 @@ div.animation-on > div {
 
 #frequency-dialer .dialer-unit-mark-box {
   background: url(images/dial-notches.png) no-repeat 0 3.4rem;
+  background-size: 32rem;
   overflow: hidden;
   height: 5.5rem;
 }
@@ -171,7 +178,7 @@ div.animation-on > div {
   text-align: left;
   height: 7.5rem;
   position: absolute;
-  width: 320px;
+  width: 32rem;
 }
 
 /* The beginning and end of the dial are masked to hide notches that
@@ -237,10 +244,12 @@ div#fav-list-container div.fav-list-remove-button {
   float: right;
   cursor: pointer;
   background: url("images/fav-star.png") no-repeat scroll center center transparent;
+  background-size: 1.4rem;
 }
 
 div#fav-list-container div.selected div.fav-list-remove-button {
   background: url("images/fav-star-selected.png") no-repeat scroll center center transparent;
+  background-size: 1.4rem;
 }
 
 div#fav-list-container div.fav-list-frequency {
@@ -254,7 +263,7 @@ div#fav-list-container div.fav-list-frequency::after {
   content: "MHz";
   font-size: 1.5rem;
   position: absolute;
-  padding: 6px 2px 0 10px;
+  padding: .6rem .2rem 0 1rem;
 }
 /***** end *****/
 
@@ -307,6 +316,7 @@ div#fav-list-container div.fav-list-frequency::after {
 
 #power-switch {
   background-image: url(images/play.png), url(images/reflection-72.png);
+  background-size: 7.2rem, 7.2rem;
   background-repeat: no-repeat, no-repeat;
   background-color: transparent;
   background-position: center center, 0 0;
@@ -314,14 +324,17 @@ div#fav-list-container div.fav-list-frequency::after {
 
 #power-switch:active {
   background-image: url(images/play.png);
+  background-size: 7.2rem;
 }
 
 #power-switch[data-enabled="true"] {
   background-image: url(images/stop.png), url(images/reflection-72.png);
+  background-size: 7.2rem;
 }
 
 #power-switch[data-enabled="true"]:active {
   background-image: url(images/stop.png);
+  background-size: 7.2rem;
 }
 
 a#frequency-op-seekdown {
@@ -329,6 +342,7 @@ a#frequency-op-seekdown {
   height: 5rem;
   margin: 1rem 0;
   background-image: url(images/seekdown.png), url(images/reflection-56.png);
+  background-size: 5.6rem, 5.6rem;
   background-repeat: no-repeat, no-repeat;
   background-color: transparent;
   background-position: center center;
@@ -336,6 +350,7 @@ a#frequency-op-seekdown {
 
 a#frequency-op-seekdown:active {
   background-image: url(images/seekdown.png);
+  background-size: 5.6rem;
 }
 
 a#frequency-op-seekup {
@@ -343,6 +358,7 @@ a#frequency-op-seekup {
   height: 5rem;
   margin: 1rem 0;
   background-image: url(images/seekup.png), url(images/reflection-56.png);
+  background-size: 5.6rem, 5.6rem;
   background-repeat: no-repeat, no-repeat;
   background-color: transparent;
   background-position: center center;
@@ -350,6 +366,7 @@ a#frequency-op-seekup {
 
 a#frequency-op-seekup:active {
   background-image: url(images/seekup.png);
+  background-size: 5.6rem;
 }
 /**** end ****/
 
@@ -363,15 +380,17 @@ a#frequency-op-seekup:active {
   z-index: 2;
   color: #FFF;
   background: url(images/popup-texture.png) repeat 0 0 transparent;
+  background-size: cover;
 }
 
 #antenna-warning > div:first-child {
   height: 60%;
   background: url(images/headset.png) no-repeat center center transparent;
+  background-size: 18.4rem;
 }
 
 #antenna-warning-header {
-  padding: 10px 30px 10px 30px;
+  padding: 1rem 3rem 1rem 3rem;
   font-weight: normal;
   text-transform:capitalize;
   font-size: 1.9rem;
@@ -382,8 +401,8 @@ a#frequency-op-seekup:active {
 #antenna-warning-body {
   font-weight: 300;
   font-size: 2.5rem;
-  padding: 5px;
-  margin: 0 25px;
+  padding: .5rem;
+  margin: 0 2.5rem;
   border-top: 1px solid #686868;
 }
 /******* end *******/
