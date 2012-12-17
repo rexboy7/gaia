@@ -43,10 +43,10 @@
     #evmeContainer .smart-folder .title {
         position: relative;
         z-index: 50;
-        height: 55px;
-        line-height: 55px;
-        padding: 0 10px 0 32px;
-        font-size: 17px;
+        height: 5.5rem;
+        line-height: 5.5rem;
+        padding: 0 10px 0 3.2rem;
+        font-size: 1.7rem;
         font-weight: normal;
         overflow: hidden;
         white-space: nowrap;
@@ -61,18 +61,18 @@
         }
         #evmeContainer .smart-folder .title em {
             position: absolute;
-            left: 40px;
-            bottom: -5px;
+            left: 4rem;
+            bottom: -.5rem;
             width: 0;
             height: 0;
-            border: 5px solid rgba(255, 255, 255, .8);
+            border: .5rem solid rgba(255, 255, 255, .8);
             -moz-transform: rotate(45deg);
             transform: rotate(45deg);
         }
     
     #evmeContainer .smart-folder .image {
         position: absolute;
-        top: 55px;
+        top: 5.5rem;
         left: 0;
         right: 0;
         bottom: 0;
@@ -91,36 +91,37 @@
         }
     #evmeContainer .smart-folder > .close {
         background: rgba(0, 0, 0, .1) url('/everything.me/images/imageclose.png') 50% 50% no-repeat;
+        background-size: 1.7rem;
         position: absolute;
         top: 0;
         left: 0;
-        width: 25px;
-        height: 54px;
+        width: 2.5rem;
+        height: 5.4rem;
         cursor: pointer;
         z-index: 100;
     }
         #evmeContainer .smart-folder > .close:after {
             content: "";
             position: absolute;
-            top: 4px;
-            bottom: 4px;
-            right: -1px;
-            width: 1px;
+            top: .4rem;
+            bottom: .4rem;
+            right: -.1rem;
+            width: .1rem;
             background: rgba(0, 0, 0, .3);
             border-right: 1px solid rgba(255, 255, 255, .3);
         }
     #evmeContainer .smart-folder .evme-apps {
         position: absolute;
-        top: 60px;
-        left: 5px;
-        right: 5px;
+        top: 6rem;
+        left: .5rem;
+        right: .5rem;
         bottom: 0;
         z-index: 50;
         width: auto;
         height: auto;
     }
         #evmeContainer .smart-folder .evme-apps ul.has-more {
-            padding-bottom: 45px;
+            padding-bottom: 4.5rem;
         }
         #evmeContainer .smart-folder .evme-apps li {
             width: 25%;
@@ -142,8 +143,8 @@
         }
         
     #evmeContainer .smart-folder .has-installed .connection-message {
-        -moz-transform: translateY(55px);
-        transform: translateY(55px);
+        -moz-transform: translateY(5.5rem);
+        transform: translateY(5.5rem);
     }
     #evmeContainer .smart-folder #bgimage-overlay {
         top: 0;
@@ -155,15 +156,15 @@
 
 #evmeContainer .smart-folder .evme-apps .loadmore {
     position: absolute;
-    bottom: 5px;
+    bottom: .5rem;
     left: 0;
     right: 0;
     text-align: center;
     width: 100%;
-    height: 40px;
-    line-height: 40px;
+    height: 4rem;
+    line-height: 4rem;
     color: #fff;
-    font-size: 15px;
+    font-size: 1.5rem;
     font-weight: bold;
     padding: 0;
     margin: 10px 0 0 0;

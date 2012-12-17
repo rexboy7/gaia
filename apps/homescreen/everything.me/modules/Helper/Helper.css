@@ -1,7 +1,7 @@
 #helper-header {
     position: absolute;
     left: 0;
-    top: 39px;
+    top: 3.9rem;
     right: 0;
 }
 .empty-query:not(.keyboard-visible) #helper-header {
@@ -11,13 +11,13 @@
 #search-title {
     position: absolute;
     top: 0;
-    left: 6px;
-    right: 6px;
+    left: .6rem;
+    right: .6rem;
     color: #fff;
     z-index: 50;
-    height: 38px;
-    line-height: 38px;
-    font-size: 16px;
+    height: 3.8rem;
+    line-height: 3.8rem;
+    font-size: 1.6rem;
     font-weight: 600;
     text-shadow: 0 1px 3px rgba(0, 0, 0, 1), 0 1px 1px #000;
     cursor: pointer;
@@ -36,7 +36,7 @@
 }
     #search-title .query {
         position: relative;
-        margin-left: 5px;
+        margin-left: .5rem;
         color: #b4dae7;
         text-transform: lowercase;
     }
@@ -44,27 +44,27 @@
             color: #b4dae7;
             font-style: normal;
             font-weight: normal;
-            margin-left: 5px;
+            margin-left: .5rem;
         }
         #search-title.notype .type {
             display: none;
         }
     #search-title.notype {
-        padding-right: 26px;
+        padding-right: 2.6rem;
     }
 
 #helper-rapper {
     position: absolute;
     background: #fff;
-    top: 4px;
-    left: 6px;
-    right: 6px;
-    height: 28px;
-    line-height: 25px;
+    top: .4rem;
+    left: .6rem;
+    right: .6rem;
+    height: 2.8rem;
+    line-height: 2.5rem;
     color: #000;
-    font-size: 15px;
+    font-size: 1.5rem;
     overflow: hidden;
-    border-radius: 2px;
+    border-radius: .2rem;
     border: 1px solid #1f1f1f;
     z-index: 55;
     -moz-transform-origin: 50% 50%;
@@ -78,7 +78,7 @@
 #helper-rapper.close {
     -moz-transform: scale(0, 0);
     transform: scale(0, 0);
-    right: 12px;
+    right: 1.2rem;
     display: none;
 }
     #helper-rapper.close ul {
@@ -87,7 +87,7 @@
     
     #helper-tip {
         position: absolute;
-        left: 22px;
+        left: 2.2rem;
         bottom: 1px;
         overflow: visible;
         z-index: 300;
@@ -101,8 +101,8 @@
         position: absolute;
         top: 0;
         left: 0;
-        height: 13px;
-        width: 13px;
+        height: 1.3rem;
+        width: 1.3rem;
         background: #fff;
         border-left: 1px solid #000;
         border-top: 1px solid #000;
@@ -136,8 +136,8 @@
 }
     #helper-rapper .loading {
         position: absolute;
-        top: 17px;
-        right: 16px;
+        top: 1.7rem;
+        right: 1.6rem;
         width: 0;
         height: 0;
         display: none;
@@ -147,17 +147,17 @@
     }
     #helper ul {
         position: absolute;
-        top: -3px !important;
-        width: 2000px;
+        top: -.3rem !important;
+        width: 200rem;
         height: 100%;
-        padding-bottom: 3px;
-        padding-top: 3px;
+        padding-bottom: .3rem;
+        padding-top: .3rem;
         overflow: hidden;
         text-transform: lowercase;
     }
     #helper ul.start {
-        -moz-transform: translate(320px, 0) !important;
-        transform: translate(320px, 0) !important;
+        -moz-transform: translate(32rem, 0) !important;
+        transform: translate(32rem, 0) !important;
     }
     #helper-rapper:not(.anim-disabled) #helper ul.anim {
         -moz-transition: all .4s linear !important;
@@ -167,7 +167,7 @@
             position: relative;
             display: inline-block;
             vertical-align: top;
-            padding: 0 10px 6px 10px;
+            padding: 0 1rem .6rem 1rem;
             cursor: pointer;
             white-space: nowrap;
         }
@@ -177,12 +177,12 @@
         #helper ul li:after {
             content: "";
             position: absolute;
-            top: 12px;
-            left: -3px;
-            width: 4px;
-            height: 4px;
+            top: 1.2rem;
+            left: -.3rem;
+            width: .4rem;
+            height: .4rem;
             background: #000;
-            border-radius: 2px;
+            border-radius: .2rem;
         }
         #helper ul li:first-child {
             font-weight: 600;
@@ -222,7 +222,7 @@
             color: #f00;
         }
         #helper ul li.label + li {
-            padding-left: 5px;
+            padding-left: .5rem;
         }
         #helper ul li.label + li:after {
             display: none;
