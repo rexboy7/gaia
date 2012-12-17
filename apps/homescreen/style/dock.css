@@ -51,3 +51,8 @@
 #footer li > div > *:not(img) {
   display: none;
 }
+
+#footer li > div > img {
+  width: 6.4rem;
+  height: 6.4rem;
+}
