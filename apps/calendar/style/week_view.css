@@ -51,7 +51,7 @@
   line-height: 120%;
   width: 6rem;
   float: left;
-  height: 6.1rem;
+  height: calc(6rem + 1px);
   text-align: right;
   border-left: 1px solid #CCC;
   padding: 0.2rem
@@ -105,11 +105,11 @@
 }
 
 #week-view .week-events > ol {
-  width: 7rem;
+  width: 100%;
 }
 
 #week-view .days-3 .week-events > ol {
-  width: 9.5rem;
+  width: 100%;
 }
 
 #week-view .week-events > ol li.event {
