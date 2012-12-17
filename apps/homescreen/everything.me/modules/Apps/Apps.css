@@ -1,6 +1,6 @@
 #evmeContainer .evme-apps {
     position: absolute;
-    top: 81px;
+    top: 8.1rem;
     left: 0;
     right: 0;
     bottom: 0;
@@ -19,28 +19,28 @@
     position: absolute;
     width: 100%;
     min-height: 100%;
-    padding-bottom: 10px;
+    padding-bottom: 1rem;
 }
 #evmeContainer .evme-apps.has-more ul {
-    padding-bottom: 45px;
+    padding-bottom: 4.5rem;
 }
 #evmeContainer .evme-apps.has-installed ul {
-    padding-top: 100px;
+    padding-top: 10rem;
 }
 #evmeContainer .evme-apps.has-installed ul:before {
     content: '';
     position: absolute;
-    left: 15px;
-    right: 15px;
-    top: 95px;
+    left: 1.5rem;
+    right: 1.5rem;
+    top: 9.5rem;
     height: 1px;
     box-shadow: 0 -1px 0 0 rgba(255, 255, 255, .3), 0 1px 0 0 rgba(0, 0, 0, .3) inset;
 }
 #evmeContainer .evme-apps ul li {
     clear: both;
     width: 25%;
-    height: 89px;
-    padding-top: 10px;
+    height: 8.9rem;
+    padding-top: 1rem;
     text-align: center;
     cursor: pointer;
     display: inline-block;
@@ -77,11 +77,11 @@
 #evmeContainer .evme-apps ul #button-more {
     position: absolute;
     top: auto;
-    bottom: 15px;
+    bottom: 1.5rem;
     left: 0;
     height: auto;
     color: #b4dae7;
-    font-size: 15px;
+    font-size: 1.5rem;
     font-weight: 600;
     text-shadow: 0 1px 1px #000;
     cursor: pointer;
@@ -98,7 +98,7 @@
 #evmeContainer .evme-apps ul li .c {
     position: relative;
     display: block;
-    padding: 44px 2px 0 2px;
+    padding: 4.4rem .2rem 0 .2rem;
 }
 #evmeContainer .evme-apps ul li .thumb, #evmeContainer .app-icon {
     position: absolute;
@@ -106,13 +106,13 @@
     left: 50%;
     z-index: 5;
     display: block;
-    width: 44px;
-    height: 44px;
-    margin-left: -22px;
+    width: 4.4rem;
+    height: 4.4rem;
+    margin-left: -2.2rem;
     background-position: 50% 50%;
     background-repeat: no-repeat;
     background-size: contain;
-    border-radius: 23px;
+    border-radius: 2.3rem;
     box-shadow: 0 2px 2px 0 rgba(0, 0, 0, .8);
     -moz-transition: -moz-transform .2s linear;
     transition: transform .2s linear;
@@ -122,14 +122,14 @@
     transform: scale(0);
 }
 #evmeContainer .evme-apps ul li.installed .c {
-    padding-top: 50px;
+    padding-top: 5rem;
 }
 #evmeContainer .evme-apps ul li.installed .thumb {
     border-radius: 0;
-    width: 58px;
-    height: 58px;
-    margin-left: -29px;
-    margin-top: -3px;
+    width: 5.8rem;
+    height: 5.8rem;
+    margin-left: -2.9rem;
+    margin-top: -.3rem;
     box-shadow: none;
 }
 #evmeContainer .evme-apps ul li .thumb.noicon {
@@ -140,12 +140,12 @@
 #evmeContainer .evme-apps ul li b {
     display: inline-block;
     line-height: 100%;
-    max-height: 35px;
+    max-height: 3.5rem;
     max-width: 95%;
-    margin-top: 2px;
+    margin-top: .2rem;
     overflow: hidden;
     text-overflow: ellipsis;
-    padding: 2px;
+    padding: .2rem;
     color: #fff;
     font-size: -moz-calc(5.75 * 0.226rem);
     font-weight: 500;
@@ -157,21 +157,21 @@
 
 #evmeContainer .evme-apps ul li .close {
     position: absolute;
-    top: -4px;
+    top: -.4rem;
     left: 50%;
-    margin-left: -30px;
-    border: 2px solid #fff;
+    margin-left: -3rem;
+    border: .2rem solid #fff;
     box-shadow: 0 0 2px 0 #000;
-    width: 18px;
-    height: 18px;
-    line-height: 16px;
+    width: 1.8rem;
+    height: 1.8rem;
+    line-height: 1.6rem;
     background: #000;
     color: #fff;
     cursor: pointer;
     text-align: center;
-    border-radius: 18px;
+    border-radius: 1.8rem;
     font-weight: 600;
-    font-size: 14px;
+    font-size: 1.4rem;
     z-index: 0;
     opacity: 0;
     display: none;
@@ -182,12 +182,12 @@
     position: absolute;
     left: 0;
     right: 0;
-    bottom: 5px;
+    bottom: .5rem;
     width: 100%;
-    height: 40px;
-    line-height: 40px;
+    height: 4rem;
+    line-height: 4rem;
     color: #fff;
-    font-size: 16px;
+    font-size: 1.6rem;
     font-weight: 600;
     padding: 0;
     z-index: 50;
@@ -201,8 +201,8 @@
     background: rgba(255,255,255,.01);
 }
 #evmeContainer #evmeApps.has-installed .connection-message {
-    -moz-transform: translateY(35px);
-    transform: translateY(35px);
+    -moz-transform: translateY(3.5rem);
+    transform: translateY(3.5rem);
 }
 #evmeContainer.loading-app .connection-message {
     opacity: 0;
@@ -237,9 +237,9 @@ body:not(.istouch) .evme-apps ul li:nth-child(5n+1) {
 }
 #evmeContainer.loading-app .evme-apps ul li.inplace .doat-loading {
     position: absolute;
-    top: -8px;
+    top: -.8rem;
     left: 50%;
-    margin-left: -30px;
+    margin-left: -3rem;
 }
 
 #evmeContainer.loading-app .evme-apps ul {
@@ -248,8 +248,8 @@ body:not(.istouch) .evme-apps ul li:nth-child(5n+1) {
 
 .apps-group {
     position: relative;
-    width: 64px;
-    height: 64px;
+    width: 6.4rem;
+    height: 6.4rem;
 }
 .apps-group span {
     position: absolute;
