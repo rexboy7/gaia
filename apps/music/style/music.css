@@ -273,6 +273,10 @@ body.player-mode #views {
   opacity: 0.3;
 }
 
+.album-controls-button:disabled:active {
+  background: transparent;
+}
+
 .main-tile {
   width: 31.8rem;
   height: 31.8rem;
@@ -569,6 +573,10 @@ body.player-mode #views {
   background-size: 3rem;
 }
 
+#player-album-shuffle:disabled {
+  background-image: url("./images/IconAction_Media_ShuffleOn_30x30.png");
+}
+
 #player-album-shuffle.shuffle-on {
   background-image: url("./images/IconAction_Media_ShuffleOn_30x30.png");
   background-size: 3rem;
@@ -805,6 +813,9 @@ button::-moz-focus-inner {
 }
 .player-cover-button:disabled {
   opacity: 0.3;
+}
+.player-cover-button:disabled:active {
+  background: transparent;
 }
 
 .hidden {

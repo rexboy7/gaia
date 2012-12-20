@@ -1,6 +1,16 @@
 'use strict';
 
 var AppInstallManager = {
+  mapDownloadErrorsToMessage: {
+    'NETWORK_ERROR': 'download-failed',
+    'DOWNLOAD_ERROR': 'download-failed',
+    'MISSING_MANIFEST': 'install-failed',
+    'INVALID_MANIFEST': 'install-failed',
+    'INSTALL_FROM_DENIED': 'install-failed',
+    'INVALID_SECURITY_LEVEL': 'install-failed',
+    'INVALID_PACKAGE': 'install-failed',
+    'APP_CACHE_DOWNLOAD_ERROR': 'download-failed'
+  },
 
   init: function ai_init() {
     this.dialog = document.getElementById('app-install-dialog');
@@ -70,7 +80,14 @@ var AppInstallManager = {
   },
 
   handleApplicationInstall: function ai_handleApplicationInstallEvent(e) {
-    this.prepareForDownload(e.detail.application);
+    var app = e.detail.application;
+
+    if (app.installState === 'installed') {
+      this.showInstallSuccess(app);
+      return;
+    }
+
+    this.prepareForDownload(app);
   },
 
   handleAppInstallPrompt: function ai_handleInstallPrompt(detail) {
@@ -130,12 +147,6 @@ var AppInstallManager = {
 
   prepareForDownload: function ai_prepareForDownload(app) {
     var manifestURL = app.manifestURL;
-
-    if (app.installState === 'installed') {
-      // nothing more to do here, everything is already done
-      return;
-    }
-
     this.appInfos[manifestURL] = {};
 
     // these methods are already bound to |this|
@@ -144,8 +155,17 @@ var AppInstallManager = {
     app.onprogress = this.handleProgress;
   },
 
+  showInstallSuccess: function ai_showInstallSuccess(app) {
+    var manifest = app.manifest || app.updateManifest;
+    var name = manifest.name;
+    var _ = navigator.mozL10n.get;
+    var msg = _('app-install-success', { appName: name });
+    SystemBanner.show(msg);
+  },
+
   handleDownloadSuccess: function ai_handleDownloadSuccess(evt) {
     var app = evt.application;
+    this.showInstallSuccess(app);
     this.onDownloadStop(app);
     this.onDownloadFinish(app);
   },
@@ -156,9 +176,9 @@ var AppInstallManager = {
     var manifest = app.manifest || app.updateManifest;
     var name = manifest.name;
 
-    var error = app.downloadError;
+    var errorName = app.downloadError.name;
 
-    switch (error.name) {
+    switch (errorName) {
       case 'INSUFFICIENT_STORAGE':
         var title = _('not-enough-space'),
             buttonText = _('ok'),
@@ -167,7 +187,11 @@ var AppInstallManager = {
         ModalDialog.alert(title, message, {title: buttonText});
         break;
       default:
-        var msg = _('download-stopped2', { appName: name });
+        // showing the real error to a potential developer
+        console.info('downloadError event, error code is', errorName);
+
+        var key = this.mapDownloadErrorsToMessage[errorName] || 'generic-error';
+        var msg = _('app-install-' + key, { appName: name });
         SystemBanner.show(msg);
     }
 
@@ -254,9 +278,9 @@ var AppInstallManager = {
 
   getNotificationProgressNode: function ai_getNotificationProgressNode(app) {
     var appInfo = this.appInfos[app.manifestURL];
-    var progressNode = appInfo
-      && appInfo.installNotification
-      && appInfo.installNotification.querySelector('progress');
+    var progressNode = appInfo &&
+      appInfo.installNotification &&
+      appInfo.installNotification.querySelector('progress');
     return progressNode || null;
   },
 

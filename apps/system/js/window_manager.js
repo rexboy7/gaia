@@ -478,28 +478,29 @@ var WindowManager = (function() {
     }
 
     // Get the screenshot from the database
-    getAppScreenshotFromDatabase(frame.src, function(screenshot) {
-      // If firstpaint is faster than database, we will not transition
-      // with screenshot.
-      if (!('unpainted' in frame.dataset)) {
+    getAppScreenshotFromDatabase(frame.src || frame.dataset.frameOrigin,
+      function(screenshot) {
+        // If firstpaint is faster than database, we will not transition
+        // with screenshot.
+        if (!('unpainted' in frame.dataset)) {
+          callback();
+          return;
+        }
+
+        if (!screenshot) {
+          // put a default background
+          frame.classList.add('default-background');
+          callback();
+          return;
+        }
+
+        // set the screenshot as the background of the frame itself.
+        // we are safe to do so since there is nothing on it yet.
+        setFrameBackgroundBlob(frame, screenshot, transparent);
+
+        // start the transition
         callback();
-        return;
-      }
-
-      if (!screenshot) {
-        // put a default background
-        frame.classList.add('default-background');
-        callback();
-        return;
-      }
-
-      // set the screenshot as the background of the frame itself.
-      // we are safe to do so since there is nothing on it yet.
-      setFrameBackgroundBlob(frame, screenshot, transparent);
-
-      // start the transition
-      callback();
-    });
+      });
   }
 
   // On-disk database for window manager.
@@ -1045,9 +1046,14 @@ var WindowManager = (function() {
     frame.setAttribute('mozallowfullscreen', 'true');
     frame.className = 'appWindow';
     frame.dataset.frameOrigin = origin;
+    // Save original frame URL in order to restore it on frame load error
+    frame.dataset.frameURL = url;
 
     // Note that we don't set the frame size here.  That will happen
     // when we display the app in setDisplayedApp()
+
+    // frames are began unpainted.
+    frame.dataset.unpainted = true;
 
     if (!manifestURL) {
       frame.setAttribute('data-wrapper', 'true');
@@ -1058,9 +1064,6 @@ var WindowManager = (function() {
     // They also need to be marked as 'mozapp' to be recognized as apps by the
     // platform.
     frame.setAttribute('mozbrowser', 'true');
-
-    // frames are began unpainted.
-    frame.dataset.unpainted = true;
 
     // These apps currently have bugs preventing them from being
     // run out of process. All other apps will be run OOP.
@@ -1091,6 +1094,16 @@ var WindowManager = (function() {
         createFrame(origFrame, origin, url, name, manifest, manifestURL);
     frame.id = 'appframe' + nextAppId++;
     frame.dataset.frameType = 'window';
+
+    // If this frame corresponds to the homescreen, set mozapptype=homescreen
+    // so we're less likely to kill this frame's process when we're running low
+    // on memory.
+    //
+    // We must do this before we the appendChild() call below. Once
+    // we add this frame to the document, we can't change its app type.
+    if (origin === homescreen) {
+      frame.setAttribute('mozapptype', 'homescreen');
+    }
 
     // Add the iframe to the document
     windows.appendChild(frame);
@@ -1321,17 +1334,18 @@ var WindowManager = (function() {
           // in the app frame. But we don't care.
           appendFrame(null, origin, e.detail.url,
                       name, app.manifest, app.manifestURL);
+
+          // set the size of the iframe
+          // so Cards View will get a correct screenshot of the frame
+          if (!e.detail.isActivity)
+            setAppSize(origin, false);
         } else {
           ensureHomescreen();
         }
 
         // We will only bring web activity handling apps to the foreground
-        if (!e.detail.isActivity) {
-          // set the size of the iframe
-          // so Cards View will get a correct screenshot of the frame
-          setAppSize(origin, false);
+        if (!e.detail.isActivity)
           return;
-        }
 
         // XXX: the correct way would be for UtilityTray to close itself
         // when there is a appwillopen/appopen event.
@@ -1362,12 +1376,6 @@ var WindowManager = (function() {
     }
   });
 
-  // If there is a new application coming in, we should switch to
-  // home screen so the user would see the icon pops up.
-  window.addEventListener('applicationinstall', function(e) {
-    setDisplayedApp(homescreen);
-  });
-
   // Deal with application uninstall event
   // if the application is being uninstalled, we ensure it stop running here.
   window.addEventListener('applicationuninstall', function(e) {
@@ -1375,6 +1383,71 @@ var WindowManager = (function() {
 
     deleteAppScreenshotFromDatabase(e.detail.application.origin);
   });
+
+  // When an UI layer is overlapping the current app,
+  // WindowManager should set the visibility of app iframe to false
+  // And reset to true when the layer is gone.
+  // We may need to handle windowclosing, windowopened in the future.
+  var attentionScreenTimer = null;
+  
+  var overlayEvents = ['lock', 'unlock', 'attentionscreenshow', 'attentionscreenhide', 'status-active', 'status-inactive'];
+
+  function overlayEventHandler(evt) {
+    if (attentionScreenTimer)
+      clearTimeout(attentionScreenTimer);
+    switch (evt.type) {
+      case 'status-active':
+      case 'attentionscreenhide':
+      case 'unlock':
+        if (LockScreen.locked)
+          return;
+        setVisibilityForCurrentApp(true);
+        break;
+      case 'lock':
+        setVisibilityForCurrentApp(false);
+        break;
+
+      /*
+      * Because in-transition is needed in attention screen,
+      * We set a timer here to deal with visibility change
+      */
+      case 'status-inactive':
+        if (!AttentionScreen.isVisible())
+          return;
+      case 'attentionscreenshow':
+        if (evt.detail && evt.detail.origin &&
+          evt.detail.origin != displayedApp) {
+            attentionScreenTimer = setTimeout(function setVisibility(){
+              setVisibilityForCurrentApp(false);
+            }, 5000);
+
+            // Immediatly blur the frame in order to ensure hiding the keyboard
+            var app = runningApps[displayedApp];
+            if (app)
+              app.frame.blur();
+        }
+        break;
+    }
+  }
+
+  overlayEvents.forEach(function overlayEventIterator(event) {
+    window.addEventListener(event, overlayEventHandler);
+  });
+
+  function setVisibilityForCurrentApp(visible) {
+    var app = runningApps[displayedApp];
+    if (!app)
+      return;
+    if ('setVisible' in app.frame)
+      app.frame.setVisible(visible);
+
+    // Restore/give away focus on visiblity change
+    // so that the app can take back its focus
+    if (visible)
+      app.frame.focus();
+    else
+      app.frame.blur();
+  }
 
   function handleAppCrash(origin, manifestURL) {
     if (origin && manifestURL) {
@@ -1617,11 +1690,29 @@ var WindowManager = (function() {
 
     // If the app is the currently displayed app, switch to the homescreen
     if (origin === displayedApp) {
-      setDisplayedApp(homescreen, function() {
+      // when the homescreen is displayed and being
+      // killed we need to forcibly restart it...
+      if (origin === homescreen) {
         removeFrame(origin);
-        if (callback)
-          setTimeout(callback);
-      });
+
+        // XXX workaround bug 810431.
+        // we need this here and not in other situations
+        // as it is expected that homescreen frame is available.
+        setTimeout(function() {
+          setDisplayedApp();
+
+          if (callback) {
+            callback();
+          }
+        });
+      } else {
+        setDisplayedApp(homescreen, function() {
+          removeFrame(origin);
+          if (callback)
+            setTimeout(callback);
+        });
+      }
+
     } else {
       removeFrame(origin);
     }
