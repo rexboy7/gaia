@@ -13,20 +13,19 @@ body {
   overflow: hidden;
   font-family: 'Open Sans', sans-serif;
   color: #fff;
-  font-size: 12px;
 }
 
 #value-selector {
   width: 100%;
-  height: -moz-calc(100% - 20px);
-  top: 20px;
+  height: -moz-calc(100% - 2rem);
+  top: 2rem;
   left: 0;
   position: absolute;
 }
 
 #screen.active-statusbar #value-selector {
-  height: -moz-calc(100% - 40px);
-  top: 40px;
+  height: -moz-calc(100% - 4rem);
+  top: 4rem;
 }
 
 #screen:-moz-full-screen-ancestor #value-seletcor,
@@ -133,7 +132,7 @@ button.affirmative.active {
     font-family: 'Open Sans', Sans-serif;
     font-weight: normal;
     font-size: 1.6rem;
-    line-height: 1em;
+    line-height: ;
     color: #fff;
     border-bottom: 0.1rem solid #686868;
     margin: 0 0 1.5rem;
@@ -167,18 +166,6 @@ button.affirmative.active {
 #value-selector li input:checked + span,
 #value-selector li[aria-checked="true"] span {
   background: url("/bb/value_selector/images/icons/checked.png") no-repeat right center border-box transparent;
+  background-size: 2.1rem;
 }
 
-/* 320x480 phones */
-@media screen and (width: 320px) {
-  html {
-    font-size: 10px;
-  }
-}
-
-/* 480x800 phones */
-@media screen and (min-width: 480px) {
-  html {
-    font-size: 13.3px;
-  }
-}

@@ -43,7 +43,7 @@ form[role="dialog"] > section {
 }
 
 form[role="dialog"] h1 {
-  font: 1.6rem/1em 'Open Sans', Sans-serif;
+  font: 1.6rem/1.6rem 'Open Sans', Sans-serif;
   color: #fff;
   border-bottom: 0.1rem solid #616262;
   background: url(value_selector/images/ui/alpha.png) repeat 0 0;
@@ -166,6 +166,7 @@ form[role="dialog"] .scrollable:before {
   right: 0;
   bottom: 6.9rem;
   background: url(value_selector/images/ui/shadow.png) repeat-x left top, url(value_selector/images/ui/shadow-invert.png) repeat-x left bottom;
+  background-size: auto 1rem, auto 1rem;
 }
 
 form[role="dialog"] [role="listbox"] li {
@@ -204,6 +205,7 @@ form[role="dialog"] [role="listbox"] li input:checked + span,
 form[role="dialog"] [role="listbox"] li[aria-checked="true"] span {
   color: #00abcd;
   background: url(value_selector/images/icons/checked.png) content-box right center no-repeat;
+  background-size: 2.1rem;
 }
 
 form[role="dialog"] [role="listbox"] li a,
