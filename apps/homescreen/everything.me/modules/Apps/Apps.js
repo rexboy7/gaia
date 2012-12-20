@@ -554,12 +554,12 @@ Evme.IconGroup = new function Evme_IconGroup() {
             }
             
             html += '<span ' + missingIcon + ' style="' +
-                        ' top: ' + y + 'px;' +
-                        ' left: ' + x + 'px;' +
+                        ' top: ' + (y / 10) + 'rem;' +
+                        ' left: ' + (x / 10) + 'rem;' +
                         ' border-radius: ' + size/2 + 'px;' +
                         (app.icon? ' background-image: url(' + app.icon + ');' : '') +
-                        ' width: ' + size + 'px;' +
-                        ' height: ' + size + 'px;' +
+                        ' width: ' + (size / 10) + 'rem;' +
+                        ' height: ' + (size / 10) + 'rem;' +
                         (icon.rotate ? ' ' + Evme.Utils.cssPrefix() + 'transform: rotate(' + icon.rotate + 'deg);' : '') +
                         (((icon.shadowOffset || icon.shadowBlur) && useShadows)? ' box-shadow: ' + (icon.shadowOffsetX || "0") + 'px ' + (icon.shadowOffset || "0") + 'px ' + (icon.shadowBlur || "0") + 'px 0 rgba(0, 0, 0, ' + icon.shadowOpacity + ');' : '') +
                         '"></span>';

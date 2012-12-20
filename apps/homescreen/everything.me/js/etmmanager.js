@@ -39,7 +39,7 @@ var EvmeManager = (function EvmeManager() {
     }
 
     function menuHide() {
-        footerStyle.MozTransform = "translateY(75px)";
+        footerStyle.MozTransform = "translateY(7.5rem)";
     }
 
     var footerStyle = document.getElementById("footer").style;
