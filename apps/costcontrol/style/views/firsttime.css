@@ -80,11 +80,13 @@ body[role="application"] [role="dialog"] {
   height: 2.5rem;
   margin: 0.7rem -1rem 0;
   background: url(../images/app/icons/prev.png) no-repeat center center;
+  background-size: 1.3rem;
 }
 
 #firsttime-view .step menu button.recommend span:first-child {
   float: right;
   background: url(../images/app/icons/next.png) no-repeat center center;
+  background-size: 1.3rem;
 }
 
 /* Choices */
@@ -121,6 +123,7 @@ body[role="application"] [role="dialog"] {
     font-weight: 600;
     padding-right: 0.5rem;
     background: url(../images/app/icons/checked.png) content-box right center no-repeat;
+    background-size: 1.9rem;
   }
 
   #firsttime-view .choices li label {

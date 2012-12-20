@@ -24,6 +24,7 @@ body[role="application"] [role="dialog"] [role="spinbutton"]:after {
 	z-index: 200;
 	pointer-events: none;
 	background: url(images/ui/shadow.png) repeat-x left top padding-box, url(images/ui/shadow-invert.png) repeat-x left bottom;
+        background-size: auto 1rem, auto 1rem;
 }
 
 	body[role="application"] [role="dialog"] [role="spinbutton"] > p {
