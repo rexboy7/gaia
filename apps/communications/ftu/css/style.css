@@ -88,11 +88,13 @@ html, body {
   position: absolute;
   pointer-events: none;
   background: url(images/prev.png) no-repeat center center;
+  background-size: 1.1rem;
 }
 
 [role=navigation] button.recommend span {
   left: calc(100% - 3rem);
   background: url(images/next.png) no-repeat center center;
+  background-size: 1.1rem;
 }
 
 [role=navigation] #join {
@@ -331,10 +333,12 @@ html, body {
 
 #finish .content {
   background: url(images/icon_tour.png) no-repeat center 95%;
+  background-size: 17.6rem;
 }
 
 #tutorialFinish .content {
   background: url(images/thumb-up.png) no-repeat center 70%;
+  background-size: 14.4rem;
 }
 
 #finish .content, #tutorialFinish .content {
@@ -526,10 +530,12 @@ html, body {
 
 #sim_import {
   background: url('images/import_sim.png') center left no-repeat;
+  background-size: 3rem;
 }
 
 #fb_import {
   background: url('images/import_fb.png') center left no-repeat;
+  background-size: 3rem;
 }
 
 /*
@@ -724,14 +730,17 @@ i.hack-first-child {
 
 .privacy-browserOS {
   background-image: -moz-image-rect(url(/shared/resources/branding/privacy_sprite.png), 0, 32, 32, 0);
+  background-size: 3.2rem;
 }
 
 .privacy-everythingME {
   background-image: -moz-image-rect(url(/shared/resources/branding/privacy_sprite.png), 0, 64, 32, 32);
+  background-size: 3.2rem;
 }
 
 .privacy-marketPlace {
   background-image: -moz-image-rect(url(/shared/resources/branding/privacy_sprite.png), 0, 96, 32, 64);
+  background-size: 3.2rem;
 }
 
 /* no connection error dialog */
@@ -811,6 +820,7 @@ i.hack-first-child {
 
 [data-type="list"].pack-value-selector li label:not([for]) input:checked + span {
   background: url("images/checked.png") no-repeat right center;
+  background-size: 2.1rem;
 }
 
 [data-type="list"].pack-value-selector li label:not([for]) input + span + p {
@@ -837,22 +847,27 @@ i.hack-first-child {
 
 .wifi-signal0 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 32, 32, 0) !important;
+  background-size: 3.2rem;
 }
 
 .wifi-signal1 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 64, 32, 32) !important;
+  background-size: 3.2rem;
 }
 
 .wifi-signal2 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 96, 32, 64) !important;
+  background-size: 3.2rem;
 }
 
 .wifi-signal3 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 128, 32, 96) !important;
+  background-size: 3.2rem;
 }
 
 .wifi-signal4 {
   background-image: -moz-image-rect(url(images/wifi_sprite.png), 0, 160, 32, 128) !important;
+  background-size: 3.2rem;
 }
 
 .icon {
