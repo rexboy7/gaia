@@ -559,7 +559,7 @@ body.player-mode #views {
 #player-album-repeat {
   top: 10%;
   width: calc(25% - 2rem);
-  height: 80%
+  height: 80%;
   padding: 0px;
   border-radius: 3.5rem;
   margin: 0 1rem;
