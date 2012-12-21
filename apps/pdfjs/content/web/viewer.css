@@ -35,24 +35,25 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  padding-bottom: 50px;
+  padding-bottom: 5rem;
 }
 
 section {
   overflow: hidden;
-  font-size: 10px;
+  font-size: 1rem;
   position: absolute;
   top: 0px;
   left: 0px;
   width: 100%;
   height: 100%;
   overflow: hidden;
-  font-size: 20px;
+  font-size: 2rem;
 }
 
 footer {
   background-image: url(images/toolbar_background.png);
-  height: 40px;
+  background-size: 32rem;
+  height: 4rem;
   position: absolute;
   bottom: 0;
   left: 0;
@@ -78,6 +79,7 @@ footer {
   height: 100%;
   left: 0;
   background-image: url(images/icon_previous_page.png);
+  background-size: 2rem;
 }
 
 .toolbarButton.pageDown {
@@ -86,6 +88,7 @@ footer {
   height: 100%;
   left: 18%;
   background-image: url(images/icon_next_page.png);
+  background-size: 2rem;
 }
 
 #pageNumber {
@@ -99,6 +102,7 @@ footer {
   font-size: 9pt;
   color: #FFF;
   background-image: url(images/div_line_left.png), url(images/div_line_right.png);
+  background-size: .2rem, .2rem;
   background-repeat: no-repeat;
   background-position: left, right;
 }
@@ -109,6 +113,7 @@ footer {
   height: 100%;
   left: 64%;
   background-image: url(images/icon_zoom_out.png);
+  background-size: 2.4rem;
 }
 
 .toolbarButton.zoomIn {
@@ -117,6 +122,7 @@ footer {
   height: 100%;
   left: 82%;
   background-image: url(images/icon_zoom_in.png);
+  background-size: 2.4rem;
 }
 
 .toolbarButton[disabled] {
@@ -134,8 +140,8 @@ footer {
   position: absolute;
   overflow: auto;
   width: 100%;
-  top: 50px;
-  bottom: 40px;
+  top: 5rem;
+  bottom: 4rem;
   left: 0;
   right: 0;
 }
@@ -164,6 +170,7 @@ canvas {
   width: 2.9rem;
   height: 2.9rem;
   background: url("images/spinner.png") no-repeat scroll left top transparent;
+  background-size: 38rem;
   border: medium none;
   animation: 1s steps(10, end) 0s normal none infinite moveDefault;
   display: block;
@@ -178,30 +185,30 @@ canvas {
   }
 
   to {
-    background-position: -390px top;
+    background-position: -39rem top;
   }
 }
 
 #loadingBox {
   position: absolute;
   top: 50%;
-  margin-top: -25px;
+  margin-top: -2.5rem;
   left: 0;
   right: 0;
   text-align: center;
   color: #ddd;
-  font-size: 14px;
+  font-size: 1.4rem;
 }
 
 #loadingBar {
   display: inline-block;
   clear: both;
   margin: 0px;
-  margin-top: 5px;
+  margin-top: .5rem;
   line-height: 0;
   border-radius: 2px;
-  width: 200px;
-  height: 25px;
+  width: 20rem;
+  height: 2.5rem;
 
   background-color: hsla(0,0%,0%,.3);
   background-image: -moz-linear-gradient(hsla(0,0%,100%,.05), hsla(0,0%,100%,0));
@@ -238,19 +245,19 @@ canvas {
 
 #loadingBar .progress.indeterminate {
   width: 100%;
-  height: 25px;
+  height: 2.5rem;
   background-image: -moz-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
   background-image: -webkit-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
   background-image: -ms-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
   background-image: -o-linear-gradient( 30deg, #404040, #404040 15%, #898989, #404040 85%, #404040);
-  background-size: 75px 25px;
+  background-size: 7.5rem 2.5rem;
   -moz-animation: progressIndeterminate 1s linear infinite;
   -webkit-animation: progressIndeterminate 1s linear infinite;
 }
 
 @-moz-keyframes progressIndeterminate {
   from { background-position: 0px 0px; }
-  to { background-position: 75px 0px; }
+  to { background-position: 7.5rem 0px; }
 }
 
 #errorWrapper {
@@ -259,10 +266,10 @@ canvas {
   left: 0;
   position: absolute;
   right: 0;
-  top: 32px;
+  top: 3.2rem;
   z-index: 1000;
-  padding: 3px;
-  font-size: 0.8em;
+  padding: .3rem;
+  font-size: 1.3rem;
 }
 
 #errorMessageLeft {
@@ -276,7 +283,7 @@ canvas {
 #errorMoreInfo {
   background-color: #FFFFFF;
   color: black;
-  padding: 3px;
-  margin: 3px;
+  padding: .3rem;
+  margin: .3rem;
   width: 98%;
 }
