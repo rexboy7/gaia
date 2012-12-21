@@ -1,19 +1,22 @@
 /* 320x480 phones */
-@media screen and (min-width: 320px) and (max-width:479px) {
+@media (orientation: portrait)  and (min-width: 320px) and (max-width:479px),
+       (orientation: landscape) and (min-width: 480px) and (max-width:799px) {
   html, body {
     font-size: 10px;
   }
 }
 
 /* 480x800 phones */
-@media screen and (min-width: 480px) and (max-width: 539px) {
+@media (orientation: portrait)  and (min-width: 480px) and (max-width: 539px),
+       (orientation: landscape) and (min-width: 800px) and (max-width: 959px) {
   html, body {
     font-size: 14px;
   }
 }
 
-/* 576x1024 phones */
-@media screen and (min-width: 540px) {
+/* 540x960 phones */
+@media (orientation: portrait)  and (min-width: 540px),
+       (orientation: landscape) and (min-width: 960px) {
   html, body {
     font-size: 16px;
   }
