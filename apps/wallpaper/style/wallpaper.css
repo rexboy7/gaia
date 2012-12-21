@@ -8,12 +8,12 @@ html, body {
 /* for the pick activity */
 .wallpaper {
   display: block;
-  width: 200px;
-  height: 300px;
-  border: solid white 3px;
-  border-radius: 5px;
-  margin-left: 60px;
-  margin-top: 15px;
+  width: 20rem;
+  height: 30rem;
+  border: solid white .3rem;
+  border-radius: .5rem;
+  margin-left: 6rem;
+  margin-top: 1.5rem;
 }
 
 /* for the share activity */
@@ -31,7 +31,7 @@ html, body {
   left: 0;
   width: 100%;
   bottom: 0;
-  height: 50px;
+  height: 5rem;
 }
 
 #buttons > #set-wallpaper {
