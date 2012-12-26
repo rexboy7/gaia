@@ -233,6 +233,7 @@ body, html {
   background-position: -2.1rem -4rem;
 }
 
+.sb-icon-signal[data-emergency="true"],
 .sb-icon-signal[data-level="0"] {
   background-position: -4.2rem -4rem;
 }
@@ -258,6 +259,8 @@ body, html {
 }
 
 .sb-icon-signal {
+  /* default icon is the "no sim" icon */
+  background-position: -14.7rem -4rem;
   position: relative;
 }
 

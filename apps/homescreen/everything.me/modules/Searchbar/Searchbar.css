@@ -40,13 +40,6 @@
         background-position: 98% 1rem;
     }
     
-    .clear-visible #search-rapper {
-        right: 6rem;
-    }
-    .keyboard-visible .clear-visible #search-rapper {
-        right: 0;
-    }
-    
     #search-q, #search-q-bg, #search-selection {
         position: relative;
         font-size: 1.5rem;
@@ -86,7 +79,7 @@
         background-repeat: no-repeat;
         background-position: 98% .7rem;
     }
-    .keyboard-visible .clear-visible #search-q-bg {
+    .clear-visible #search-q-bg {
         background-image: none;
     }
     #search-q:focus {
@@ -95,21 +88,14 @@
         
     #button-clear {
         position: absolute;
-        top: .9rem;
-        right: 0;
+        top: 1.4rem;
+        right: .4rem;
         z-index: 30;
-        width: 5.2rem;
-        height: 2.8rem;
-        line-height: 2.6rem;
-        text-align: center;
+        width: 2rem;
+        height: 2rem;
         cursor: pointer;
-        color: #666;
-        font-size: 1.4rem;
-        border-radius: .2rem;
-        text-shadow: 0 1px 0 rgba(255, 255, 255, .3);
-        font-weight: 600;
-        background: #1ac6ea;
-        background: -moz-linear-gradient(center top, #1ac6ea 0%, #12a8e0 100%);
+        font-size: 0;
+        background-position: -3.8rem -7.8rem;
         -moz-user-select: none;
         overflow: hidden;
         display: none;
@@ -117,23 +103,14 @@
     .clear-visible #button-clear {
         display: block;
     }
-    .keyboard-visible .clear-visible #button-clear {
-        width: 2rem;
-        height: 2rem;
-        top: 1.4rem;
-        right: .4rem;
-        background-position: -3.8rem -7.8rem;
-        display: block;
-        font-size: 0;
-    }
-    .keyboard-visible .clear-visible #button-clear:before {
-        content: "";
-        position: absolute;
-        top: -.5rem;
-        right: -.5rem;
-        left: -.5rem;
-        bottom: -.5rem;
-    }
+        .clear-visible #button-clear:before {
+            content: "";
+            position: absolute;
+            top: -1.5rem;
+            right: -1.5rem;
+            left: -.8rem;
+            bottom: -.8rem;
+        }
     
     #default-text {
         position: absolute;

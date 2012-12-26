@@ -32,17 +32,21 @@
 
   <!-- Shared code -->
   <script type="text/javascript" src="shared/js/l10n.js"></script>
+  <script type="text/javascript" src="shared/js/l10n_date.js"></script>
+  <script type="text/javascript" src="shared/js/async_storage.js"></script>
 
   <!-- Specific code -->
   <script type="text/javascript" src="js/utils/debug.js"></script>
   <script type="text/javascript" src="js/utils/formatting.js"></script>
 
-  <script type="text/javascript" src="js/service/service_utils.js"></script>
-
-  <script type="text/javascript" defer src="js/views/view_manager.js"></script>
-  <script type="text/javascript" defer src="js/utils/autosettings.js"></script>
-  <script type="text/javascript" defer src="js/views/limit_dialog.js"></script>
-  <script type="text/javascript" defer src="js/views/fte.js"></script>
+  <script type="text/javascript" defer src="js/utils/toolkit.js"></script>
+  <script type="text/javascript" defer src="js/common.js"></script>
+  <script type="text/javascript" defer src="js/costcontrol.js"></script>
+  <script type="text/javascript" defer src="js/config_manager.js"></script>
+  <script type="text/javascript" defer src="js/view_manager.js"></script>
+  <script type="text/javascript" defer src="js/settings/limitdialog.js"></script>
+  <script type="text/javascript" defer src="js/settings/autosettings.js"></script>
+  <script type="text/javascript" defer src="js/fte.js"></script>
 </head>
 
 <body role="application" class="skin-organic">
@@ -90,7 +94,7 @@
       <ul class="content settings">
         <li>
           <label class="end">
-            <input class="localsetting" data-option="lowlimit" type="checkbox" checked="checked" data-type="switch">
+            <input class="settings-option" data-option="lowLimit" type="checkbox" checked="checked" data-type="switch">
             <span></span>
           </label>
           <p data-l10n-id="low-balance-alert">Low Balance alert</p>
@@ -98,7 +102,7 @@
         <li>
           <label class="end" for="ft-balance-alert-value">
             R$
-            <input class="localsetting" data-option="lowlimit_threshold" data-disable-on="lowlimit=false" type="number" id="ft-balance-alert-value">
+            <input class="settings-option" data-option="lowLimitThreshold" data-disable-on="lowLimit=false" type="number" id="ft-balance-alert-value">
           </label>
           <p data-l10n-id="low-balance-explanation">Alert me when I’m under</p>
         </li>
@@ -123,7 +127,7 @@
       <ul class="content settings">
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="tracking_period" data-selectdialog="selectdialog-tracking-period">
+            <button class="settings-option icon icon-dialog" data-option="trackingPeriod" data-selectdialog="selectdialog-tracking-period">
               <span class="tag"></span>
             </button>
           </div>
@@ -131,7 +135,7 @@
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="reset_time" data-selectdialog="selectdialog-weekday" data-hide-on="tracking_period!=weekly" data-disable-on="tracking_period!=weekly">
+            <button class="settings-option icon icon-dialog" data-option="resetTime" data-selectdialog="selectdialog-weekday" data-hide-on="trackingPeriod!=weekly" data-disable-on="trackingPeriod!=weekly">
               <span class="tag"></span>
             </button>
           </div>
@@ -139,7 +143,7 @@
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="reset_time" data-selectdialog="selectdialog-monthday" data-hide-on="tracking_period!=monthly" data-disable-on="tracking_period!=monthly">
+            <button class="settings-option icon icon-dialog" data-option="resetTime" data-selectdialog="selectdialog-monthday" data-hide-on="trackingPeriod!=monthly" data-disable-on="trackingPeriod!=monthly">
               <span class="tag"></span>
             </button>
           </div>
@@ -147,14 +151,14 @@
         </li>
         <li>
           <label class="end">
-            <input class="localsetting" data-option="data_limit" type="checkbox" data-type="switch">
+            <input class="settings-option" data-option="dataLimit" type="checkbox" data-type="switch">
             <span></span>
           </label>
           <p data-l10n-id="data-limit-alert">Data use alert</p>
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="set-data-limit localsetting icon icon-dialog" data-disable-on="data_limit=false" data-hide-on="data_limit=false">
+            <button class="settings-option icon icon-dialog" data-widget-type="data-limit"  data-disable-on="dataLimit=false" data-hide-on="dataLimit=false">
               <span class="tag"></span>
             </button>
           </div>
@@ -181,7 +185,7 @@
        <ul class="content settings">
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="tracking_period" data-selectdialog="selectdialog-tracking-period">
+            <button class="settings-option icon icon-dialog" data-option="trackingPeriod" data-selectdialog="selectdialog-tracking-period">
               <span class="tag"></span>
             </button>
           </div>
@@ -189,7 +193,7 @@
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="reset_time" data-selectdialog="selectdialog-weekday" data-hide-on="tracking_period!=weekly" data-disable-on="tracking_period!=weekly">
+            <button class="settings-option icon icon-dialog" data-option="resetTime" data-selectdialog="selectdialog-weekday" data-hide-on="trackingPeriod!=weekly" data-disable-on="trackingPeriod!=weekly">
               <span class="tag"></span>
             </button>
           </div>
@@ -197,7 +201,7 @@
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="reset_time" data-selectdialog="selectdialog-monthday" data-hide-on="tracking_period!=monthly" data-disable-on="tracking_period!=monthly">
+            <button class="settings-option icon icon-dialog" data-option="resetTime" data-selectdialog="selectdialog-monthday" data-hide-on="trackingPeriod!=monthly" data-disable-on="trackingPeriod!=monthly">
               <span class="tag"></span>
             </button>
           </div>
@@ -224,14 +228,14 @@
       <ul class="content settings">
         <li>
           <label class="end">
-            <input class="localsetting" data-option="data_limit" type="checkbox" data-type="switch">
+            <input class="settings-option" data-option="data_limit" type="checkbox" data-type="switch">
             <span></span>
           </label>
           <p data-l10n-id="data-limit-alert">Data use alert</p>
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="data_limit_value" data-inputdialog="data-limit-dialog" data-formatter="dataUnit" data-disable-on="data_limit=false" data-hide-on="data_limit=false">
+            <button class="settings-option icon icon-dialog" data-widget-type="data-limit" data-disable-on="dataLimit=false" data-hide-on="dataLimit=false">
               <span class="tag"></span>
             </button>
           </div>
@@ -258,7 +262,7 @@
       <ul class="content settings">
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="tracking_period" data-selectdialog="selectdialog-tracking-period">
+            <button class="settings-option icon icon-dialog" data-option="trackingPeriod" data-selectdialog="selectdialog-tracking-period">
               <span class="tag"></span>
             </button>
           </div>
@@ -266,7 +270,7 @@
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="reset_time" data-selectdialog="selectdialog-weekday" data-hide-on="tracking_period!=weekly" data-disable-on="tracking_period!=weekly">
+            <button class="settings-option icon icon-dialog" data-option="resetTime" data-selectdialog="selectdialog-weekday" data-hide-on="trackingPeriod!=weekly" data-disable-on="trackingPeriod!=weekly">
               <span class="tag"></span>
             </button>
           </div>
@@ -274,7 +278,7 @@
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog" data-option="reset_time" data-selectdialog="selectdialog-monthday" data-hide-on="tracking_period!=monthly" data-disable-on="tracking_period!=monthly">
+            <button class="settings-option icon icon-dialog" data-option="resetTime" data-selectdialog="selectdialog-monthday" data-hide-on="trackingPeriod!=monthly" data-disable-on="trackingPeriod!=monthly">
               <span class="tag"></span>
             </button>
           </div>
@@ -297,14 +301,14 @@
       <ul class="content settings">
         <li>
           <label class="end">
-            <input class="localsetting" data-option="data_limit" type="checkbox" data-type="switch">
+            <input class="settings-option" data-option="dataLimit" type="checkbox" data-type="switch">
             <span></span>
           </label>
           <p data-l10n-id="data-limit-alert">Data use alert</p>
         </li>
         <li>
           <div class="end buttons-list">
-            <button class="localsetting icon icon-dialog set-data-limit" data-disable-on="data_limit=false" data-hide-on="data_limit=false">
+            <button class="settings-option icon icon-dialog" data-widget-type="data-limit" data-disable-on="dataLimit=false" data-hide-on="dataLimit=false">
               <span class="tag"></span>
             </button>
           </div>
@@ -329,7 +333,7 @@
   <section role="region" id="data-limit-dialog" class="view" data-viewport="bottom">
     <header>
       <menu type="toolbar">
-         <button id="data-usage-done-button" data-l10n-id="Done" class="recommend">Done</button>
+        <button id="data-usage-done-button" data-l10n-id="done" class="recommend">Done</button>
       </menu>
       <a class="cancel"><span id="data-usage-close-button" class="icon icon-close">close</span></a>
       <h1 data-l10n-id="data-limit-header">Data usage limit</h1>
@@ -641,5 +645,6 @@
     </menu>
   </section>
 
+  <iframe id="message-handler" src="message_handler.html"></iframe>
 </body>
 </html>

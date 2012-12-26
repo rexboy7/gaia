@@ -28,6 +28,10 @@
   background-size: 3rem;
 }
 
+#menuItem-callSettings {
+  background-image: -moz-image-rect(url(images/icons_sprite.png), 150, 30, 180, 0);
+}
+
 #menuItem-cellularAndData {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 120, 30, 90);
   background-size: 3rem;
@@ -129,7 +133,7 @@
 }
 
 #menuItem-improveBrowserOS {
-  background-image: -moz-image-rect(url(images/icons_sprite.png), 120, 120, 150, 90);
+  background-image: -moz-image-rect(url(images/icons_sprite.png), 150, 60, 180, 30);
   background-size: 3rem;
 }
 
@@ -187,6 +191,17 @@
   background-image: url(images/wifi_lock.png);
   background-size: 5.6rem;
 }
+
+/******************************************************************************
+ * Call Settings icons
+ */
+
+ #menuItem-callWaiting .alert-label > span {
+  position: absolute;
+  width: 3rem;
+  height: 3rem;
+  background-image: url(images/call_waiting_disabled.png);
+ }
 
 
 /******************************************************************************
@@ -356,6 +371,7 @@
   background-image: -moz-image-rect(url(images/privacy_sprite.png), 0, 96, 32, 64);
   background-size: 3.2rem;
 }
+
 
 /******************************************************************************
  * Right-To-Left layout

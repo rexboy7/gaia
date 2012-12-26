@@ -46,17 +46,14 @@ const GridManager = (function() {
       case 'mousemove':
         evt.stopPropagation();
 
-        // Starts panning only when tapping does not make sense
-        // anymore. The pan will then start from this point to avoid
-        // a jump effect.
+        // Start panning immediately but only disable
+        // the tap when we've moved far enough.
         var deltaX = evt.clientX - startEvent.clientX;
-        if (!isPanning) {
-          if (Math.abs(deltaX) < thresholdForTapping) {
-            return;
-          } else {
-            isPanning = true;
-            document.body.dataset.transitioning = 'true';
-          }
+        if (deltaX == 0)
+          return;
+        document.body.dataset.transitioning = 'true';
+        if (Math.abs(deltaX) >= thresholdForTapping) {
+          isPanning = true;
         }
 
         // Panning time! Stop listening here to enter into a dedicated
@@ -346,13 +343,15 @@ const GridManager = (function() {
     // switch RTL-sensitive methods accordingly
     setDirCtrl();
 
-    for each (var iconsForApp in appIcons) {
-      for each (var icon in iconsForApp) {
-        icon.translate();
+    for (var manifestURL in appIcons) {
+      var iconsForApp = appIcons[manifestURL];
+      for (var entryPoint in iconsForApp) {
+        iconsForApp[entryPoint].translate();
       }
     }
-    for each (var icon in bookmarkIcons) {
-      icon.translate();
+
+    for (var bookmarkURL in bookmarkIcons) {
+      bookmarkIcons[bookmarkURL].translate();
     }
 
     haveLocale = true;
@@ -659,7 +658,7 @@ const GridManager = (function() {
       return;
 
     var entryPoints = manifest.entry_points;
-    if (!entryPoints) {
+    if (!entryPoints || manifest.type != "certified") {
       createOrUpdateIconForApp(app);
       return;
     }

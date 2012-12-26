@@ -87,7 +87,8 @@ function audioPreview(element, type) {
             element.querySelector('input').value;
   audio.src = url;
   if (source === audio.src && playing) {
-    audio.stop();
+    audio.pause();
+    audio.src = '';
   } else {
     audio.play();
   }
@@ -271,7 +272,8 @@ function bug344618_polyfill() {
  */
 
 function onLocalized(callback) {
-  if (navigator.mozL10n.readyState == 'complete') {
+  if (navigator.mozL10n.readyState == 'complete' ||
+      navigator.mozL10n.readyState == 'interactive') {
     callback();
   } else {
     window.addEventListener('localized', callback);
