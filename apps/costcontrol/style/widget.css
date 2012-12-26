@@ -254,3 +254,27 @@ p.meta {
 .reached-limit .stats progress {
   background: #ca435b;
 }
+
+/* Because we can't detect landscape/portrait mode correctly inside widget,
+   let's uses the height assigned to widget to detect the resolution instead. */
+
+/* 320x480 phones */
+@media (min-height: 45px) {
+  html, body {
+    font-size: 10px;
+  }
+}
+
+/* 480x800 phones */
+@media (min-height: 68px) {
+  html, body {
+    font-size: 15px;
+  }
+}
+
+/* 540x960 phones */
+@media (min-height: 74px) {
+  html, body {
+    font-size: 16.875px;
+  }
+}
