@@ -68,7 +68,7 @@ html, body {
 }
 
 [role=navigation] button {
-  width: calc((100% - 1rem) / 2);
+  width: calc(100% / 2 - 0.5rem);
   float: left;
   margin-right: 1rem;
   position: relative;

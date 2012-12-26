@@ -219,6 +219,22 @@ body, html {
   background-position: -12.6rem -8rem;
 }
 
+.sb-icon-data[data-type="1X"] {
+  background-position: -14.7rem -8rem;
+}
+
+.sb-icon-data[data-type="EV"] {
+  background-position: -16.8rem -8rem;
+}
+
+.sb-icon-signal-type[data-type="1X"] {
+  background-position: -14.7rem -8rem;
+}
+
+.sb-icon-signal-type[data-type="EV"] {
+  background-position: -16.8rem -8rem;
+}
+
 .sb-icon-flight-mode {
   background-position: 0 -4rem;
 }
@@ -260,7 +276,7 @@ body, html {
 
 .sb-icon-signal {
   /* default icon is the "no sim" icon */
-  background-position: -14.7rem -4rem;
+  background-position: -16.8rem -4rem;
   position: relative;
 }
 
@@ -327,7 +343,7 @@ body, html {
 }
 
 .sb-icon-mute.vibration {
-  background-position: -210px -60px;
+  background-position: -21rem -6rem;
 }
 
 .sb-icon-usb {
@@ -413,3 +429,27 @@ body, html {
   background-size: 1.6rem;
   background-position: 0 0;
 }
+
+/* 480x800 phones */
+@media (orientation: portrait)  and (min-width: 480px) and (max-width: 539px),
+       (orientation: landscape) and (min-width: 800px) and (max-width: 959px) {
+}
+
+
+/* 540x960 phones */
+@media (orientation: portrait)  and (min-width: 540px),
+       (orientation: landscape) and (min-width: 960px) {
+  .sb-icon-signal[data-roaming="true"]::after {
+    background-image: url('images/icons_qhd.png');
+  }
+
+  .sb-icon-notification::before {
+    background-image: url('images/icons_qhd.png');	
+  }
+
+  .sb-icon {
+    background-image: url('images/icons_qhd.png');
+  }
+}
+
+
