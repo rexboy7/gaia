@@ -72,27 +72,34 @@ html, body {
 
 #alarm-label {
   background-image: url(images/alarm.png);
+  background-size: 3.2rem;
 }
 #alarm-label[data-active] {
   background: url(images/alarm.png) no-repeat 50% 50%, -moz-linear-gradient(top, hsl(0,0%,44%) 0, hsl(0,0%,37%) 0.06rem, hsl(0,0%,56%) 100%);
+  background-size: 3.2rem, auto;
 }
 
 #stopwatch-label {
   background-image: url(images/stopwatch.png);
+  background-size: 3.2rem;
 }
 #stopwatch-label[data-active] {
   background: url(images/stopwatch.png) no-repeat 50% 50%, -moz-linear-gradient(top, hsl(0,0%,44%) 0, hsl(0,0%,37%) 0.06rem, hsl(0,0%,56%) 100%);
+  background-size: 3.2rem, auto;
 }
 
 #timer-label {
   background-image: url(images/timer.png);
+  background-size: 3.2rem;
 }
 #timer-label[data-active] {
   background: url(images/timer.png) no-repeat 50% 50%, -moz-linear-gradient(top, hsl(0,0%,44%) 0, hsl(0,0%,37%) 0.06rem, hsl(0,0%,56%) 100%);
+  background-size: 3.2rem;
 }
 
 #views {
   background: url(images/background.png) no-repeat;
+  background-size: cover;
   position: fixed;
   top: 0;
   left: 0;
@@ -333,6 +340,7 @@ html, body {
   height: 22.1rem; /* 48%; */
   display: block;
   background: url(images/digital_bk.png) no-repeat;
+  background-size: 32rem;
 }
 
 #digital-clock {
@@ -368,6 +376,7 @@ html, body {
 
 #clock-hour24-state.alarm-set-indicator::after {
   background: url("images/alarm_indicator.png") no-repeat;
+  background-size: 1.8rem;
   position: absolute;
   height: 1.8rem;
   width: 1.8rem;
@@ -401,6 +410,7 @@ html, body {
 /*270x270*/
 #analog-clock-container.marks1 {
   background-image: url(images/analog_clock_marks1.png);
+  background-size: 27rem;
   width: 27rem; height: 27rem;
 }
 #analog-clock-container.marks1 svg {
@@ -410,6 +420,7 @@ html, body {
 /*248x248*/
 #analog-clock-container.marks2 {
   background-image: url(images/analog_clock_marks2.png);
+  background-size: 24.8rem;
   width: 24.8rem; height: 24.8rem;
   margin-top: 6.9rem;
 }
@@ -420,6 +431,7 @@ html, body {
 /*198x198*/
 #analog-clock-container.marks3 {
   background-image: url(images/analog_clock_marks3.png);
+  background-size: 19.8rem;
   width: 19.8rem; height: 19.8rem;
   margin-top: 6.2rem;
 }
@@ -430,6 +442,7 @@ html, body {
 /*148x148*/
 #analog-clock-container.marks4 {
   background-image: url(images/analog_clock_marks4.png);
+  background-size: 14.8rem;
   width: 14.8rem; height: 14.8rem;
   margin-top: 5.8rem;
 }

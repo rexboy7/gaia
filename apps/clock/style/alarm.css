@@ -74,6 +74,7 @@ a.button.right {
 
 a.button.right.plus {
   background: url(images/add_alarm.png) no-repeat center;
+  background-size: 3.2rem;
   padding: 2.2rem 1.5rem;
   height: 2.5rem;
   width: 3.2rem;
@@ -329,12 +330,14 @@ ul li > small {
 
 #alarms label input[type="checkbox"] + span {
   background: url(images/alarm_off.png) no-repeat center top;
+  background-size: 3.4rem;
   width: 3.4rem;
   height: 3.4rem;
 }
 #alarms label input[type="checkbox"]:checked + span {
   border-color: #00acce;
   background: url(images/alarm_on.png) no-repeat center top;;
+  background-size: 3.4rem;
 }
 
 #alarms label span {
@@ -373,10 +376,12 @@ ul li > small {
 
 .view label > input[type=radio] + span {
   background: url(images/radio_off.png) no-repeat scroll center center;
+  background-size: 5.6rem;
 }
 
 .view label > input[type=radio]:checked + span {
   background: url(images/radio_on.png) no-repeat scroll center center;
+  background-size: 5.6rem;
 }
 
 /* ----------- Alarm Set Repeat Button ------------- */
@@ -394,6 +399,7 @@ ul li > small {
 
 .view label > input[type=checkbox]:checked + span.setRepeat {
   background: url(images/checked.png) no-repeat scroll center center,
+  background-size: 5.6rem;
     -moz-linear-gradient(#ffffff, #eaeae4);
 }
 
@@ -463,6 +469,7 @@ input ~ *:empty {
 
 #alarms li {
   background: url(images/alarm_sep.png) top no-repeat;
+  background-size: 29rem;
   padding-top: 0.2rem;
   padding-left: 0.8rem;
 }
@@ -586,7 +593,8 @@ li img {
 }
 
 #value-indicator-wrapper {
-  background: url(/style/images/picker_label.png) no-repeat -6px 0;
+  background: url(/style/images/picker_label.png) no-repeat -.6rem 0;
+  background-size: 28.2rem; 
   position: absolute;
   top: 5.6rem;
   height: 6rem;
@@ -597,6 +605,7 @@ li img {
 #value-indicator-left,
 #value-indicator-right {
   background: url(/style/images/picker_label.png) no-repeat 0 0;
+  background-size: 28.2rem; 
   position: absolute;
   width: 0.6rem;
   height: 6rem;
