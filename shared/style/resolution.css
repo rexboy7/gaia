@@ -1,22 +1,22 @@
 /* 320x480 phones */
-@media (orientation: portrait)  and (min-width: 320px) and (max-width:479px),
-       (orientation: landscape) and (min-width: 480px) and (max-width:799px) {
+@media (max-device-aspect-ratio: 1/1)  and (min-device-width: 320px) and (max-device-width:479px),
+       (min-device-aspect-ratio: 11/10) and (min-device-width: 480px) and (max-device-width:799px) {
   html, body {
     font-size: 10px;
   }
 }
 
 /* 480x800 phones */
-@media (orientation: portrait)  and (min-width: 480px) and (max-width: 539px),
-       (orientation: landscape) and (min-width: 800px) and (max-width: 959px) {
+@media (max-device-aspect-ratio: 1/1)  and (min-device-width: 480px) and (max-device-width: 539px),
+       (min-device-aspect-ratio: 11/10) and (min-device-width: 800px) and (max-device-width: 959px) {
   html, body {
     font-size: 15px;
   }
 }
 
 /* 540x960 phones */
-@media (orientation: portrait)  and (min-width: 540px),
-       (orientation: landscape) and (min-width: 960px) {
+@media (max-device-aspect-ratio: 1/1)  and (min-device-width: 540px),
+       (min-device-aspect-ratio: 11/10) and (min-device-width: 960px) {
   html, body {
     font-size: 16.875px;
   }
