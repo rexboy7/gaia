@@ -9,7 +9,7 @@ var StatusBar = {
     'battery', 'wifi', 'data', 'flight-mode', 'signal', 'network-activity',
     'tethering', 'alarm', 'bluetooth', 'mute', 'headphones',
     'recording', 'sms', 'geolocation', 'usb', 'label', 'system-downloads',
-    'call-forwarding'],
+    'call-forwarding', 'data-signal', 'signal-type'],
 
   /* Timeout for 'recently active' indicators */
   kActiveIndicatorTimeout: 60 * 1000,
@@ -30,7 +30,7 @@ var StatusBar = {
     'ehrpd': '4G', // 4G CDMA
     'hspa+': 'H+', // 3.5G HSPA+
     'hsdpa': 'H', 'hsupa': 'H', 'hspa': 'H', // 3.5G HSDPA
-    'evdo0': '3G', 'evdoa': '3G', 'evdob': '3G', '1xrtt': '3G', // 3G CDMA
+    'evdo0': 'EV', 'evdoa': 'EV', 'evdob': 'EV', '1xrtt': '1X', // 3G CDMA
     'umts': '3G', // 3G
     'edge': 'E', // EDGE
     'is95a': '2G', 'is95b': '2G', // 2G CDMA
@@ -327,12 +327,14 @@ var StatusBar = {
 
       var voice = conn.voice;
       var icon = this.icons.signal;
+      var typeIcon = this.icons.signalType;
       var flightModeIcon = this.icons.flightMode;
       var _ = navigator.mozL10n.get;
 
       if (this.settingValues['ril.radio.disabled']) {
         // "Airplane Mode"
         icon.hidden = true;
+        typeIcon.hidden = true;
         flightModeIcon.hidden = false;
         return;
       }
@@ -346,10 +348,21 @@ var StatusBar = {
         delete icon.dataset.emergency;
         delete icon.dataset.searching;
         delete icon.dataset.roaming;
+        typeIcon.hidden = true;
       } else if (voice.connected || this.hasActiveCall()) {
         // "Carrier" / "Carrier (Roaming)"
         icon.dataset.level = Math.ceil(voice.relSignalStrength / 20); // 0-5
         icon.dataset.roaming = voice.roaming;
+
+        // Show the carrier type for 1X signal for clearifying because
+        // 1X/EV are in separated signal level.
+        typeIcon.dataset.type =
+            this.mobileDataIconTypes[voice.type] || 'circle';
+
+        if (typeIcon.dataset.type == '1X')
+          typeIcon.hidden = false;
+        else
+          typeIcon.hidden = true;
 
         delete icon.dataset.emergency;
         delete icon.dataset.searching;
@@ -361,6 +374,9 @@ var StatusBar = {
         icon.dataset.searching = (!voice.emergencyCallsOnly &&
                                   voice.state !== 'notSearching');
         icon.dataset.emergency = (voice.emergencyCallsOnly);
+
+        typeIcon.hidden = true;
+
         delete icon.dataset.roaming;
       }
 
@@ -379,11 +395,14 @@ var StatusBar = {
 
       var data = conn.data;
       var icon = this.icons.data;
+      var dataSignalIcon = this.icons.dataSignal;
+      console.log(data.state);
 
       if (this.settingValues['ril.radio.disabled'] ||
           !this.settingValues['ril.data.enabled'] ||
           !this.icons.wifi.hidden || !data.connected) {
         icon.hidden = true;
+        dataSignalIcon.hidden = true;
 
         return;
       }
@@ -391,6 +410,14 @@ var StatusBar = {
       icon.hidden = false;
       icon.dataset.type =
         this.mobileDataIconTypes[data.type] || 'circle';
+
+      // If we're receiving EvDo signal, show an independent signal level icon.
+      if (icon.dataset.type == 'EV' && data.connected) {
+        dataSignalIcon.dataset.level = Math.ceil(data.relSignalStrength / 20); // 0-5
+        dataSignalIcon.hidden = false;
+      } else {
+        dataSignalIcon.hidden = true;
+      }
     },
 
 
