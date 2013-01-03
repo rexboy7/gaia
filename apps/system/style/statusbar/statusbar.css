@@ -435,21 +435,46 @@ body, html {
        (orientation: landscape) and (min-width: 800px) and (max-width: 959px) {
 }
 
-
 /* 540x960 phones */
-@media (orientation: portrait)  and (min-width: 540px),
-       (orientation: landscape) and (min-width: 960px) {
+@media (max-device-aspect-ratio: 1/1) and (min-width: 540px),
+       (min-device-aspect-ratio: 1/1) and (min-width: 960px) {
+
+  .sb-icon {
+    background-image: url('images/icons_qhd.png');
+  }
+
+  .sb-icon-wifi[data-level="0"][data-connecting="true"] {
+    background-image: url('images/wifi-connecting.gif');
+  }
+
+  .sb-icon-signal[data-level="-1"][data-searching="true"] {
+    background-image: url('images/signal-searching.gif');
+  }
+
   .sb-icon-signal[data-roaming="true"]::after {
     background-image: url('images/icons_qhd.png');
+  }
+
+  .sb-icon-network-activity {
+    background-image: url('images/network-activity.gif');
   }
 
   .sb-icon-notification::before {
     background-image: url('images/icons_qhd.png');	
   }
 
-  .sb-icon {
-    background-image: url('images/icons_qhd.png');
+  .sb-icon-notification {
+    background: #000;
   }
+
+  .sb-icon-system-downloads {
+    background-image: url('images/system-downloads.gif');
+  }
+
+  .sb-icon-call-forwarding {
+    background-image: url('images/call-forwarding.png');
+  }
+
 }
 
 
