@@ -366,7 +366,7 @@ function initDB(include_videos) {
     videodb.onscanstart = photodb.onscanstart;
     videodb.onscanend = photodb.onscanend;
     videodb.oncreated = photodb.oncreated;
-    videodb.ondelete = photodb.oncreated;
+    videodb.ondeleted = photodb.ondeleted;
   }
 }
 
@@ -711,6 +711,9 @@ function setView(view) {
     previousFrame.clear();
     currentFrame.clear();
     nextFrame.clear();
+    delete previousFrame.filename;
+    delete currentFrame.filename;
+    delete nextFrame.filename;
     break;
   }
 

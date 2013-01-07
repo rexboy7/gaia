@@ -8,31 +8,39 @@ var UIManager = {
   // we can access this.splashScreen in our code.
   domSelectors: [
     'splash-screen',
-    'progress-bar',
-    'tutorial-progress',
     'activation-screen',
+    'progress-bar',
     'finish-screen',
-    'tutorial-screen',
     'nav-bar',
     'main-title',
+    'loading-overlay',
+    // PIN Screen
     'pincode-screen',
     'pin-input',
+    'fake-sim-pin',
+    'pin-error',
     'sim-import-button',
-    'done-button',
+    'sim-import-feedback',
+    'skip-pin-button',
+    'unlock-sim-button',
+    // Wifi
     'networks',
+    'wifi-refresh-button',
     'wifi-join-button',
+    //Date & Time
     'date-configuration',
     'time-configuration',
     'date-configuration-label',
     'time-configuration-label',
-    'data-connection-switch',
-    'fake-sim-pin',
-    'pin-error',
-    'button-lets-go',
-    'button-skip',
     'time-form',
-    'sim-import-feedback',
-    'wifi-refresh-button',
+    // 3G
+    'data-connection-switch',
+    // Tutorial
+    'tutorial-screen',
+    'tutorial-progress',
+    'lets-go-button',
+    'skip-tutorial-button',
+    // Privacy Settings
     'share-performance',
     'offline-error-dialog'
   ],
@@ -51,71 +59,85 @@ var UIManager = {
     this.dateConfigurationLabel.innerHTML = currentDate.
       toLocaleFormat('%Y-%m-%d');
     // Add events to DOM
-    this.wifiRefreshButton.addEventListener('click', this);
+    this.fakeSimPin.addEventListener('input', this);
     this.simImportButton.addEventListener('click', this);
-    this.doneButton.addEventListener('click', this);
+    this.skipPinButton.addEventListener('click', this);
+    this.unlockSimButton.addEventListener('click', this);
+
+    this.dataConnectionSwitch.addEventListener('click', this);
+
+    this.wifiRefreshButton.addEventListener('click', this);
     this.wifiJoinButton.addEventListener('click', this);
     this.networks.addEventListener('click', this);
+
     this.timeConfiguration.addEventListener('input', this);
     this.dateConfiguration.addEventListener('input', this);
-    this.buttonSkip.addEventListener('click', function() {
-      window.close();
-    });
-    this.dataConnectionSwitch.addEventListener('click', this);
-    this.buttonLetsGo.addEventListener('click', function() {
-      UIManager.activationScreen.classList.remove('show');
-      UIManager.finishScreen.classList.remove('show');
-      UIManager.tutorialScreen.classList.add('show');
-    });
-    this.fakeSimPin.addEventListener('input', this);
+    // Initialize the timezone selector, see /shared/js/tz_select.js
+    var tzCont = document.getElementById('tz-continent');
+    var tzCity = document.getElementById('tz-city');
+    tzSelect(tzCont, tzCity, this.setTimeZone);
     // Prevent form submit in case something tries to send it
     this.timeForm.addEventListener('submit', function(event) {
       event.preventDefault();
     });
 
+    this.skipTutorialButton.addEventListener('click', function() {
+      window.close();
+    });
+    this.letsGoButton.addEventListener('click', function() {
+      UIManager.activationScreen.classList.remove('show');
+      UIManager.finishScreen.classList.remove('show');
+      UIManager.tutorialScreen.classList.add('show');
+    });
+
     // Enable sharing performance data (saving to settings)
     this.sharePerformance.addEventListener('click', this);
-
-    // Initialize the timezone selector, see /shared/js/tz_select.js
-    var tzCont = document.getElementById('tz-continent');
-    var tzCity = document.getElementById('tz-city');
-    tzSelect(tzCont, tzCity, this.setTimeZone);
-
     var button = this.offlineErrorDialog.querySelector('button');
     button.addEventListener('click', this.onOfflineDialogButtonClick.bind(this));
+
   },
 
   handleEvent: function ui_handleEvent(event) {
     switch (event.target.id) {
-      case 'wifi-refresh-button':
-        WifiManager.scan(UIManager.renderNetworks);
+      // SIM
+      case 'skip-pin-button':
+        SimManager.skip();
+        break;
+      case 'unlock-sim-button':
+        SimManager.unlock();
+        break;
+      // workaround for a number-passsword input
+      case 'fake-sim-pin':
+        this.pinInput.value = this.fakeSimPin.value;
         break;
       case 'sim-import-button':
-        this.importFromSim();
+        SimManager.importContacts();
         break;
-      case 'done-button':
-        this.unlockSIM();
+      // 3G
+      case 'data-connection-switch':
+        var status = event.target.checked;
+        DataMobile.toggle(status);
+        break;
+      // WIFI
+      case 'wifi-refresh-button':
+        WifiManager.scan(UIManager.renderNetworks);
         break;
       case 'wifi-join-button':
         this.joinNetwork();
         break;
+      // Date & Time
       case 'time-configuration':
         this.setTime();
         break;
       case 'date-configuration':
         this.setDate();
         break;
-      case 'data-connection-switch':
-        var status = event.target.checked;
-        DataMobile.toggle(status);
-        break;
-      case 'fake-sim-pin':
-        this.pinInput.value = this.fakeSimPin.value;
-        break;
+      // Privacy
       case 'share-performance':
         this.updateSetting(event.target.name, event.target.value);
         break;
       default:
+        // wifi selection
         if (event.target.parentNode.id == 'networks') {
           this.chooseNetwork(event);
         }
@@ -140,18 +162,6 @@ var UIManager = {
 
   onOfflineDialogButtonClick: function ui_onOfflineDialogButtonClick(e) {
     this.offlineErrorDialog.classList.remove('visible');
-  },
-
-  importFromSim: function ui_ifs() {
-    this.simImportFeedback.innerHTML = _('simContacts-importing');
-    importSIMContacts(
-      function() {
-        this.simImportFeedback.innerHTML = _('simContacts-reading');
-      }.bind(this), function(n) {
-        this.simImportFeedback.innerHTML = _('simContacts-imported2', {n: n});
-      }.bind(this), function() {
-        this.simImportFeedback.innerHTML = _('simContacts-error');
-    }.bind(this));
   },
 
   joinNetwork: function ui_jn() {
@@ -229,33 +239,6 @@ var UIManager = {
       var timeLabel = document.getElementById('time-configuration-label');
       timeLabel.innerHTML = f.localeFormat(now, _('shortTimeFormat'));
     });
-  },
-
-  unlockSIM: function ui_us() {
-    var pin = this.pinInput.value;
-    if (pin === '')
-      return;
-    this.pinInput.value = '';
-
-    // Unlock SIM
-    var options = {lockType: 'pin', pin: pin };
-    var conn = window.navigator.mozMobileConnection;
-
-    conn.addEventListener('icccardlockerror', function(data) {
-      this.pinInput.value = '';
-      this.fakeSimPin.value = '';
-      this.pinInput.classList.add('onerror');
-      this.pinError.innerHTML = _('pinErrorMsg') + ' ' +
-        _('pinAttemptMsg', {n: data.retryCount});
-    }.bind(this));
-
-    var req = conn.unlockCardLock(options);
-
-    req.onsuccess = function sp_unlockSuccess() {
-      UIManager.pincodeScreen.classList.remove('show');
-      UIManager.activationScreen.classList.add('show');
-      window.location.hash = '#languages';
-    };
   },
 
   chooseNetwork: function ui_cn(event) {
@@ -341,7 +324,7 @@ var UIManager = {
         li.dataset.ssid = network.ssid;
         // Show authentication method
         var keys = network.capabilities;
-        if (network.connected) {
+        if (WifiManager.isConnectedTo(network)) {
           small.textContent = _('shortStatus-connected');
         } else {
           if (keys && keys.length) {
@@ -358,7 +341,11 @@ var UIManager = {
         li.appendChild(ssidp);
         li.appendChild(small);
         // Append to DOM
-        networksDOM.appendChild(li);
+        if (WifiManager.isConnectedTo(network)) {
+          networksDOM.insertBefore(li, networksDOM.firstChild);
+        } else {
+          networksDOM.appendChild(li);
+        }
       }
     }
   },
@@ -370,8 +357,11 @@ var UIManager = {
   },
 
   updateNetworkStatus: function uim_uns(ssid, status) {
+    if (!document.getElementById(ssid))
+      return;
+
     document.getElementById(ssid).
-      querySelector('p:last-child').innerHTML = status;
+      querySelector('p:last-child').innerHTML = _('shortStatus-' + status);
   },
 
   updateDataConnectionStatus: function uim_udcs(status) {

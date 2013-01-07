@@ -3,6 +3,12 @@
 var Bookmark = function Bookmark(params) {
   this.removable = true;
 
+  if ('iconable' in params) {
+    this.iconable = params.iconable;
+  } else {
+    this.iconable = true;
+  }
+
   this.isBookmark = true;
   this.url = this.bookmarkURL = this.origin = params.bookmarkURL;
 
@@ -59,6 +65,10 @@ var BookmarkEditor = {
   },
 
   save: function bookmarkEditor_save() {
+    // Only allow http(s): urls to be bookmarked.
+    if (/^https?:/.test(this.bookmarkUrl.value) == false)
+      return;
+
     this.data.name = this.bookmarkTitle.value;
     this.data.bookmarkURL = this.bookmarkUrl.value;
 

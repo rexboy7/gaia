@@ -16,7 +16,11 @@ const Homescreen = (function() {
   PaginationBar.init('.paginationScroller');
   GridManager.init('.apps', '.dockWrapper', function gm_init() {
     PaginationBar.show();
-    GridManager.goToPage(1);
+    if (document.location.hash === '#root') {
+      // Switch to the first page only if the user has not already start to pan
+      // while home is loading
+      GridManager.goToPage(1);
+    }
     DragDropManager.init();
     Wallpaper.init();
   });
@@ -83,6 +87,8 @@ const Homescreen = (function() {
         body = _('remove-body', { name: manifest.name });
         confirm.title = _('remove');
       } else {
+        // Make sure to get the localized name
+        manifest = new ManifestHelper(manifest);
         title = _('delete-title', { name: manifest.name });
         body = _('delete-body', { name: manifest.name });
         confirm.title = _('delete');

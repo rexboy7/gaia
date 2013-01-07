@@ -26,7 +26,7 @@ section {
   margin: 0;
   padding: 0;
   overflow: hidden;
-  font-size: 1rem;
+  font-size: 1.4rem;
 }
 
 .hidden {
@@ -43,7 +43,7 @@ section {
   padding: 0px;
   margin: 0px;
   overflow: hidden;
-  font-size: 2rem;
+  font-size: 2.1rem;
 }
 
 /*
@@ -70,26 +70,41 @@ section {
  * the overlay text shows up more clearly
  */
 #overlay-content {
-  margin-top: 30%;
-  margin-left: 10%;
-  margin-right: 10%;
-  padding: 10%;
-  border: solid black 4px;
-  border-radius: 10px;
-  background-color: rgba(0, 0, 0, 0.6);
-  font-family: "MozTT", sans-serif;
+  background:
+  url(images/ui/pattern.png) repeat left top,
+  url(images/ui/gradient.png) no-repeat left top;
+  background-size: auto auto, 100% 100%;
+  /* We can't use shortand with background size because is not implemented yet:
+  https://bugzilla.mozilla.org/show_bug.cgi?id=570326; */
+  overflow: hidden;
+  position: absolute;
+  z-index: 100;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  font-family: "MozTT", Sans-serif;
+  font-size: 0;
+  /* Using font-size: 0; we avoid the unwanted visual space (about 3px)
+  created by white-spaces and break lines in the code betewen inline-block elements */
   color: #fff;
-  -moz-user-select: none;
+  padding: 11rem 2.5rem 0px 2.5rem;
 }
 
 #overlay-title {
-  text-align: center;
-  font-weight: bold;
-  font-size: 2.6rem;
+  font-weight: normal;
+  text-transform:capitalize;
+  font-size: 1.9rem;
+  color: #fff;
+  margin: 0 .5rem -1rem .5rem;
 }
 
 #overlay-text {
-  font-size: 1.8rem;
+  padding: 0 .5rem 0 .5rem;
+  border-top: 1px solid #686868;	
+  font-weight: 300;
+  font-size: 2.5rem;
+  color: #ebebeb;
 }
 
 /* Spinner */
@@ -108,10 +123,10 @@ section {
  */
 #spinner {
   position: absolute;
-  top: calc(50% - 15px);
-  left: calc(50% - 15px);
-  width: 29px;
-  height: 29px;
+  top: calc(50% - 1.5rem);
+  left: calc(50% - 1.5rem);
+  width: 2.9rem;
+  height: 2.9rem;
   background: url(images/spinner.png) no-repeat center center;
   animation: 0.9s spinner-animation infinite steps(30);
   border: none;
@@ -346,7 +361,7 @@ a.button {
   background-repeat: no-repeat;
 
   /* for buttons that display text */
-  font-size: smaller;
+  font-size: 1.4rem;
   text-align: center;
   line-height: 4rem;
 }
@@ -580,7 +595,7 @@ footer {
   border-right: solid black 1px;
   overflow: hidden;
   padding-top: 1.6rem;
-  font-size: 1.2rem;
+  font-size: 1.4rem;
   background-position: center;
 }
 
@@ -725,7 +740,7 @@ a.filter-faded {
   position: absolute;
   width: 25%;
   height: 100%;
-  font-size: 1.5rem;
+  font-size: 1.4rem;
 }
 
 /* If the button is selected, it has a different background */
@@ -761,7 +776,7 @@ a.filter-faded {
   width: 100%;
   height: 5rem;
   background-color: #444;
-  font-size: smaller;
+  font-size: 1.4rem;
 }
 
 #sliderbar {
@@ -791,7 +806,7 @@ a.filter-faded {
   background-color: #eee;
   text-align: center;
   padding-top: 1.2rem;
-  font-size: smaller;
+  font-size: 1.4rem;
   color: black;
 }
 

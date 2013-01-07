@@ -49,13 +49,12 @@ suite('system/UpdateManager', function() {
   var fakeToaster;
   var fakeDialog;
 
-  var tinyTimeout = 5;
+  var tinyTimeout = 10;
   var lastDispatchedEvent = null;
 
   var mocksHelper;
 
   suiteSetup(function() {
-
     realNavigatorSettings = navigator.mozSettings;
     navigator.mozSettings = MockNavigatorSettings;
 
@@ -75,6 +74,9 @@ suite('system/UpdateManager', function() {
 
     mocksHelper = new MocksHelper(mocksForUpdateManager);
     mocksHelper.suiteSetup();
+
+    UpdateManager.NOTIFICATION_BUFFERING_TIMEOUT = 0;
+    UpdateManager.TOASTER_TIMEOUT = 0;
   });
 
   suiteTeardown(function() {
@@ -150,33 +152,39 @@ suite('system/UpdateManager', function() {
     mocksHelper.setup();
   });
 
-  teardown(function() {
-    UpdateManager.updatableApps = [];
-    UpdateManager.updatesQueue = [];
-    UpdateManager.downloadsQueue = [];
-    UpdateManager._downloading = false;
-    UpdateManager._uncompressing = false;
-    UpdateManager.container = null;
-    UpdateManager.message = null;
-    UpdateManager.toaster = null;
-    UpdateManager.toasterMessage = null;
-    UpdateManager.laterButton = null;
-    UpdateManager.downloadButton = null;
-    UpdateManager.downloadDialog = null;
-    UpdateManager.downloadDialogTitle = null;
-    UpdateManager.downloadDialogList = null;
+  teardown(function(done) {
+    // We wait for the nextTick in order to let the UpdateManger's
+    // timeouts finish (they are all set to 0)
+    setTimeout(function() {
+      UpdateManager.updatableApps = [];
+      UpdateManager.updatesQueue = [];
+      UpdateManager.downloadsQueue = [];
+      UpdateManager._downloading = false;
+      UpdateManager._uncompressing = false;
+      UpdateManager.container = null;
+      UpdateManager.message = null;
+      UpdateManager.toaster = null;
+      UpdateManager.toasterMessage = null;
+      UpdateManager.laterButton = null;
+      UpdateManager.downloadButton = null;
+      UpdateManager.downloadDialog = null;
+      UpdateManager.downloadDialogTitle = null;
+      UpdateManager.downloadDialogList = null;
 
-    MockAppsMgmt.mTeardown();
+      MockAppsMgmt.mTeardown();
 
-    mocksHelper.teardown();
+      mocksHelper.teardown();
 
-    fakeNode.parentNode.removeChild(fakeNode);
-    fakeToaster.parentNode.removeChild(fakeToaster);
-    fakeDialog.parentNode.removeChild(fakeDialog);
+      fakeNode.parentNode.removeChild(fakeNode);
+      fakeToaster.parentNode.removeChild(fakeToaster);
+      fakeDialog.parentNode.removeChild(fakeDialog);
 
-    lastDispatchedEvent = null;
-    MockNavigatorWakeLock.mTeardown();
-    MockNavigatorSettings.mTeardown();
+      lastDispatchedEvent = null;
+      MockNavigatorWakeLock.mTeardown();
+      MockNavigatorSettings.mTeardown();
+
+      done();
+    });
   });
 
   suite('init', function() {
@@ -249,8 +257,7 @@ suite('system/UpdateManager', function() {
 
         installedApp = new MockApp();
         installedApp.downloadAvailable = true;
-        MockAppsMgmt.mLastApp = installedApp;
-        MockAppsMgmt.mTriggerOninstall();
+        MockAppsMgmt.mTriggerOninstall(installedApp);
       });
 
       test('should instantiate an updatable app', function() {
@@ -261,32 +268,35 @@ suite('system/UpdateManager', function() {
     });
 
     suite('app uninstall', function() {
-      var installedApp;
+      var partialApp;
 
       setup(function() {
         UpdateManager.init();
         UpdateManager.updatableApps = updatableApps;
         UpdateManager.addToUpdatesQueue(uAppWithDownloadAvailable);
 
-        MockAppsMgmt.mLastApp = appWithDownloadAvailable;
+        partialApp = {
+          origin: appWithDownloadAvailable.origin,
+          manifestURL: appWithDownloadAvailable.manifestURL
+        };
       });
 
       test('should remove the updatable app', function() {
         var initialLength = UpdateManager.updatableApps.length;
-        MockAppsMgmt.mTriggerOnuninstall();
+        MockAppsMgmt.mTriggerOnuninstall(partialApp);
         assert.equal(initialLength - 1, UpdateManager.updatableApps.length);
       });
 
       test('should remove from the update queue', function() {
         var initialLength = UpdateManager.updatesQueue.length;
-        MockAppsMgmt.mTriggerOnuninstall();
+        MockAppsMgmt.mTriggerOnuninstall(partialApp);
         assert.equal(initialLength - 1, UpdateManager.updatesQueue.length);
       });
 
       test('should call uninit on the updatable', function() {
         var lastIndex = UpdateManager.updatesQueue.length - 1;
         var updatableApp = UpdateManager.updatesQueue[lastIndex];
-        MockAppsMgmt.mTriggerOnuninstall();
+        MockAppsMgmt.mTriggerOnuninstall(partialApp);
         assert.isTrue(updatableApp.mUninitCalled);
       });
     });
@@ -330,8 +340,6 @@ suite('system/UpdateManager', function() {
       MockAppsMgmt.mApps = [];
       UpdateManager.init();
       UpdateManager.updatableApps = updatableApps;
-      UpdateManager.NOTIFICATION_BUFFERING_TIMEOUT = tinyTimeout;
-      UpdateManager.TOASTER_TIMEOUT = tinyTimeout;
     });
 
     suite('downloading state', function() {
@@ -454,8 +462,25 @@ suite('system/UpdateManager', function() {
     });
 
     suite('container visibility', function() {
+      suiteSetup(function() {
+        UpdateManager.NOTIFICATION_BUFFERING_TIMEOUT = tinyTimeout;
+        UpdateManager.TOASTER_TIMEOUT = tinyTimeout;
+      });
+
+      suiteTeardown(function() {
+        UpdateManager.NOTIFICATION_BUFFERING_TIMEOUT = 0;
+        UpdateManager.TOASTER_TIMEOUT = 0;
+      });
+
       setup(function() {
         UpdateManager.addToUpdatesQueue(uAppWithDownloadAvailable);
+      });
+
+      teardown(function(done) {
+        // wait for all actions to happen in UpdateManager before reseting
+        setTimeout(function() {
+          done();
+        }, tinyTimeout * 2);
       });
 
       suite('displaying the container after a timeout', function() {
@@ -503,7 +528,7 @@ suite('system/UpdateManager', function() {
               assert.equal('updatesAvailableMessage{"n":1}',
                            UpdateManager.message.textContent);
               done();
-            }, tinyTimeout * 2);
+            }, tinyTimeout * 1.5);
           });
 
           test('should display an updated count', function(done) {
@@ -578,10 +603,26 @@ suite('system/UpdateManager', function() {
     });
 
     suite('error banner requests', function() {
-      setup(function() {
+      suiteSetup(function() {
         UpdateManager.NOTIFICATION_BUFFERING_TIMEOUT = tinyTimeout;
+        UpdateManager.TOASTER_TIMEOUT = tinyTimeout;
+      });
+
+      suiteTeardown(function() {
+        UpdateManager.NOTIFICATION_BUFFERING_TIMEOUT = 0;
+        UpdateManager.TOASTER_TIMEOUT = 0;
+      });
+
+      setup(function() {
         UpdateManager.init();
         UpdateManager.requestErrorBanner();
+      });
+
+      teardown(function(done) {
+        // wait for all actions to happen in UpdateManager before reseting
+        setTimeout(function() {
+          done();
+        }, tinyTimeout * 2);
       });
 
       test('should wait before showing the system banner', function(done) {

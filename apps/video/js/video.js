@@ -6,7 +6,8 @@ var ids = ['player', 'thumbnails', 'overlay', 'overlay-title',
            'overlay-text', 'videoControls', 'videoFrame', 'videoBar',
            'close', 'play', 'playHead', 'timeSlider', 'elapsedTime',
            'video-title', 'duration-text', 'elapsed-text', 'bufferedTime',
-           'slider-wrapper', 'throbber', 'delete-video-button', 'delete-confirmation-button'];
+           'slider-wrapper', 'throbber', 'delete-video-button',
+           'delete-confirmation-button'];
 
 ids.forEach(function createElementRef(name) {
   dom[toCamelCase(name)] = document.getElementById(name);
@@ -41,10 +42,6 @@ var THUMBNAIL_HEIGHT = 160;
 // Enumerating the readyState for html5 video api
 var HAVE_NOTHING = 0;
 
-var activityData; // From an activity call
-var pendingActivity;
-var appStarted = false;
-
 var storageState;
 var currentOverlay;
 
@@ -65,9 +62,6 @@ function init() {
     storageState = false;
     updateDialog();
     createThumbnailList();
-    if (activityData) {
-      startStream();
-    }
   };
 
   videodb.onscanstart = function() {
@@ -88,9 +82,8 @@ function init() {
     event.detail.forEach(videoDeleted);
   };
 
-  dom.deleteConfirmationButton.addEventListener('click', deleteSelectedVideoFile, false);
-
-  appStarted = true;
+  dom.deleteConfirmationButton.addEventListener('click',
+                                                deleteSelectedVideoFile, false);
 }
 
 function videoAdded(videodata) {
@@ -147,18 +140,17 @@ function videoAdded(videodata) {
       ctxTriggered = false;
     }
   });
-
   dom.thumbnails.appendChild(thumbnail);
 }
 
 dom.thumbnails.addEventListener('contextmenu', function(evt) {
   var node = evt.target;
   var found = false;
-  while (!found && node) { 
-    if (node.dataset.name) { 
+  while (!found && node) {
+    if (node.dataset.name) {
       found = true;
       selectedVideo = node.dataset.name;
-    } else { 
+    } else {
       node = node.parentNode;
     }
   }
@@ -207,11 +199,6 @@ function updateDialog() {
   } else if (firstScanEnded && videoCount === 0) {
     showOverlay('empty');
   }
-}
-
-function startStream() {
-  showPlayer(activityData, true);
-  activityData = null;
 }
 
 function metaDataParser(videofile, callback, metadataError) {
@@ -373,12 +360,6 @@ function setVideoPlaying(playing) {
   }
 }
 
-function completeActivity(deleteVideo) {
-  pendingActivity.postResult({delete: deleteVideo});
-  pendingActivity = null;
-  dom.thumbnails.classList.remove('hidden');
-}
-
 function playerMousedown(event) {
   // If we interact with the controls before they fade away,
   // cancel the fade
@@ -434,11 +415,10 @@ function setPlayerSize() {
   var yscale = containerHeight / height;
   var scale = Math.min(xscale, yscale);
 
-  // scale large videos down, but don't scale small videos up
-  if (scale < 1) {
-    width *= scale;
-    height *= scale;
-  }
+  // scale large videos down and scale small videos up
+  // this might result in lower image quality for small videos
+  width *= scale;
+  height *= scale;
 
   var left = ((containerWidth - width) / 2);
   var top = ((containerHeight - height) / 2);
@@ -465,9 +445,7 @@ function setPlayerSize() {
     break;
   }
 
-  if (scale < 1) {
-    transform += ' scale(' + scale + ')';
-  }
+  transform += ' scale(' + scale + ')';
 
   dom.player.style.transform = transform;
 }
@@ -603,14 +581,9 @@ function playerEnded() {
     clearTimeout(endedTimer);
     endedTimer = null;
   }
-  if (pendingActivity) {
-    pause();
-    dom.player.currentTime = 0;
-    setControlsVisibility(true);
-  } else {
-    dom.player.currentTime = 0;
-    document.mozCancelFullScreen();
-  }
+
+  dom.player.currentTime = 0;
+  document.mozCancelFullScreen();
 }
 
 function play() {
@@ -709,6 +682,8 @@ function dragSlider(e) {
 
     dragging = false;
 
+    dom.playHead.classList.remove('active');
+
     if (dom.player.currentTime === dom.player.duration) {
       pause();
     } else if (!isPaused) {
@@ -719,6 +694,7 @@ function dragSlider(e) {
   function mousemoveHandler(event) {
     var pos = position(event);
     var percent = pos * 100 + '%';
+    dom.playHead.classList.add('active');
     dom.playHead.style.left = percent;
     dom.elapsedTime.style.width = percent;
     dom.player.currentTime = dom.player.duration * pos;
@@ -760,33 +736,6 @@ function formatDuration(duration) {
   return '';
 }
 
-function actHandle(activity) {
-  var data = activity.source.data;
-  var title = 'extras' in data ? (data.extras.title || '') : '';
-  switch (activity.source.name) {
-  case 'open':
-    // Activities are required to specify whether they are inline in the manifest
-    // so we know we are inline, dont bother showing thumbnails
-    dom.thumbnails.classList.add('hidden');
-    pendingActivity = activity;
-    var filename = data.src.replace(/^ds\:videos:\/\//, '');
-    activityData = {
-      fromMediaDB: false,
-      name: filename,
-      title: title
-    };
-    break;
-  case 'view':
-    activityData = {
-      url: data.url,
-      title: title
-    };
-    break;
-  }
-  if (appStarted) {
-    startStream();
-  }
-}
 
 // The mozRequestFullScreen can fail silently, so we keep asking
 // for full screen until we detect that it happens, We limit the
@@ -800,18 +749,10 @@ function requestFullScreen(callback) {
     if (++requests > MAX_FULLSCREEN_REQUESTS) {
       window.clearInterval(fullscreenTimer);
       fullscreenTimer = null;
-      if (pendingActivity) {
-        pendingActivity.postError('Could not play video');
-        pendingActivity = null;
-      }
       return;
     }
     dom.videoFrame.mozRequestFullScreen();
   }, 500);
-}
-
-if (window.navigator.mozSetMessageHandler) {
-  window.navigator.mozSetMessageHandler('activity', actHandle);
 }
 
 // When we exit fullscreen mode, stop playing the video.
@@ -822,11 +763,7 @@ if (window.navigator.mozSetMessageHandler) {
 document.addEventListener('mozfullscreenchange', function() {
   // We have exited fullscreen
   if (document.mozFullScreenElement === null) {
-    if (pendingActivity) {
-      completeActivity(false);
-    } else {
-      hidePlayer();
-    }
+    hidePlayer();
     return;
   }
 
