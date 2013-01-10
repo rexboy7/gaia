@@ -206,6 +206,13 @@ section {
    * at least get the effect of a grid rather than a black screen
    */
   background-color: #444;
+
+  /*
+   * Give it a default width and height for the case all media query
+   * doesn't fit.
+   */
+  width: 10.6rem;
+  height: 10.6rem;
 }
 
 .thumbnail.selected {
@@ -220,7 +227,6 @@ section {
 .thumbnail:last-child {
   margin-bottom: 4rem;
 }
-
 
 /* 320x480 phones */
 @media (orientation: portrait) and (width: 320px) {
