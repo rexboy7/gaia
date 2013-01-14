@@ -3,6 +3,7 @@
 requireApp('system/js/updatable.js');
 
 requireApp('system/test/unit/mock_app.js');
+requireApp('system/test/unit/mock_asyncStorage.js');
 requireApp('system/test/unit/mock_update_manager.js');
 requireApp('system/test/unit/mock_window_manager.js');
 requireApp('system/test/unit/mock_apps_mgmt.js');
@@ -18,7 +19,8 @@ var mocksForUpdatable = [
   'UpdateManager',
   'WindowManager',
   'UtilityTray',
-  'ManifestHelper'
+  'ManifestHelper',
+  'asyncStorage'
 ];
 
 mocksForUpdatable.forEach(function(mockName) {
@@ -80,6 +82,34 @@ suite('system/Updatable', function() {
     lastDispatchedEvent = null;
   });
 
+  function downloadAvailableSuite(name, setupFunc) {
+    suite(name, function() {
+      setup(setupFunc);
+
+      test('should add self to the available downloads', function() {
+        assert.isNotNull(MockUpdateManager.mLastUpdatesAdd);
+        assert.equal(MockUpdateManager.mLastUpdatesAdd.app.mId,
+                     mockApp.mId);
+      });
+
+      suite('first progress', function() {
+        setup(function() {
+          mockApp.mTriggerDownloadProgress(42);
+        });
+
+        test('should add self to active downloads', function() {
+          assert.isNotNull(MockUpdateManager.mLastDownloadsAdd);
+          assert.equal(MockUpdateManager.mLastDownloadsAdd.app.mId,
+                      mockApp.mId);
+        });
+
+        test('should start with first progress value', function() {
+          assert.equal(42, subject.progress);
+        });
+      });
+    });
+  }
+
   suite('init', function() {
     test('should keep a reference to the app', function() {
       assert.equal(mockApp, subject.app);
@@ -90,6 +120,21 @@ suite('system/Updatable', function() {
       freshApp.manifest = undefined;
       subject = new AppUpdatable(freshApp);
       assert.equal(freshApp, subject.app);
+    });
+
+    test('should add itself to updatable apps', function() {
+      assert.equal(MockUpdateManager.mLastUpdatableAdd, subject);
+    });
+
+    test('should remember about the update on startup', function() {
+      asyncStorage.mItems[SystemUpdatable.KNOWN_UPDATE_FLAG] = true;
+      var systemUpdatable = new SystemUpdatable();
+      assert.equal(MockUpdateManager.mCheckForUpdatesCalledWith, true);
+    });
+
+    downloadAvailableSuite('app has a download available', function() {
+      mockApp.downloadAvailable = true;
+      subject = new AppUpdatable(mockApp);
     });
   });
 
@@ -131,62 +176,46 @@ suite('system/Updatable', function() {
   });
 
   suite('actions', function() {
-    suite('download', function() {
+    suite('ask for download', function() {
       setup(function() {
-        subject.progress = 42;
+        mockApp.mTriggerDownloadAvailable();
         subject.download();
-      });
-
-      test('should add self to active downloads', function() {
-        assert.isNotNull(MockUpdateManager.mLastDownloadsAdd);
-        assert.equal(MockUpdateManager.mLastDownloadsAdd.app.mId,
-                     mockApp.mId);
-      });
-
-      test('should start with download progress 0', function() {
-        assert.equal(0, subject.progress);
       });
 
       test('should call download on the app', function() {
         assert.isTrue(mockApp.mDownloadCalled);
       });
+    });
 
-      test('should send download message for system updates', function() {
+    suite('download system update', function() {
+      setup(function() {
         subject = new SystemUpdatable(42);
         subject._dispatchEvent = fakeDispatchEvent;
+        subject.progress = 42;
         subject.download();
+      });
+
+      test('should send download message for system updates', function() {
         assert.equal('update-available-result', lastDispatchedEvent.type);
         assert.equal('download', lastDispatchedEvent.value);
       });
 
       test('should add system updates to active downloads too', function() {
-        MockUpdateManager.mLastDownloadsAdd = null;
-        subject = new SystemUpdatable(42);
-        subject.download();
         assert.isNotNull(MockUpdateManager.mLastDownloadsAdd);
         assert.equal(subject, MockUpdateManager.mLastDownloadsAdd);
       });
 
-      suite('when starting a system update', function() {
-        setup(function() {
-          subject = new SystemUpdatable(42);
-          subject._dispatchEvent = fakeDispatchEvent;
-          subject.progress = 42;
-          subject.download();
-        });
+      test('should start system updates with progress 0 too', function() {
+        assert.equal(subject.progress, 0);
+      });
 
-        test('should start system updates with progress 0 too', function() {
-          assert.equal(subject.progress, 0);
-        });
+      test('should do nothing if already downloading', function() {
+        lastDispatchedEvent = null;
+        subject.progress = 42;
+        subject.download();
 
-        test('should do nothing if already downloading', function() {
-          lastDispatchedEvent = null;
-          subject.progress = 42;
-          subject.download();
-
-          assert.equal(subject.progress, 42);
-          assert.isNull(lastDispatchedEvent);
-        });
+        assert.equal(subject.progress, 42);
+        assert.isNull(lastDispatchedEvent);
       });
     });
 
@@ -208,6 +237,7 @@ suite('system/Updatable', function() {
 
     suite('cancel system update download', function() {
       setup(function() {
+        asyncStorage.setItem(SystemUpdatable.KNOWN_UPDATE_FLAG, true);
         subject = new SystemUpdatable(42);
         subject.download();
         subject._dispatchEvent = fakeDispatchEvent;
@@ -235,9 +265,8 @@ suite('system/Updatable', function() {
       // at the end of a download. Assumes subject.download() was called.
       function testCleanup() {
         test('should stop responding to progress', function() {
-          mockApp.progress = 42;
-          mockApp.mTriggerDownloadProgress();
-          assert.notEqual(42, subject.progress);
+          mockApp.mTriggerDownloadProgress(42);
+          assert.notEqual(subject.progress, 42);
         });
 
         test('should stop responding to error', function() {
@@ -245,23 +274,53 @@ suite('system/Updatable', function() {
           mockApp.mTriggerDownloadError();
           assert.isFalse(MockUpdateManager.mErrorBannerRequested);
         });
+
+        test('progress should be reset', function() {
+          assert.isNull(subject.progress);
+        });
       }
 
-      suite('ondownloadavailable', function() {
+      downloadAvailableSuite('ondownloadavailable', function() {
+        mockApp.mTriggerDownloadAvailable();
+      });
+
+      suite('ondownloadavailable when not installed', function() {
         setup(function() {
+          mockApp.installState = 'pending';
           mockApp.mTriggerDownloadAvailable();
         });
 
-        test('should add self to the available downloads', function() {
-          assert.isNotNull(MockUpdateManager.mLastUpdatesAdd);
-          assert.equal(MockUpdateManager.mLastUpdatesAdd.app.mId,
-                       mockApp.mId);
+        test('should not add self to the available downloads', function() {
+          assert.isNull(MockUpdateManager.mLastUpdatesAdd);
+        });
+
+        test('should not answer to progress', function() {
+          mockApp.mTriggerDownloadSuccess();
+          assert.isNull(MockUpdateManager.mLastDownloadsRemoval);
+        });
+      });
+
+      suite('downloadavailable at init when not installed', function() {
+        setup(function() {
+          mockApp.installState = 'pending';
+          subject = new AppUpdatable(mockApp);
+          mockApp.mTriggerDownloadAvailable();
+        });
+
+        test('should not add self to the available downloads', function() {
+          assert.isNull(MockUpdateManager.mLastUpdatesAdd);
+        });
+
+        test('should not answer to progress', function() {
+          mockApp.mTriggerDownloadSuccess();
+          assert.isNull(MockUpdateManager.mLastDownloadsRemoval);
         });
       });
 
       suite('ondownloadsuccess', function() {
         test('should remove self from active downloads', function() {
-          subject.download();
+          mockApp.mTriggerDownloadAvailable();
+          mockApp.mTriggerDownloadProgress(42);
           mockApp.mTriggerDownloadSuccess();
           assert.isNotNull(MockUpdateManager.mLastDownloadsRemoval);
           assert.equal(MockUpdateManager.mLastDownloadsRemoval.app.mId,
@@ -273,9 +332,18 @@ suite('system/Updatable', function() {
           assert.isNull(MockUpdateManager.mLastDownloadsRemoval);
         });
 
+        test('should remove self from available downloads', function() {
+          mockApp.mTriggerDownloadAvailable();
+          mockApp.mTriggerDownloadProgress(42);
+          mockApp.mTriggerDownloadSuccess();
+          assert.isNotNull(MockUpdateManager.mLastUpdatesRemoval);
+          assert.equal(MockUpdateManager.mLastUpdatesRemoval.app.mId,
+                       mockApp.mId);
+        });
+
         suite('application of the download', function() {
           test('should apply if the app is not in foreground', function() {
-            subject.download();
+            mockApp.mTriggerDownloadAvailable();
             MockWindowManager.mDisplayedApp =
               'http://homescreen.gaiamobile.org';
             mockApp.mTriggerDownloadSuccess();
@@ -288,7 +356,7 @@ suite('system/Updatable', function() {
             mockApp.origin = origin;
             MockWindowManager.mDisplayedApp = origin;
 
-            subject.download();
+            mockApp.mTriggerDownloadAvailable();
             mockApp.mTriggerDownloadSuccess();
             assert.isNull(MockAppsMgmt.mLastAppApplied);
 
@@ -302,7 +370,7 @@ suite('system/Updatable', function() {
           });
 
           test('should kill the app before applying the update', function() {
-            subject.download();
+            mockApp.mTriggerDownloadAvailable();
             mockApp.mTriggerDownloadSuccess();
             assert.equal('https://testapp.gaiamobile.org',
                          MockWindowManager.mLastKilledOrigin);
@@ -312,7 +380,7 @@ suite('system/Updatable', function() {
 
       suite('ondownloaderror', function() {
         setup(function() {
-          subject.download();
+          mockApp.mTriggerDownloadAvailable();
           mockApp.mTriggerDownloadError();
         });
 
@@ -326,12 +394,19 @@ suite('system/Updatable', function() {
                        mockApp.mId);
         });
 
-        testCleanup();
+        test('progress should be reset', function() {
+          assert.isNull(subject.progress);
+        });
+
+        test('should still answer to progress events', function() {
+          mockApp.mTriggerDownloadProgress(42);
+          assert.equal(42, subject.progress);
+        });
       });
 
       suite('onprogress', function() {
         setup(function() {
-          subject.download();
+          mockApp.mTriggerDownloadAvailable();
         });
 
         test('should send progress to update manager', function() {
@@ -348,15 +423,8 @@ suite('system/Updatable', function() {
 
       suite('ondownloadapplied', function() {
         setup(function() {
-          subject.download();
+          mockApp.mTriggerDownloadAvailable();
           mockApp.mTriggerDownloadApplied();
-        });
-
-        test('should remove self from available downloads', function() {
-          mockApp.mTriggerDownloadSuccess();
-          assert.isNotNull(MockUpdateManager.mLastUpdatesRemoval);
-          assert.equal(MockUpdateManager.mLastUpdatesRemoval.app.mId,
-                       mockApp.mId);
         });
 
         testCleanup();
@@ -372,6 +440,7 @@ suite('system/Updatable', function() {
 
       suite('update-downloaded', function() {
         setup(function() {
+          asyncStorage.setItem(SystemUpdatable.KNOWN_UPDATE_FLAG, true);
           var event = new MockChromeEvent({
             type: 'update-downloaded'
           });
@@ -382,16 +451,25 @@ suite('system/Updatable', function() {
           assert.isFalse(subject.downloading);
         });
 
+        test('should reset SystemUpdatable.KNOWN_UPDATE_FLAG', function() {
+          assert.isUndefined(asyncStorage.mItems[SystemUpdatable.KNOWN_UPDATE_FLAG]);
+        });
+
         testSystemApplyPrompt();
       });
 
       suite('update-prompt-apply', function() {
         setup(function() {
+          asyncStorage.setItem(SystemUpdatable.KNOWN_UPDATE_FLAG, true);
           MockUtilityTray.show();
           var event = new MockChromeEvent({
             type: 'update-prompt-apply'
           });
           subject.handleEvent(event);
+        });
+
+        test('should reset SystemUpdatable.KNOWN_UPDATE_FLAG', function() {
+          assert.isUndefined(asyncStorage.mItems[SystemUpdatable.KNOWN_UPDATE_FLAG]);
         });
 
         testSystemApplyPrompt();
@@ -420,42 +498,90 @@ suite('system/Updatable', function() {
         });
       });
 
-      suite('update-progress', function() {
+      suite('update download events', function() {
         var event;
         setup(function() {
           subject = new SystemUpdatable(98734);
           subject.download();
-          event = new MockChromeEvent({
-            type: 'update-progress',
-            progress: 1234,
-            total: 98734
+        });
+
+        suite('when the download starts', function() {
+          setup(function() {
+            event = new MockChromeEvent({
+              type: 'update-download-started',
+              total: 98734
+            });
+          });
+
+          test('should clear paused flag', function() {
+            subject.paused = true;
+            subject.handleEvent(event);
+            assert.isFalse(subject.paused);
           });
         });
 
-        test('should send progress to update manager', function() {
-          subject.handleEvent(event);
-          assert.equal(1234, MockUpdateManager.mProgressCalledWith);
-        });
-
-        test('should send progress delta to update manager', function() {
-          subject.handleEvent(event);
-          event.detail.progress = 2234;
-          subject.handleEvent(event);
-          assert.equal(1000, MockUpdateManager.mProgressCalledWith);
-        });
-
-        suite('when the download is complete', function() {
+        suite('when the download receives progress', function() {
           setup(function() {
             event = new MockChromeEvent({
-              type: 'update-progress',
-              progress: 98734,
+              type: 'update-download-progress',
+              progress: 1234,
               total: 98734
+            });
+          });
+
+          test('should send progress to update manager', function() {
+            subject.handleEvent(event);
+            assert.equal(1234, MockUpdateManager.mProgressCalledWith);
+          });
+
+          test('should send progress delta to update manager', function() {
+            subject.handleEvent(event);
+            event.detail.progress = 2234;
+            subject.handleEvent(event);
+            assert.equal(1000, MockUpdateManager.mProgressCalledWith);
+          });
+        });
+
+        suite('when the download is paused', function() {
+          setup(function() {
+            asyncStorage.setItem(SystemUpdatable.KNOWN_UPDATE_FLAG, true);
+            event = new MockChromeEvent({
+              type: 'update-download-stopped',
+              paused: true
             });
             subject.handleEvent(event);
           });
 
+          test('should set the paused flag', function() {
+            assert.isTrue(subject.paused);
+          });
+          test('shouldn\'t signal "started uncompressing"', function() {
+            assert.isFalse(MockUpdateManager.mStartedUncompressingCalled);
+          });
+          test('should not reset SystemUpdatable.KNOWN_UPDATE_FLAG', function() {
+            assert.isTrue(asyncStorage.mItems[SystemUpdatable.KNOWN_UPDATE_FLAG]);
+          });
+        });
+
+        suite('when the download is complete', function() {
+          setup(function() {
+            asyncStorage.setItem(SystemUpdatable.KNOWN_UPDATE_FLAG, true);
+            event = new MockChromeEvent({
+              type: 'update-download-stopped',
+              paused: false
+            });
+            subject.handleEvent(event);
+          });
+
+          test('should clear the paused flag', function() {
+            assert.isFalse(subject.paused);
+          });
+
           test('should signal the UpdateManager', function() {
             assert.isTrue(MockUpdateManager.mStartedUncompressingCalled);
+          });
+          test('should not reset SystemUpdatable.KNOWN_UPDATE_FLAG', function() {
+            assert.isTrue(asyncStorage.mItems[SystemUpdatable.KNOWN_UPDATE_FLAG]);
           });
         });
       });

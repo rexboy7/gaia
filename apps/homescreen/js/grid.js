@@ -32,7 +32,7 @@ const GridManager = (function() {
     right: 0
   };
 
-  var startEvent, isPanning = false;
+  var startEvent, isPanning = false, deltaX;
 
   function handleEvent(evt) {
     switch (evt.type) {
@@ -40,6 +40,7 @@ const GridManager = (function() {
         touchStartTimestamp = MouseEventShim.getEventTimestamp(evt);
         evt.stopPropagation();
         startEvent = evt;
+        deltaX = 0;
         attachEvents();
         break;
 
@@ -173,6 +174,11 @@ const GridManager = (function() {
         break;
 
       case 'contextmenu':
+        if (deltaX !== 0) {
+          evt.stopImmediatePropagation();
+          return;
+        }
+
         if (currentPage > 1 && 'isIcon' in evt.target.dataset) {
           evt.stopImmediatePropagation();
           Homescreen.setMode('edit');
@@ -705,7 +711,8 @@ const GridManager = (function() {
       updateTime: app.updateTime,
       removable: app.removable,
       name: iconsAndNameHolder.name,
-      icon: bestMatchingIcon(app, iconsAndNameHolder)
+      icon: bestMatchingIcon(app, iconsAndNameHolder),
+      useAsyncPanZoom: app.useAsyncPanZoom
     };
     if (haveLocale && !app.isBookmark) {
       descriptor.localizedName = iconsAndNameHolder.name;
@@ -810,6 +817,13 @@ const GridManager = (function() {
         url.indexOf('http://') == 0 ||
         url.indexOf('https://') == 0)
       return url;
+
+    if (url.charAt(0) != '/') {
+      console.warn('`' + manifest.name + '` app icon is invalid. ' +
+                   'Manifest `icons` attribute should contain URLs -or- ' +
+                   'absolute paths from the origin field.');
+      return getDefaultIcon(app);
+    }
 
     if (app.origin.slice(-1) == '/')
       return app.origin.slice(0, -1) + url;

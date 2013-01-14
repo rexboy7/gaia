@@ -75,6 +75,7 @@ var AppInstallManager = {
     var apps = e.detail.applications;
 
     Object.keys(apps)
+      .filter(function(key) { return apps[key].installState === 'pending'; })
       .map(function(key) { return apps[key]; })
       .forEach(this.prepareForDownload, this);
   },
@@ -115,8 +116,8 @@ var AppInstallManager = {
     this.msg.textContent = msg;
 
     if (manifest.developer) {
-      this.authorName.textContent = manifest.developer.name;
-      this.authorUrl.textContent = manifest.developer.url;
+      this.authorName.textContent = manifest.developer.name || _('unknown');
+      this.authorUrl.textContent = manifest.developer.url || '';
     } else {
       this.authorName.textContent = _('unknown');
       this.authorUrl.textContent = '';

@@ -32,7 +32,8 @@ Icon.prototype = {
   // These properties will be copied from the descriptor onto the icon's HTML
   // element dataset and allow us to uniquely look up the Icon object from
   // the HTML element.
-  _descriptorIdentifiers: ['manifestURL', 'entry_point', 'bookmarkURL'],
+  _descriptorIdentifiers: ['manifestURL', 'entry_point', 'bookmarkURL',
+                           'useAsyncPanZoom'],
 
   /**
    * The Application (or Bookmark) object corresponding to this icon.
@@ -105,6 +106,7 @@ Icon.prototype = {
     var label = this.label = document.createElement('span');
     label.textContent = localizedName;
     wrapper.appendChild(label);
+    this.applyOverflowTextMask();
 
     icon.appendChild(wrapper);
 
@@ -128,6 +130,15 @@ Icon.prototype = {
     }
   },
 
+  applyOverflowTextMask: function icon_applyOverflowTextMask() {
+    var label = this.label;
+    if (TextOverflowDetective.check(label.textContent)) {
+      label.parentNode.classList.add('mask');
+    } else {
+      label.parentNode.classList.remove('mask');
+    }
+  },
+
   fetchImageData: function icon_fetchImageData() {
     var descriptor = this.descriptor;
     var icon = descriptor.icon;
@@ -138,8 +149,8 @@ Icon.prototype = {
 
     // If we already have locally cached data, load the image right away.
     if (icon.indexOf('data:') == 0) {
-       this.loadImageData();
-       return;
+      this.loadImageData();
+      return;
     }
 
     var self = this;
@@ -151,7 +162,7 @@ Icon.prototype = {
     } catch (e) {
       console.error('Got an exception when trying to load icon "' + icon +
           '", falling back to default icon. Exception is:', e);
-      this.loadImageData();
+      this.loadCachedIcon();
       return;
     }
 
@@ -160,15 +171,23 @@ Icon.prototype = {
         return;
 
       if (xhr.status != 0 && xhr.status != 200) {
-        self.loadImageData();
+        self.loadCachedIcon();
         return;
       }
       self.loadImageData(xhr.response);
     };
 
     xhr.onerror = function saveIcon_onerror() {
-      self.loadImageData();
+      self.loadCachedIcon();
     };
+  },
+
+  loadCachedIcon: function icon_loadCachedImage() {
+    if ('oldRenderedIcon' in this.descriptor) {
+      this.renderBlob(this.descriptor.oldRenderedIcon);
+    } else {
+      this.loadImageData();
+    }
   },
 
   loadImageData: function icon_loadImageData(blob) {
@@ -314,6 +333,7 @@ Icon.prototype = {
         descriptor.icon == oldDescriptor.icon) {
       this.descriptor.renderedIcon = oldDescriptor.renderedIcon;
     } else {
+      this.descriptor.oldRenderedIcon = oldDescriptor.renderedIcon;
       this.fetchImageData();
     }
     if (descriptor.updateTime != oldDescriptor.updateTime ||
@@ -368,6 +388,8 @@ Icon.prototype = {
       descriptor.localizedName = localizedName;
       GridManager.markDirtyState();
     }
+
+    this.applyOverflowTextMask();
   },
 
   /*
@@ -799,3 +821,16 @@ dockProto.getChildren = function dk_getChildren() {
 };
 
 HTMLCollection.prototype.indexOf = Array.prototype.indexOf;
+
+const TextOverflowDetective = (function() {
+  var iconFakeWrapperWidht = document.querySelector('#fake-icon-name-wrapper').
+                                                                    offsetWidth;
+  var iconFakeLabel = document.querySelector('#fake-icon-name');
+
+  return {
+    check: function od_check(text) {
+      iconFakeLabel.textContent = text;
+      return iconFakeLabel.offsetWidth >= iconFakeWrapperWidht;
+    }
+  }
+})();

@@ -19,6 +19,8 @@ var UpdateManager = {
   _errorTimeout: null,
   _wifiLock: null,
   _systemUpdateDisplayed: false,
+  _conn: null,
+  _edgeTypes: ['edge', 'is95a', 'is95b', 'gprs'],
   NOTIFICATION_BUFFERING_TIMEOUT: 30 * 1000,
   TOASTER_TIMEOUT: 1200,
 
@@ -45,12 +47,8 @@ var UpdateManager = {
     this._mgmt.getAll().onsuccess = (function gotAll(evt) {
       var apps = evt.target.result;
       apps.forEach(function appIterator(app) {
-        var updatableApp = new AppUpdatable(app);
-        this.addToUpdatableApps(updatableApp);
-        if (app.downloadAvailable) {
-          this.addToUpdatesQueue(updatableApp);
-        }
-      }, this);
+        new AppUpdatable(app);
+      });
     }).bind(this);
 
     this.systemUpdatable = new SystemUpdatable();
@@ -78,6 +76,17 @@ var UpdateManager = {
 
     SettingsListener.observe('gaia.system.checkForUpdates', false,
                              this.checkForUpdates.bind(this));
+
+    // We maintain the the edge and nowifi data attributes to show
+    // a warning on the download dialog
+    window.addEventListener('wifi-statuschange', this);
+    this.updateWifiStatus();
+
+    this._conn = window.navigator.mozMobileConnection;
+    if (this._conn) {
+      this._conn.addEventListener('datachange', this);
+      this.updateEdgeStatus();
+    }
   },
 
   startDownloads: function um_startDownloads(evt) {
@@ -256,7 +265,7 @@ var UpdateManager = {
   render: function um_render() {
     var _ = navigator.mozL10n.get;
 
-    this.toasterMessage.innerHTML = _('updatesAvailableMessage', {
+    this.toasterMessage.innerHTML = _('updateAvailableInfo', {
                                       n: this.updatesQueue.length
                                     });
 
@@ -271,7 +280,7 @@ var UpdateManager = {
                   });
       }
     } else {
-      message = _('updatesAvailableMessage', {
+      message = _('updateAvailableInfo', {
                  n: this.updatesQueue.length
                 });
     }
@@ -291,16 +300,16 @@ var UpdateManager = {
       return;
 
     var removedApp = this.updatableApps[removeIndex];
-    if (removedApp.app.downloadAvailable) {
-      this.removeFromUpdatesQueue(removedApp);
-    }
+    this.removeFromUpdatesQueue(removedApp);
+
     removedApp.uninit();
     this.updatableApps.splice(removeIndex, 1);
   },
 
   addToUpdatesQueue: function um_addToUpdatesQueue(updatable) {
-    if (this._downloading)
+    if (this._downloading) {
       return;
+    }
 
     if (updatable.app &&
         updatable.app.installState !== 'installed') {
@@ -322,22 +331,25 @@ var UpdateManager = {
     this.updatesQueue.push(updatable);
 
     if (this.updatesQueue.length === 1) {
-      var self = this;
-      setTimeout(function waitForMore() {
-        if (self.updatesQueue.length) {
-          self.container.classList.add('displayed');
-          self.toaster.classList.add('displayed');
-
-          setTimeout(function waitToHide() {
-            self.toaster.classList.remove('displayed');
-          }, self.TOASTER_TIMEOUT);
-
-          NotificationScreen.incExternalNotifications();
-        }
-      }, this.NOTIFICATION_BUFFERING_TIMEOUT);
+      setTimeout(this.displayNotificationAndToaster.bind(this),
+          this.NOTIFICATION_BUFFERING_TIMEOUT);
     }
 
     this.render();
+  },
+
+  displayNotificationAndToaster: function um_displayNotificationAndToaster() {
+    if (this.updatesQueue.length && !this._downloading) {
+      this.container.classList.add('displayed');
+      this.toaster.classList.add('displayed');
+
+      var self = this;
+      setTimeout(function waitToHide() {
+        self.toaster.classList.remove('displayed');
+      }, this.TOASTER_TIMEOUT);
+
+      NotificationScreen.incExternalNotifications();
+    }
   },
 
   removeFromUpdatesQueue: function um_removeFromUpdatesQueue(updatable) {
@@ -375,6 +387,7 @@ var UpdateManager = {
       StatusBar.incSystemDownloads();
       this._wifiLock = navigator.requestWakeLock('wifi');
 
+      this.container.classList.add('displayed');
       this.render();
     }
   },
@@ -389,6 +402,7 @@ var UpdateManager = {
     if (this.downloadsQueue.length === 0) {
       this._downloading = false;
       StatusBar.decSystemDownloads();
+      this._downloadedBytes = 0;
       this.checkStatuses();
 
       if (this._wifiLock) {
@@ -418,7 +432,6 @@ var UpdateManager = {
   oninstall: function um_oninstall(evt) {
     var app = evt.application;
     var updatableApp = new AppUpdatable(app);
-    this.addToUpdatableApps(updatableApp);
   },
 
   onuninstall: function um_onuninstall(evt) {
@@ -437,14 +450,19 @@ var UpdateManager = {
     if (!evt.type)
       return;
 
-    if (evt.type === 'applicationinstall') {
-      this.oninstall(evt.detail);
-      return;
-    }
-
-    if (evt.type === 'applicationuninstall') {
-      this.onuninstall(evt.detail);
-      return;
+    switch (evt.type) {
+      case 'applicationinstall':
+        this.oninstall(evt.detail);
+        break;
+      case 'applicationuninstall':
+        this.onuninstall(evt.detail);
+        break;
+      case 'datachange':
+        this.updateEdgeStatus();
+        break;
+      case 'wifi-statuschange':
+        this.updateWifiStatus();
+        break;
     }
 
     if (evt.type !== 'mozChromeEvent')
@@ -454,8 +472,27 @@ var UpdateManager = {
 
     if (detail.type && detail.type === 'update-available') {
       this.systemUpdatable.size = detail.size;
+      this.systemUpdatable.rememberKnownUpdate();
       this.addToUpdatesQueue(this.systemUpdatable);
     }
+  },
+
+  updateEdgeStatus: function su_updateEdgeStatus() {
+    if (!this._conn)
+      return;
+
+    var data = this._conn.data;
+    this.downloadDialog.dataset.edge =
+      (this._edgeTypes.indexOf(data.type) !== -1);
+  },
+
+  updateWifiStatus: function su_updateWifiStatus() {
+    var wifiManager = window.navigator.mozWifiManager;
+    if (!wifiManager)
+      return;
+
+    this.downloadDialog.dataset.nowifi =
+      (wifiManager.connection.status != 'connected');
   },
 
   checkForUpdates: function su_checkForUpdates(shouldCheck) {

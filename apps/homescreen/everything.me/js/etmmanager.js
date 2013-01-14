@@ -2,8 +2,8 @@
 "use strict";
 
 var EvmeManager = (function EvmeManager() {
-    var currentWindow = null;
-    var currentURL = null;
+    var currentWindow = null,
+        currentURL = null;
 
     function openApp(params) {
         var evmeApp = new EvmeApp({
@@ -12,7 +12,7 @@ var EvmeManager = (function EvmeManager() {
             icon: params.icon
         });
 
-        evmeApp.launch(params.url, params.urlTitle);
+        evmeApp.launch(params.url, params.urlTitle, params.useAsyncPanZoom);
         currentURL = params.url;
     }
 
@@ -21,7 +21,8 @@ var EvmeManager = (function EvmeManager() {
           bookmarkURL: params.originUrl,
           name: params.title,
           icon: params.icon,
-          iconable: false
+          iconable: false,
+          useAsyncPanZoom: params.useAsyncPanZoom
         }));
     }
 
@@ -109,11 +110,12 @@ var EvmeApp = function createEvmeApp(params) {
 
 extend(EvmeApp, Bookmark);
 
-EvmeApp.prototype.launch = function evmeapp_launch(url, name) {
+EvmeApp.prototype.launch = function evmeapp_launch(url, name, useAsyncPanZoom) {
     var features = {
       name: this.manifest.name.replace(/\s/g, '&nbsp;'),
       icon: this.manifest.icons['60'],
-      remote: true
+      remote: true,
+      useAsyncPanZoom: useAsyncPanZoom
     };
 
     if (!GridManager.getIconForBookmark(this.origin)) {

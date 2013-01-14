@@ -1,12 +1,13 @@
-#header {
+#evmeContainer #header {
     position: relative;
     z-index: 50;
     min-height: 8rem;
 }
-#evmeContainer:not(.empty-query) #header, #evmeContainer.keyboard-visible #header {
+#evmeContainer:not(.empty-query) #header,
+#evmeContainer.keyboard-visible #header {
     background: rgba(0, 0, 0, .3);
 }
-#search-header {
+#evmeContainer #search-header {
     position: absolute;
     top: 0;
     left: .6rem;
@@ -15,7 +16,7 @@
     z-index: 51;
     padding-top: .9rem;
 }
-    #search-rapper {
+    #evmeContainer #search-rapper {
         position: absolute;
         top: .9rem;
         left: 0;
@@ -25,22 +26,24 @@
         height: 2.8rem;
         line-height: 3rem;
     }
-    .empty-query:not(.keyboard-visible) #search-rapper {
-        -moz-transform: translate3d(0, 2.3rem, 0);
+    #evmeContainer.empty-query:not(.keyboard-visible) #search-rapper {
+        -moz-transform: translate3d(0, 23px, 0);
         height: 3.6rem;
         line-height: 3.6rem;
         left: .5rem;
         right: .5rem;
     }
-    .empty-query:not(.keyboard-visible) #search-q {
+    #evmeContainer.empty-query:not(.keyboard-visible) #search-q {
         height: 3.6rem;
         line-height: 3.6rem;
     }
-    .empty-query:not(.keyboard-visible) #search-q-bg {
+    #evmeContainer.empty-query:not(.keyboard-visible) #search-q-bg {
         background-position: 98% 1rem;
     }
     
-    #search-q, #search-q-bg, #search-selection {
+    #evmeContainer #search-q,
+    #evmeContainer #search-q-bg,
+    #evmeContainer #search-selection {
         position: relative;
         font-size: 1.5rem;
         vertical-align: middle;
@@ -49,14 +52,14 @@
         height: 100%;
         -moz-box-sizing: border-box;
     }
-    #search-header fieldset {
+    #evmeContainer #search-header fieldset {
         height: 100%;
         line-height: inherit;
         background: none;
 		border-radius: 0;
 		border: none;
     }
-    #search-q {
+    #evmeContainer #search-q {
         border: none;
         z-index: 10;
         padding: .2rem 1.8rem .4rem 0;
@@ -66,7 +69,7 @@
         display: inline;
         background: transparent;
     }
-    #search-q-bg {
+    #evmeContainer #search-q-bg {
         border-radius: 2px;
         box-shadow: 1px 1px 0 0 #ccc inset, 0 0 0 1px rgba(0, 0, 0, .3);
         background: #fff;
@@ -79,14 +82,14 @@
         background-repeat: no-repeat;
         background-position: 98% .7rem;
     }
-    .clear-visible #search-q-bg {
+    #evmeContainer .clear-visible #search-q-bg {
         background-image: none;
     }
-    #search-q:focus {
+    #evmeContainer #search-q:focus {
         outline: none;
     }
         
-    #button-clear {
+    #evmeContainer #button-clear {
         position: absolute;
         top: 1.4rem;
         right: .4rem;
@@ -100,10 +103,10 @@
         overflow: hidden;
         display: none;
     }
-    .clear-visible #button-clear {
+    #evmeContainer .clear-visible #button-clear {
         display: block;
     }
-        .clear-visible #button-clear:before {
+        #evmeContainer .clear-visible #button-clear:before {
             content: "";
             position: absolute;
             top: -1.5rem;
@@ -112,7 +115,7 @@
             bottom: -.8rem;
         }
     
-    #default-text {
+    #evmeContainer #default-text {
         position: absolute;
         top: 0;
         bottom: 0;
@@ -121,11 +124,11 @@
         text-transform: none;
         display: none;
     }
-    .empty-query #default-text {
+    #evmeContainer.empty-query #default-text {
         display: block;
     }
     
-#homepage-search-text {
+#evmeContainer #homepage-search-text {
     position: absolute;
     top: 8.8rem;
     left: 1.6rem;
@@ -139,7 +142,7 @@
     -moz-transition: all .2s linear;
     transition: all .2s linear;
 }
-#homepage-search-text:before {
+#evmeContainer #homepage-search-text:before {
     content: "";
     position: absolute;
     top: -2rem;
@@ -148,11 +151,11 @@
     bottom: -2rem;
 }
 
-.screen-homepage #homepage-search-text {
+#evmeContainer.screen-homepage #homepage-search-text {
     display: block;
 }
 
-.loading-app #search-header  {
+#evmeContainer.loading-app #search-header  {
     -moz-transition: all .2s linear;
     transition: all .2s linear;
     opacity: 0 !important;
