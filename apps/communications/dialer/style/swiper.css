@@ -22,6 +22,7 @@
   background-image: url("images/hangup_icon.png");
   background-position: center;
   background-repeat: no-repeat;
+  background-size: 4.1rem;
   margin-left: 4.2rem;
   margin-right: auto;
   transition: opacity 0.5s ease;
@@ -33,6 +34,7 @@
 
 #swiper-area-hangup:active > div {
   background-image: url("images/hangup_icon_pressed.png");
+  background-size: 4.1rem;
   background-color: #F80000;
   background-position: center;
   background-repeat: no-repeat;
@@ -78,6 +80,7 @@
 /* swiper-area-pickup */
 #swiper-area-pickup > div {
   background-image: url("images/pickup_icon.png");
+  background-size: 3.2rem;
   background-position: center;
   background-repeat: no-repeat;
   margin-right: 4.2rem;
@@ -91,6 +94,7 @@
 
 #swiper-area-pickup:active > div {
   background-image: url("images/pickup_icon_pressed.png");
+  background-size: 3.2rem;
   background-color: #82C82D;
   background-position: center;
   background-repeat: no-repeat;
@@ -105,6 +109,7 @@
   opacity: 1;
   position: absolute;
   background-image: url('images/handle.png');
+  background-size: 2rem;
   background-repeat: no-repeat;
   background-position: center;
   border-top: 1px solid transparent;
