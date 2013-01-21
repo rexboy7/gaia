@@ -238,7 +238,6 @@ html, body {
 
 #overlay-title {
   font-weight: normal;
-  text-transform:capitalize;
   font-size: 1.9rem;
   color: #fff;
   margin: 0 .5rem -1rem .5rem;

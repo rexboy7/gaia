@@ -392,7 +392,6 @@ a#frequency-op-seekup:active {
 #antenna-warning-header {
   padding: 1rem 3rem 1rem 3rem;
   font-weight: normal;
-  text-transform:capitalize;
   font-size: 1.9rem;
   color: #fff;
   margin-top: -2.5rem;

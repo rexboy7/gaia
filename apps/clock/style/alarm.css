@@ -430,6 +430,10 @@ input.right {
   height: 2.8rem;
   color: black;
 }
+
+input.right:-moz-placeholder {
+  color: gray;
+}
 /* ----------- Input Error ---------- */
 input ~ * {
   color:#E00;
@@ -526,7 +530,6 @@ li img {
 
 .alarmList-detail .repeat {
   font: 1.4rem 'MozTT', sans-serif;
-  text-transform: capitalize;
   text-overflow: ellipsis;
   position: absolute;
   overflow: hidden;
