@@ -216,6 +216,9 @@
     <!-- z-indexes of all the overlays in the system -->
     <link rel="stylesheet" type="text/css" href="style/zindex.css">
 
+    <!-- Resolution -->
+    <link rel="stylesheet" type="text/css" href="shared/style/resolution.css"/>
+
     <style>
       /* initlogo style is here to prevent flashing */
       #initlogo {
@@ -259,11 +262,15 @@
           data-level="100" charging hidden></div>
         <div id="statusbar-wifi" class="sb-icon sb-icon-wifi"
           data-level="4" hidden></div>
+        <div id="statusbar-data-signal" class="sb-icon sb-icon-signal"
+          data-level="4" hidden></div>
         <div id="statusbar-data" class="sb-icon sb-icon-data"
           data-type="" hidden></div>
         <div id="statusbar-flight-mode" class="sb-icon sb-icon-flight-mode" hidden></div>
         <div id="statusbar-signal" class="sb-icon sb-icon-signal"
           data-level="5" hidden></div>
+        <div id="statusbar-signal-type" class="sb-icon sb-icon-signal-type"
+          data-type="" hidden></div>
         <div id="statusbar-headphones" class="sb-icon sb-icon-headphones" hidden></div>
 
         <!-- Permissions -->

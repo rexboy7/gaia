@@ -1,6 +1,5 @@
 html, body {
   font-family: 'MozTT', sans-serif;
-  font-size: 10px;
 }
 
 #update-manager-container {
@@ -14,10 +13,11 @@ html, body {
 #update-manager-container > .activity {
   display: none;
   float: left;
-  width: 32px;
-  height: 30px;
-  margin: 14px 10px;
+  width: 3.2rem;
+  height: 3rem;
+  margin: 1.4rem 1rem;
   background-image: url(images/loader.png);
+  background-size: 3.2rem;
   background-position: center center;
   background-repeat: no-repeat;
   animation: 0.9s fn-rotate infinite linear;
@@ -40,9 +40,9 @@ html, body {
 #update-manager-container > .icon {
   float: left;
   display: block;
-  width: 24px;
-  height: 24px;
-  margin: 18px 10px;
+  width: 2.4rem;
+  height: 2.4rem;
+  margin: 1.8rem 1rem;
 }
 
 #update-manager-container > .icon,
@@ -64,9 +64,9 @@ html, body {
 
 #update-manager-toaster > .message {
   position: absolute;
-  left: 50px;
-  top: 10px;
-  width: -moz-calc(100% - 55px);
+  left: 5rem;
+  top: 1rem;
+  width: -moz-calc(100% - 5.5rem);
   color: #52b8cc;
   font-size: 1.5rem;
   font-weight: 500;
@@ -74,8 +74,8 @@ html, body {
 }
 
 #update-manager-container > .message {
-  margin: 10px 0 0 50px;
-  width: -moz-calc(100% - 55px);
+  margin: 1rem 0 0 5rem;
+  width: -moz-calc(100% - 5.5rem);
   font-size: 1.5rem;
   font-weight: 500;
   line-height: 1.9rem;
@@ -106,7 +106,7 @@ html, body {
   background-repeat: repeat-x;
   -moz-box-sizing: border-box;
   border-bottom: 1px #2c2c2c solid;
-  -moz-transform: translateY(-50px);
+  -moz-transform: translateY(-5rem);
   -moz-transition: -moz-transform .3s ease-in-out;
 }
 

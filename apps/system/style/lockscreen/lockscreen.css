@@ -17,8 +17,8 @@
 }
 
 #screen.active-statusbar > #lockscreen {
-  top: 40px;
-  height: calc(100% - 40px);
+  top: 4rem;
+  height: calc(100% - 4rem);
 }
 
 #screen:not(.locked) > #lockscreen,
@@ -332,12 +332,14 @@ button::-moz-focus-inner {
 
 #lockscreen-area-unlock > div {
   background-image: url('./images/icon-unlock.png');
+  background-size: 1.8rem;
   background-position: center;
   background-repeat: no-repeat;
 }
 
 #lockscreen-area-camera > div {
   background-image: url('./images/icon-camera.png');
+  background-size: 1.8rem;
   background-position: center;
   background-repeat: no-repeat;
 }

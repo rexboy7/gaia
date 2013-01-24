@@ -11,8 +11,8 @@
 #authentication-dialog input,
 #modal-dialog input {
   border-radius: 2px 2px 2px 2px;
-  height: 40px;
-  font-size: 20px;
+  height: 4rem;
+  font-size: 2rem;
   width: 100%;
   color: white;
   background: none;
@@ -51,7 +51,7 @@
 
 #modal-dialog-sad-face {
   float: left;
-  font-size: 72px;
+  font-size: 7.2rem;
   margin-right: 2px;
 }
 

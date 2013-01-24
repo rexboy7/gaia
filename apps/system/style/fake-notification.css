@@ -1,6 +1,6 @@
 .fake-notification {
   position: relative;
-  height: 60px;
+  height: 6rem;
 
   background-color: rgba(0, 0, 0, 0.5);
   border-top: 1px black solid;

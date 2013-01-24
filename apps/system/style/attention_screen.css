@@ -14,11 +14,11 @@
 }
 
 #screen.active-statusbar #attention-screen {
-  transform: translateY(calc(-100% + 40px));
+  transform: translateY(calc(-100% + 4rem));
 }
 
 #screen.active-statusbar #attention-screen.status-mode {
-  height: 40px;
+  height: 4rem;
   transform: translateY(0px);
   transition: none;
 }
@@ -31,9 +31,9 @@
 #attention-screen > iframe {
   border: 0;
   width: 100%;
-  /* we have the 20px status bar on top */
-  height: calc(100% - 20px);
-  margin-top: 20px;
+  /* we have the 2rem status bar on top */
+  height: calc(100% - 2rem);
+  margin-top: 2rem;
 
   background-color: transparent;
 
@@ -47,7 +47,7 @@
   bottom: 0px;
   width: 100%;
   /* Status bar height * 2 */
-  height: 40px;
+  height: 4rem;
   z-index: 2;
   display: none;
 }

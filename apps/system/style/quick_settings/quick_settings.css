@@ -6,11 +6,11 @@ html, body {
 #quick-settings {
   display: block;
   width: 100%;
-  height: 60px;
+  height: 6rem;
   padding: 0;
 
   background-image: url(images/background.png);
-  background-size: 100% 60px;
+  background-size: 100% 6rem;
 
   border-top:1px black solid;
 }
@@ -19,8 +19,8 @@ html, body {
   display: block;
   float: left;
   width: -moz-calc(20% - 2px);
-  height: 30px;
-  margin: 15px 0;
+  height: 3rem;
+  margin: 1.5rem 0;
   padding: 0;
   color: #fff;
   text-align: center;
@@ -51,6 +51,7 @@ html, body {
 #quick-settings > a {
   background-position: center;
   background-repeat: no-repeat;
+  background-size: 2.5rem 2.5rem;
 }
 #quick-settings > *[data-initializing] {
   opacity: 0.5;
