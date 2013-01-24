@@ -16,7 +16,7 @@ ul {
 }
 li {
   margin: 0;
-  height: 120px;
+  height: 12rem;
   width: 100%;
   overflow: hidden;
   position: relative;
@@ -31,8 +31,8 @@ li {
   background: #21a6b9;
 }
 li img {
-  height: 120px;
-  width: 210px;
+  height: 12rem;
+  width: 21rem;
   overflow: hidden;
   position: absolute;
   left: 0;
@@ -42,7 +42,7 @@ li img {
 li p {
   display: block;
   width: auto;
-  margin: 20px 10px 0 220px;
+  margin: 2rem 1rem 0 22rem;
   padding: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -53,7 +53,7 @@ li p.name {
   font-size: 1.4rem;
 }
 li p.time {
-  margin-top: 4px;
+  margin-top: .4rem;
   font-size: 1.4rem;
   color: #95a3a6;
 }
@@ -62,9 +62,9 @@ li:last-child hr {
 }
 li hr {
   position: absolute;
-  bottom: -5px;
-  left: 210px;
-  right: 20px;
+  bottom: -.5rem;
+  left: 21rem;
+  right: 2rem;
   height: 0px;
   border: 0;
   border-bottom: 1px solid rgba(150, 150, 150, 0.1);
@@ -80,6 +80,7 @@ li hr {
 
 #delete-video-button {
   background: transparent url(images/delete.png) no-repeat center center;
+  background-size: 3rem;
 }
 
 #delete-video-button:active {
@@ -142,18 +143,18 @@ li hr {
   /* Using font-size: 0; we avoid the unwanted visual space (about 3px)
   created by white-spaces and break lines in the code betewen inline-block elements */
   color: #fff;
-  padding: 110px 25px 0px 25px;
+  padding: 11rem 2.5rem 0 2.5rem;
 }
 
 #overlay-title {
   font-weight: normal;
   font-size: 1.9rem;
   color: #fff;
-  margin: 0 5px -10px 5px;
+  margin: 0 .5rem -1rem .5rem;
 }
 
 #overlay-text {
-  padding: 10px 5px 0 5px;
+  padding: 1rem .5rem 0 .5rem;
   border-top: 1px solid #686868;	
   font-weight: 300;
   font-size: 2.5rem;
@@ -165,7 +166,7 @@ body.hidden *[data-l10n-id] {
   visibility: hidden;
 }
 *[dir=rtl] li {
-  padding: 0 144px 0 20px;
+  padding: 0 14.4rem 0 2rem;
 }
 *[dir=rtl] li img {
   left: auto;
@@ -209,8 +210,9 @@ header h1 {
 }
 
 #throbber > div {
-  height: 24px;
+  height: 2.4rem;
   background-image: url(images/progress.png);
+  background-size: auto 2.4rem;
 }
 
 #throbber.throb > div {
@@ -222,7 +224,7 @@ header h1 {
     transform: translateY(0px);
   }
   to {
-    transform: translateY(-21px);
+    transform: translateY(-2.1rem);
   }
 }
 
@@ -268,6 +270,7 @@ header .icon:after {
 
 #play {
   background: url(images/button_bg_normal.png) no-repeat;
+  background-size: 8rem;
   position: absolute;
   border: none;
   padding: 0;
@@ -279,6 +282,7 @@ header .icon:after {
 
 #play:active {
   background: url(images/button_bg_pressed.png) no-repeat;
+  background-size: 8rem;
 }
 
 #play:after {
@@ -293,9 +297,11 @@ header .icon:after {
 /* play/pause button */
 #play:after {
   background-image: url("images/pause.png");
+  background-size: 3rem;
 }
 #play.paused:after {
   background-image: url("images/play.png");
+  background-size: 3rem;
 }
 
 /* time slider */
@@ -336,10 +342,10 @@ header .icon:after {
 }
 
 .progress {
-  height: 4px;
+  height: .4rem;
   width: 0%;
   top: 50%;
-  margin-top: -2px;
+  margin-top: -.2rem;
 }
 
 #elapsedTime {
