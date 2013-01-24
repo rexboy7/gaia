@@ -808,8 +808,8 @@ var ThreadUI = {
     var input = this.input;
     var inputCss = window.getComputedStyle(input, null);
     var inputMaxHeight = parseInt(inputCss.getPropertyValue('max-height'), 10);
-    //Constant difference of height beteween button and growing input
-    var deviationHeight = 30;
+    //Constant difference of height beteween button and growing input (in rem)
+    var deviationHeight = 3;
     if (input.scrollHeight > inputMaxHeight) {
       return;
     }
@@ -826,8 +826,8 @@ var ThreadUI = {
 
     // Add 0.7 rem that are equal to the message box vertical padding
     var bottomToolbarHeight = (newHeight / Utils.getFontSize() + 0.7) + 'rem';
-    var sendButtonTranslate = (input.offsetHeight - deviationHeight) /
-      Utils.getFontSize() + 'rem';
+    var sendButtonTranslate = (input.offsetHeight /
+      Utils.getFontSize() - deviationHeight) + 'rem';
     var bottomToolbar =
         document.querySelector('#new-sms-form');
 
