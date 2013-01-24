@@ -39,7 +39,7 @@
 }());
 
 var NotificationScreen = {
-  TOASTER_TIMEOUT: 2000,
+  TOASTER_TIMEOUT: 5000,
   TRANSITION_SPEED: 1.8,
   TRANSITION_FRACTION: 0.30,
 
@@ -252,7 +252,7 @@ var NotificationScreen = {
 
     this.toasterDetail.textContent = detail.text;
 
-    this.container.appendChild(notificationNode);
+    this.container.insertBefore(notificationNode, this.container.firstElementChild);
     new GestureDetector(notificationNode).startDetecting();
 
     // We turn the screen on if needed in order to let

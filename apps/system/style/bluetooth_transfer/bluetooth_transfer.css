@@ -15,12 +15,14 @@
 
 #bluetooth-transfer-status .bluetooth-transfer-progress {
   display: block;
+  width: auto;
+  margin-right: 1.5rem;
 }
 
 #bluetooth-transfer-status progress {
   position: absolute;
   top: 3.5rem;
-  left: 6rem;
+  left: 5rem;
   width: -moz-calc(100% - 10.5rem);
   height: 1rem;
   padding: 0;
@@ -38,19 +40,6 @@
   background-color: #52b6cc;
 }
 
-#bluetooth-transfer-status .icon {
-  position: absolute;
-  top: 1.8rem;
-  left: 1.8rem;
-  width: 2.4rem;
-  height: 2.4rem;
-  margin: 0;
-
-  background-image: url('images/transfer.png');
-  background-position: center center;
-  background-repeat: no-repeat;
-}
-
 #bluetooth-transfer-status.applying .icon {
   background-image: url('images/spinner.png');
 
@@ -62,4 +51,3 @@
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
-

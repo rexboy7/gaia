@@ -4,7 +4,7 @@
 
 #appPermissions ul li img {
   float: left;
-  margin-top: calc(3rem - 15px);
+  margin-top: calc(3rem - 1.5rem);
   margin-right: 1.4rem;
   width: 3rem;
   height: 3rem;
@@ -21,11 +21,11 @@
 }
 
 #permissionsListHeader + ul li select[value='allow'] {
-  background: #22aa22;
+  background-color: #22aa22;
 }
 
 #permissionsListHeader + ul li select[value='deny'] {
-  background: #da4e49;
+  background-color: #da4e49;
 }
 
 #uninstall-app {
