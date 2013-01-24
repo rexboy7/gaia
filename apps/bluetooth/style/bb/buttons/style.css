@@ -19,6 +19,7 @@ body[role="application"] a[role="button"] {
 	white-space: nowrap;
 	overflow: hidden;
 	background: #fafafa url(images/ui/default.png) repeat-x left bottom;
+        background-size: auto 3.8rem;
 	border: 1px solid #9f9f9f;
 	border-radius: 0.3rem;
 	font-size: 1.6rem;
@@ -118,28 +119,33 @@ body[role="application"] a[role="button"] span.end {
 body[role="application"] button span.goto,
 body[role="application"] a[role="button"] span.goto {
 	background-image: url(images/icons/goto.png);
+        background-size: .9rem;
 }
 
 body[role="application"] button span.launch,
 body[role="application"] a[role="button"] span.launch {
 	background-image: url(images/icons/launch.png);
+        background-size: 1.1rem;
 	background-position: 1rem bottom;
 }
 
 body[role="application"] button span.favourite,
 body[role="application"] a[role="button"] span.favourite {
 	background-image: url(images/icons/favourite.png);
+        background-size: 2.3rem;
 }
 
 body[role="application"] button span.call,
 body[role="application"] a[role="button"] span.call {
 	background-image: url(images/icons/call.png);
+        background-size: 2.1rem;
 	background-position: center bottom;
 }
 
 body[role="application"] button span.tick,
 body[role="application"] a[role="button"] span.tick {
 	background-image: url(images/icons/tick.png);
+        background-size: 1.5rem;
 }
 
 
