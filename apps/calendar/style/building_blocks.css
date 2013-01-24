@@ -4,11 +4,12 @@
 */
 section[role="region"] > header:first-child {
   position: relative;
-  z-index: 10;
+  z-index: 255;
   padding: 0;
   height: 5rem;
   color: #fff;
   background: url("building_blocks/headers/images/ui/header.png") repeat-x 0 0;
+  background-size: auto 100%;
   border: none;
 }
 
@@ -75,6 +76,7 @@ section[role="region"] > header:first-child form button[type="reset"] {
   display: none;
   border: none;
   background: url("building_blocks/headers/images/icons/clear.png") no-repeat center center;
+  background-size: 1.7rem;
 }
 
 section[role="region"] > header:first-child input[type=text]:valid + button[type="reset"] {
@@ -167,6 +169,7 @@ section[role="region"] > header:first-child .icon {
   overflow: hidden;
   position: relative;
   height: 4.9rem;
+  background-size: 3rem;
 }
 
 section[role="region"] > header:first-child .icon.icon-add {
@@ -220,6 +223,7 @@ section[role="region"] > header:first-child > a .icon:after {
   width: 2rem;
   height: 4.9rem;
   background: #9d3d26 url("building_blocks/headers/images/ui/negative.png") repeat-x 0 0;
+  background-size: auto 100%;
 }
 
 section[role="region"] > header > a .icon.icon-menu,
@@ -252,6 +256,7 @@ section[role="region"] > header h2 {
 section[role="region"] > header + form.search {
   height: 3rem;
   background: url("building_blocks/headers/images/ui/search.png") repeat-x left bottom;
+  backround-size: auto 2.4rem;
   padding: 0.5rem 2.4rem 0 2.4rem;
 }
 
@@ -276,6 +281,7 @@ section[role="region"] > header + form.search input[type="text"]:-moz-placeholde
 section[role="region"].skin-organic > header:first-child,
 .skin-organic section[role="region"] > header:first-child {
   background: url("building_blocks/headers/images/ui/organic/header.png") repeat-x 0 0,  url("building_blocks/headers/images/ui/organic/pattern.png") repeat 0 0;
+  background-size: auto 5rem, auto;
 }
 
 section[role="region"].skin-organic > header:first-child:after,
@@ -288,6 +294,7 @@ section[role="region"].skin-organic > header:first-child > a .icon:after,
 section[role="region"].skin-organic > header:first-child > button .icon:after,
 .skin-organic section[role="region"]> header > button .icon:after {
   background: url("building_blocks/headers/images/ui/organic/negative.png") repeat-x 0 0;
+  background-size: auto 4.9rem;
 }
 
 section[role="region"].skin-organic > header:first-child menu[type="toolbar"] a:last-child,
@@ -301,6 +308,7 @@ section[role="region"].skin-organic > header,
 .skin-organic section[role="region"] > header {
   background: #7f7f7f url("building_blocks/headers/images/ui/organic/subheader.png") repeat-x left bottom;
   color: #fff;
+  background-size: 3.4rem;
 }
 /* ----------------------------------
  * INPUT AREAS
@@ -341,6 +349,7 @@ section[role="region"].skin-organic > header,
    right: 0.5rem;
    top: 50%;
    background: url("building_blocks/input_areas/images/icons/clear.png") no-repeat left top;
+   background-size: 1.7rem;
    opacity: 0;
    pointer-events: none;
  }
@@ -454,6 +463,7 @@ body[role="application"] [role="toolbar"] li button:active {
 
 body[role="application"] [role="toolbar"] li button.update {
   background-image: url("building_blocks/toolbars/images/icons/update.png");
+  background-size: 3.2rem;
 }
 body[role="application"] > nav {
   position: absolute;
@@ -472,6 +482,7 @@ body[role="application"] > nav > header {
   height: 5rem;
   color: #fff;
   background: url("building_blocks/drawer/images/ui/header.png") repeat-x left top;
+  background-size: auto 5rem;
 }
 
 body[role="application"] > nav > header:after {
@@ -556,22 +567,27 @@ body[role="application"] > nav > header .icon {
 
 body[role="application"] > nav > header .icon.icon-add {
   background-image: url("building_blocks/drawer/images/icons/add.png");
+  background-size: 3rem;
 }
 
 body[role="application"] > nav > header .icon.icon-edit {
   background-image: url("building_blocks/drawer/images/icons/edit.png");
+  background-size: 3rem;
 }
 
 body[role="application"] > nav > header .icon.icon-close {
   background-image: url("building_blocks/drawer/images/icons/close.png");
+  background-size: 3rem;
 }
 
 body[role="application"] > nav > header .icon.icon-menu {
   background-image: url("building_blocks/drawer/images/icons/menu.png");
+  background-size: 3rem;
 }
 
 body[role="application"] > nav > header .icon.icon-user {
   background-image: url("building_blocks/drawer/images/icons/user.png");
+  background-size: 3rem;
 }
 
 body[role="application"] > nav:after {
