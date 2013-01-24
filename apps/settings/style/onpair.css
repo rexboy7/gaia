@@ -46,5 +46,6 @@
 
 .bluetooth-default {
   background-image: -moz-image-rect(url(images/icons_sprite.png), 0, 150, 30, 120);
+  background-size: 3rem;
 }
 
