@@ -110,6 +110,7 @@ ul[role="tablist"][data-type="filter"] > [role="tab"].selected > a {
   height: 20rem;
   margin: 0 auto;
   background-image: url('images/ComLog_200x200_clock.png');
+  background-size: 20rem;
 }
 
 .icon-container {
@@ -120,14 +121,17 @@ ul[role="tablist"][data-type="filter"] > [role="tab"].selected > a {
 
 [data-type="list"] aside.icon.icon-incoming {
   background-image: url('images/CallLog_30x30_incoming.png');
+  background-size: 3rem;
 }
 
 [data-type="list"] aside.icon.icon-outgoing {
   background-image: url('images/CallLog_30x30_outgoing.png');
+  background-size: 3rem;
 }
 
 [data-type="list"] aside.icon.icon-missed {
   background-image: url('images/CallLog_30x30_missed_grey.png');
+  background-size: 3rem;
 }
 
 .log-item * {
@@ -170,6 +174,7 @@ ul[role="tablist"][data-type="filter"] > [role="tab"].selected > a {
 
 [data-type="list"] .highlighted aside.icon.icon-missed {
   background-image: url('images/CallLog_30x30_missed.png');
+  background-size: 3rem;
 }
 
 .log-item.highlighted[data-type='incoming'] .call-time {
@@ -221,6 +226,7 @@ ul[role="tablist"][data-type="filter"] > [role="tab"].selected > a {
 */
 #no-result-container {
   background-image: url('images/ComLog_200x200_clock.png');
+  background-size: 20rem;
   background-repeat:no-repeat;
   background-attachment:fixed;
   background-position:center;
@@ -235,8 +241,8 @@ ul[role="tablist"][data-type="filter"] > [role="tab"].selected > a {
   top: 50%;
   border-top: .1rem solid rgba(96,96,96,.5);
   padding: 2rem 0.5rem;
-  width: 270px;
-  margin: -80px auto;
+  width: 27rem;
+  margin: -8rem auto;
   color: #606060;
   font-weight: 300;
   font-size: -moz-calc(10 * 0.226rem);

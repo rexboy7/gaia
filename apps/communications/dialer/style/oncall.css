@@ -239,6 +239,7 @@ body.hidden *[data-l10n-id] {
 #mute > span {
   display: inline-block;
   background: url('images/ActionIcon_40x40_mute.png');
+  background-size: 4rem;
   width: 4rem;
   height: 4rem;
 }
@@ -262,6 +263,7 @@ button[disabled] .icon-keypad-visibility {
 #speaker span {
   display:inline-block;
   background:url('images/ActionIcon_40x40_speaker.png') ;
+  background-size: 4rem;
   width:4rem;
   height:4rem;
   opacity: 1.0;
@@ -518,6 +520,7 @@ button[disabled] .icon-keypad-visibility {
   margin-top: 3.5rem;
   background-color: #1c1818;
   background-image:  url("images/incoming-call.png");
+  background-size: 1.6rem;
   background-position: top 2rem right 1.5rem;
   background-repeat: no-repeat;
 }
@@ -532,7 +535,7 @@ button[disabled] .icon-keypad-visibility {
   border-radius:.3rem;
   display: block;
   text-align: center;
-  font-size: 1.5em;
+  font-size: 2.4rem;
   line-height: 4rem;
   font-weight: 700;
 }
@@ -547,6 +550,7 @@ button[disabled] .icon-keypad-visibility {
 #incoming-answer > span {
   background: url('images/ActionIcon_40x40_pause.png'),
               -moz-linear-gradient(top, #00b3d9 1%, #00d3ff 100%);
+  background-size: 4rem, auto;
   background-position: center, center;
   background-repeat: no-repeat, repeat;
   opacity: 1.0;
@@ -556,6 +560,7 @@ button[disabled] .icon-keypad-visibility {
 #incoming-end > span {
   background: url('images/ActionIcon_40x40_hangup.png'),
               -moz-linear-gradient(top, #ff0000 1%, #ce0000 100%);
+  background-size: 4rem, auto;
   background-position: center, center;
   background-repeat: no-repeat, repeat;
   opacity: 1.0;
@@ -564,7 +569,7 @@ button[disabled] .icon-keypad-visibility {
 
 #incoming-info > span {
   display: block;
-  font-size: 1.8em;
+  font-size: 2.8rem;
   font-weight: 300;
   line-height: 6rem;
   margin: 0 1.5rem;
