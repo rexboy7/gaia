@@ -37,6 +37,7 @@
   	right: 0.5rem;
   	top: 50%;
   	background: url(images/icons/clear.png) no-repeat left top;
+        background-size: 1.7rem;
   	opacity: 0;
   	pointer-events: none;
  }

@@ -7,7 +7,7 @@
 
 body[role="application"] [role="dialog"] .calendar {
 	font-size: 2.2rem;
-	line-height: 1em;
+	line-height: 1.6rem;
 	margin: 0 -2.1rem 0 -2.5rem;
 	position: relative;
 }
@@ -20,6 +20,7 @@ body[role="application"] [role="dialog"] .calendar {
 		top: 7.9rem;
 		bottom: 0;
 		background: url(images/ui/shadow.png) repeat-y left top, url(images/ui/shadow-invert.png) repeat-y right top;
+                background-size: auto 1rem, auto 1rem;
 		pointer-events: none;
 	}
 
@@ -42,12 +43,14 @@ body[role="application"] [role="dialog"] .calendar {
 	body[role="application"] [role="dialog"] .calendar > a[role="button"]:first-of-type {
 		left: 0;
 		background-image: url(images/icons/prev.png);
+                background-size: 1.1rem;
 	}
 
 	body[role="application"] [role="dialog"] .calendar > button:last-of-type,
 	body[role="application"] [role="dialog"] .calendar > a[role="button"]:last-of-type {
 		right: 0;
 		background-image: url(images/icons/next.png);
+                background-size: 1.1rem;
 	}
 	
 	body[role="application"] [role="dialog"] .calendar table {
@@ -59,14 +62,14 @@ body[role="application"] [role="dialog"] .calendar {
 		body[role="application"] [role="dialog"] .calendar table caption {
 			font-weight: 200;
 			font-size: 2.2rem;
-			line-height: 1em;
+			line-height: 1.6rem;
 			text-align: center;
 			margin: 1.5rem 0 2rem;
 		}
 
 		body[role="application"] [role="dialog"] .calendar thead th {
 			font-size: 1.1rem;
-			line-height: 1em;
+			line-height: 1.6rem;
 			font-weight: normal;
 			text-transform: uppercase;
 			background: #333;

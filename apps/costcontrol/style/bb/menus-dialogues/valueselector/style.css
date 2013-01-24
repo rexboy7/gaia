@@ -18,6 +18,7 @@ body[role="application"] [role="dialog"] ol {
 body[role="application"] [role="dialog"] [data-mode="scroll"] ul,
 body[role="application"] [role="dialog"] [data-mode="scroll"] ol {
 	background: url(images/ui/shadow.png) repeat-x left top, url(images/ui/shadow-invert.png) repeat-x left bottom;
+        background-size: auto 1rem, auto 1rem;
 	padding: 0 2.8rem 0 4rem;
 	/* 4rem - 1.2rem = 2.8rem (1.2rem scrollbar width) */
 }
@@ -62,6 +63,7 @@ body[role="application"] [role="dialog"] [data-mode="scroll"] h3 {
 		padding-right: 0.5rem;
 		color: #00abcd;
 		background: url(images/icons/checked.png) content-box right center no-repeat;
+                background-size: 1.9rem;
 	}
 	
 	body[role="application"] [role="dialog"] li a,
