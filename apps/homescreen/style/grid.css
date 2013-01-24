@@ -61,6 +61,12 @@
   pointer-events: none; /* NO touchable area */
 }
 
+/* Container -> icon image */
+.apps ol > li > div > img {
+  width: 6.4rem;
+  height: 6.4rem;
+}
+
 /* Handling the case where the status bar is double size */
 /* XXX remove when the homescreen layout gets more dynamic */
 @media screen and (max-height: 440px) {
@@ -117,7 +123,7 @@ li:active > div > img {
 
 /* Alternative icons when an app is being installed */
 .loading:after {
-  margin: 8px;
+  margin: .8rem;
   content: "";
   position: absolute;
   left: 0px;

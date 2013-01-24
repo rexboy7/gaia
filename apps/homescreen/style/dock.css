@@ -1,6 +1,6 @@
 #footer {
   width: 100%;
-  height: 75px;
+  height: 7.5rem;
   position: fixed;
   bottom: 0;
   z-index: 10000;
@@ -54,4 +54,9 @@
 
 #footer li > div > *:not(img) {
   display: none;
+}
+
+#footer li > div > img {
+  width: 6.4rem;
+  height: 6.4rem;
 }
