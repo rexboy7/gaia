@@ -208,9 +208,8 @@ const GridManager = (function() {
 
   function onTouchEnd(deltaX, evt) {
     var page = currentPage;
-    /* Bigger than panning threshold or fast gesture */
-    if (Math.abs(deltaX) > panningThreshold ||
-        touchEndTimestamp - touchStartTimestamp < kPageTransitionDuration) {
+    /* Bigger than panning threshold */
+    if (Math.abs(deltaX) > panningThreshold) {
       var forward = dirCtrl.goesForward(deltaX);
       if (forward && currentPage < pages.length - 1) {
         page = page + 1;
