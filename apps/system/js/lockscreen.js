@@ -903,6 +903,8 @@ var LockScreen = {
       canvas.classList.add('lockscreen-wallpaper');
       canvas.width = images[0].width;
       canvas.height = images[0].height;
+      canvas.style.minWidth = "100%";
+      canvas.style.minHeight = "100%";
 
       var ctx = canvas.getContext('2d');
       ctx.drawImage(images[0], 0, 0);
