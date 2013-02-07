@@ -227,6 +227,12 @@ var KeypadManager = {
       document.getElementById('keypad-hidebar-hide-keypad-action');
   },
 
+  get suggestionBar() {
+    delete this.suggestionBar;
+    return this.suggestionBar =
+      document.getElementById('suggestion-bar');
+  },
+
   init: function kh_init(oncall) {
     this._onCall = !!oncall;
 
@@ -253,6 +259,9 @@ var KeypadManager = {
     this.keypad.addEventListener('mouseleave', keyHandler, true);
     this.deleteButton.addEventListener('mousedown', keyHandler);
     this.deleteButton.addEventListener('mouseup', keyHandler);
+
+    this.suggestionBar.addEventListener('click',
+                                        this.suggestionHandler.bind(this));
 
     // The keypad add contact bar is only included in the normal version of
     // the keypad.
@@ -290,6 +299,7 @@ var KeypadManager = {
     TonePlayer.init();
 
     this.render();
+    Recents.load();
   },
 
   moveCaretToEnd: function hk_util_moveCaretToEnd(el) {
@@ -338,7 +348,8 @@ var KeypadManager = {
   },
 
   makeCall: function hk_makeCall(event) {
-    event.stopPropagation();
+    if (event)
+      event.stopPropagation();
 
     if (this._phoneNumber != '') {
       CallHandler.call(KeypadManager._phoneNumber);
@@ -590,6 +601,22 @@ var KeypadManager = {
     }
   },
 
+  suggestionHandler: function kh_suggestionHandler(event) {
+    var typeTag = this.suggestionBar.querySelector('.tel-type');
+    var telTag = this.suggestionBar.querySelector('.tel');
+    var isAddContact = typeTag.classList.contains('add-contact');
+    if (isAddContact) {
+      this.addContact();
+    } else if (this.suggestionBar.dataset.isCallLog &&
+      event.target.className == 'avatar') {
+      this.updatePhoneNumber(telTag.textContent, 'begin', false);
+      this.addContact();
+    } else {
+      this.updatePhoneNumber(telTag.textContent, 'begin', false);
+      this.makeCall();
+    }
+  },
+
   updateAddContactStatus: function kh_updateAddContactStatus() {
     if (this._phoneNumber.length === 0)
       this.callBarAddContact.classList.add('disabled');
@@ -622,6 +649,7 @@ var KeypadManager = {
     }
 
     this.formatPhoneNumber(ellipsisSide, maxFontSize);
+    this.updateSuggestions();
   },
 
   restorePhoneNumber: function kh_restorePhoneNumber(ellipsisSide,
@@ -675,6 +703,85 @@ var KeypadManager = {
        }
      };
      request.onerror = function() {};
+  },
+
+  updateSuggestions: function kh_updateSuggestions() {
+    var self = this;
+    delete this.suggestionBar.dataset.isCallLog;
+    if (!this._phoneNumber) {
+      this._setSuggestionBar(null, null, null, null);
+
+      return;
+    }
+    ContactDataManager.getContactData(self._phoneNumber, function(contacts) {
+      if (!contacts || ! Array.isArray(contacts) || contacts.length < 1) {
+        self._updateSuggestionsByRecents();
+        return;
+      }
+
+      var contact = contacts[0];
+
+      // Update suggestions by contact API
+      var tel = contact.tel;
+      for (var i = 0; i < tel.length; i++) {
+        if (tel[i].value.contains(self._phoneNumber)) {
+          var photo = contact.photo ? contact.photo[0] : null;
+          var markedNumber = self._markMatched(tel[i].value, self._phoneNumber);
+          self._setSuggestionBar(tel[i].type, contact.name[0],
+            markedNumber, photo);
+          break;
+        }
+      }
+    });
+  },
+
+  _updateSuggestionsByRecents: function kh_updateSuggestionsByRecents() {
+    var self = this;
+    RecentsDBManager.init(function() {
+      RecentsDBManager.getBeginWith(self._phoneNumber, function(recentMatch) {
+        LazyL10n.get(function localized(_) {
+          if (!!recentMatch) {
+            var markedNumber = self._markMatched(recentMatch.number,
+              self._phoneNumber);
+            self._setSuggestionBar(null, _('callLog'), markedNumber, null);
+            self.suggestionBar.dataset.isCallLog = true;
+          }
+          else {
+              var addContactText = _('addToContacts', {
+                number: '<b>' + self_phoneNumber + '</b>'});
+              self._setSuggestionBar(null, addContactText, null, null);
+          }
+        });
+      });
+    });
+  },
+
+  // content setter of suggestion bar.
+  // if only "type" parameter is non-null, it sets suggestion bar to
+  // "add contact" style.
+  _setSuggestionBar: function kh_setSuggestionBar(name, type, tel, avatar) {
+    var typeTag = this.suggestionBar.querySelector('.tel-type');
+    var telTag = this.suggestionBar.querySelector('.tel');
+    var nameTag = this.suggestionBar.querySelector('.name');
+    var avatarTag = this.suggestionBar.querySelector('.avatar');
+
+
+    if (!name && !tel && type) {
+      typeTag.classList.add('add-contact');
+    } else {
+      typeTag.classList.remove('add-contact');
+    }
+
+    nameTag.textContent = name;
+    typeTag.innerHTML = type;
+    telTag.innerHTML = tel;
+
+    avatarTag.style.backgroundImage = avatar ?
+      'url(' + URL.createObjectURL(avatar) + ')' : null;
+  },
+
+  _markMatched: function kh_markMatched(str, substr) {
+    var regex = new RegExp(substr, 'g');
+    return str.replace(regex, '<span class="matched">' + substr + '</span>');
   }
 };
-
