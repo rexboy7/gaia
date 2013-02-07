@@ -13,9 +13,14 @@ var MockRecentsDBManager = {
     this.mCalledClose = true;
   },
 
+  getBeginWith: function(entry, cb) {
+    cb.call(this, this.mData);
+  },
+
   mCalledInit: false,
   mCalledAdd: null,
   mCalledClose: false,
+  mData: null,
   mTearDown: function tearDown() {
     this.mCalledAdd = null;
     this.mCalledInit = false;
