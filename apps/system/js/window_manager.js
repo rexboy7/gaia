@@ -99,13 +99,18 @@ var WindowManager = (function() {
   // Function to hide init starting logo
   function handleInitlogo(callback) {
     var initlogo = document.getElementById('initlogo');
-    initlogo.classList.add('hide');
-    initlogo.addEventListener('transitionend', function delInitlogo() {
-      initlogo.removeEventListener('transitionend', delInitlogo);
-      initlogo.parentNode.removeChild(initlogo);
-      if (callback) {
-        callback();
-      }
+    var oslogo = document.getElementById('oslogo');
+    oslogo.classList.remove('hide');
+    initlogo.addEventListener('transitionend', function showOSLogo() {
+      initlogo.removeEventListener('transitionend', showOSLogo);
+      initlogo.classList.add('hide');
+      initlogo.addEventListener('transitionend', function delInitLogo() {
+        initlogo.removeEventListener('transitionend', delInitLogo);
+        initlogo.parentNode.removeChild(initlogo);
+        if (callback) {
+          callback();
+        }
+      });
     });
   };
 
@@ -384,7 +389,7 @@ var WindowManager = (function() {
         openCallback = null;
 
         setOpenFrame(null);
-      }
+      };
 
       // If this is a cold launch let's wait for the app to load first
       var iframe = openFrame.firstChild;
@@ -484,7 +489,7 @@ var WindowManager = (function() {
       // element so that doesn't work either.)
       //
       // The "real" fix for this defect is tracked in bug 842102.
-      setTimeout(function () { iframe.setVisible(false); }, 50);
+      setTimeout(function() { iframe.setVisible(false); }, 50);
     }
 
     screenElement.classList.remove('fullscreen-app');
@@ -639,7 +644,7 @@ var WindowManager = (function() {
       }
 
       callback(req.result.screenshot, true);
-    }
+    };
     req.onerror = function(evt) {
       console.warn('Window Manager: get screenshot from database failed.');
       callback();
@@ -876,7 +881,8 @@ var WindowManager = (function() {
                   /* expectingSystemMessage */ false);
       runningApps[homescreen].iframe.dataset.start = Date.now();
       setAppSize(homescreen);
-      if (displayedApp != homescreen && 'setVsibile' in runningApps[homescreen].iframe)
+      if (displayedApp != homescreen &&
+        'setVsibile' in runningApps[homescreen].iframe)
         runningApps[homescreen].iframe.setVisible(false);
     } else if (reset) {
       runningApps[homescreen].iframe.src = homescreenURL;
@@ -909,7 +915,7 @@ var WindowManager = (function() {
 
         callback(app);
       }
-    }
+    };
   }
 
   function skipFTU() {
@@ -1030,7 +1036,8 @@ var WindowManager = (function() {
     if (closeFrame && 'setVisible' in closeFrame.firstChild)
       closeFrame.firstChild.setVisible(false);
 
-    if (!isFirstRunApplication && newApp == homescreen && !AttentionScreen.isFullyVisible()) {
+    if (!isFirstRunApplication && newApp == homescreen &&
+      !AttentionScreen.isFullyVisible()) {
       toggleHomescreen(true);
     }
 
@@ -1220,8 +1227,8 @@ var WindowManager = (function() {
   }
 
   function maybeSetFrameIsCritical(iframe, origin) {
-    if (origin.startsWith("app://communications.gaiamobile.org/dialer") ||
-        origin.startsWith("app://clock.gaiamobile.org")) {
+    if (origin.startsWith('app://communications.gaiamobile.org/dialer') ||
+        origin.startsWith('app://clock.gaiamobile.org')) {
       iframe.setAttribute('mozapptype', 'critical');
     }
   }
@@ -1642,7 +1649,8 @@ var WindowManager = (function() {
     if (!inlineActivityFrames.length)
       return;
 
-    var topFrame = inlineActivityFrames[inlineActivityFrames.length - 1].firstChild;
+    var topFrame = inlineActivityFrames[inlineActivityFrames.length - 1]
+      .firstChild;
     if ('setVisible' in topFrame) {
       topFrame.setVisible(visible);
     }

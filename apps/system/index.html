@@ -240,11 +240,23 @@
         z-index: 65536;
 
         opacity: 1;
-        transition: opacity 1s ease 3s;
+        transition: opacity 1s ease 1.5s;
         pointer-events: none;
       }
 
-      #initlogo.hide {
+      #oslogo {
+        position: absolute;
+        overflow: hidden;
+        width: 100%;
+        height: 100%;
+        background: #666 url('../style/wrapper/images/back.png') bottom right no-repeat;
+
+        opacity: 1;
+        transition: opacity 1s ease 1.5s;
+      }
+
+      #initlogo.hide,
+      #oslogo.hide {
         opacity: 0;
       }
     </style>
@@ -253,7 +265,9 @@
 
   <body role="application">
     <div id="screen" class="locked">
-      <div id="initlogo" data-z-index-level="initlogo"></div>
+      <div id="initlogo" data-z-index-level="initlogo">
+        <div id="oslogo" class="hide"></div>
+      </div>
 
       <div id="statusbar" data-z-index-level="statusbar">
         <!-- Carrier & date label -->
