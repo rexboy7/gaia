@@ -228,8 +228,8 @@
     <link rel="stylesheet" type="text/css" href="style/zindex.css">
 
     <style>
-      /* initlogo style is here to prevent flashing */
-      #initlogo {
+      /* initlogos style is here to prevent flashing */
+      #osLogo {
         position: absolute;
         overflow: hidden;
         width: 100%;
@@ -240,11 +240,11 @@
         z-index: 65536;
 
         opacity: 1;
-        transition: opacity 1s ease 1.5s;
+        transition: opacity 1s ease 2s;
         pointer-events: none;
       }
 
-      #oslogo {
+      #carrierLogo {
         position: absolute;
         overflow: hidden;
         width: 100%;
@@ -252,11 +252,21 @@
         background: #666 url('../style/wrapper/images/back.png') bottom right no-repeat;
 
         opacity: 1;
-        transition: opacity 1s ease 1.5s;
+        transition: opacity 1s ease;
       }
 
-      #initlogo.hide,
-      #oslogo.hide {
+      #carrierLogo:empty {
+        transition: opacity 1s ease 2s;
+      }
+
+      #carrierAnimation {
+        width: 100%;
+        height: 100%;
+        position: absolute;
+      }
+
+      #carrierLogo.hide,
+      #osLogo.hide {
         opacity: 0;
       }
     </style>
@@ -265,8 +275,10 @@
 
   <body role="application">
     <div id="screen" class="locked">
-      <div id="initlogo" data-z-index-level="initlogo">
-        <div id="oslogo" class="hide"></div>
+      <div id="osLogo" data-z-index-level="initlogo">
+        <div id="carrierLogo">
+            <video id="carrierAnimation" src="../style/manifesto.ogv" autoplay></video>
+        </div>
       </div>
 
       <div id="statusbar" data-z-index-level="statusbar">

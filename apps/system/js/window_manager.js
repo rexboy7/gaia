@@ -98,15 +98,26 @@ var WindowManager = (function() {
 
   // Function to hide init starting logo
   function handleInitlogo(callback) {
-    var initlogo = document.getElementById('initlogo');
-    var oslogo = document.getElementById('oslogo');
-    oslogo.classList.remove('hide');
-    initlogo.addEventListener('transitionend', function showOSLogo() {
-      initlogo.removeEventListener('transitionend', showOSLogo);
-      initlogo.classList.add('hide');
-      initlogo.addEventListener('transitionend', function delInitLogo() {
-        initlogo.removeEventListener('transitionend', delInitLogo);
-        initlogo.parentNode.removeChild(initlogo);
+    var carrierLogo = document.getElementById('carrierLogo');
+    var carrierAnimation = document.getElementById('carrierAnimation');
+    var osLogo = document.getElementById('osLogo');
+    carrierAnimation.onerror = function () {
+      carrierLogo.removeChild(carrierAnimation);
+      carrierLogo.classList.add('hide');
+      console.log("!!!!!");
+    }
+    carrierAnimation.onended = function () {
+      carrierLogo.classList.add('hide');
+      console.log("?????");
+    }
+    carrierLogo.addEventListener('transitionend', function showOSLogo() {
+      carrierLogo.removeEventListener('transitionend', showOSLogo);
+      console.log("oooooo");
+      osLogo.classList.add('hide');
+      osLogo.addEventListener('transitionend', function delInitLogo() {
+        console.log("qqqqqq");
+        osLogo.removeEventListener('transitionend', delInitLogo);
+        osLogo.parentNode.removeChild(osLogo);
         if (callback) {
           callback();
         }
