@@ -1,0 +1,3 @@
+var MockRecents = {
+  load: function() {}
+};
