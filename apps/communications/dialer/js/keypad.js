@@ -27,7 +27,6 @@ if (window.SettingsListener) {
   observeKeypadSound();
 } else {
   window.addEventListener('load', function onLoad() {
-    console.log("shit");
     window.removeEventListener('load', onLoad);
     loader.load('/shared/js/settings_listener.js', observeKeypadSound);
   });

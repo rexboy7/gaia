@@ -1,3 +1,4 @@
+require('/shared/js/lazy_loader.js');
 requireApp('communications/dialer/js/keypad.js');
 
 requireApp('communications/dialer/test/unit/mock_call_screen.js');
@@ -30,8 +31,9 @@ suite('keypad', function() {
   var realRecents;
   var realRecentsDBManager;
 
-  suiteSetup(function() {
-    console.log("bitch;l");
+  setup(function() {
+    console.log("22");
+    window.loader = LazyLoader;
     realCallScreen = window.CallScreen;
     window.CallScreen = MockCallScreen;
 
@@ -51,6 +53,18 @@ suite('keypad', function() {
     };
 
     KeypadManager.init();
+  });
+
+  suite('Suggestion Bar', function() {
+    suiteSetup(function() {
+    })
+    test('Find recent', function() {
+      var oldPhoneNumber = subject._phoneNumber;
+      subject._phoneNumber = '0987654321';
+      subject._updateSuggestionsByRecents();
+      assert.equal(subject.suggestionBar.querySelector('.tel').textContent,
+        '0987654321');
+    });
   });
 
   suiteTeardown(function() {

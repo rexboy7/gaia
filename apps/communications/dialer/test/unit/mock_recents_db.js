@@ -20,5 +20,12 @@ var MockRecentsDBManager = {
     this.mCalledAdd = null;
     this.mCalledInit = false;
     this.mCalledClose = false;
+  },
+
+  getBeginWith: function(param, cb) {
+    var mockRecent = {
+      'number': param
+    }
+    cb.call(this, mockRecent);
   }
 };
