@@ -98,7 +98,7 @@ var InitLogoHandler = {
   },
 
   _waitReady: function ilh_waitReady(callback) {
-    this.callback = callback;
+    this.readyCallBack = callback;
   },
 
   animate: function ilh_animate(callback) {
