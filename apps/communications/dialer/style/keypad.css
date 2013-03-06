@@ -363,24 +363,27 @@ article:not(:target) #keypad-delete {
   color: gray;
 }
 
-#suggestion-bar > .add-contact {
+#suggestion-bar.not-exist > .tel {
+  color: gray;
   line-height: 4.3rem;
   font-size: 2rem;
+  visibility: visible;
 }
 
-#suggestion-bar > .add-contact > b {
+#suggestion-bar.not-exist > .tel > span {
   display: inline-block;
   max-width: 10.5rem;
   vertical-align: top;
   white-space: nowrap;
   text-overflow: ellipsis;
   overflow: hidden;
+  font-weight: bold;
 }
 
 #suggestion-bar > .tel {
   color: black;
 }
-#suggestion-bar > .tel > .matched {
+#suggestion-bar:not(.not-exist) > .tel > span {
   color: #FF4E00;
 }
 

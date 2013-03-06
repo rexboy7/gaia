@@ -6,23 +6,15 @@
 var ContactDataManager = {
   contactData: {},
 
-  getContactData: function cm_getContactData(number, callback) {
+  _search: function cm_queryContact(options, callback) {
     // so desktop keeps working
     if (!navigator.mozContacts) {
       return;
     }
-    // Get contacts given a number
-    var options = {
-      filterBy: ['tel'],
-      filterOp: 'contains',
-      filterValue: number
-    };
-    var self = this;
-    var req = window.navigator.mozContacts.find(options);
+    var req = navigator.mozContacts.find(options);
     req.onsuccess = function onsuccess() {
       // TODO Add cache if it's feasible without PhoneNumberJS
-      var result = req.result;
-      callback(result);
+      callback(req.result);
     };
     req.onerror = function onerror() {
       var msg = 'Contact finding error. Error: ' + req.errorCode;
@@ -30,27 +22,24 @@ var ContactDataManager = {
     };
   },
 
-  searchContactData: function cm_searchContactData(string, callback) {
-    // so desktop keeps working
-    if (!navigator.mozSms)
-      return;
+  getContactData: function cm_getContactData(number, callback) {
+    // Get contacts given a number
+    var options = {
+      filterBy: ['tel'],
+      filterOp: 'contains',
+      filterValue: number
+    };
 
+    this._search(options, callback);
+  },
+
+  searchContactData: function cm_searchContactData(string, callback) {
     var options = {
       filterBy: ['tel', 'givenName', 'familyName'],
       filterOp: 'contains',
       filterValue: string
     };
 
-    var self = this;
-    var req = window.navigator.mozContacts.find(options);
-    req.onsuccess = function onsuccess() {
-      callback(req.result);
-    };
-
-    req.onerror = function onerror() {
-      var msg = 'Contact finding error. Error: ' + req.errorCode;
-      console.log(msg);
-      callback(null);
-    };
+    this._search(options, callback);
   }
 };

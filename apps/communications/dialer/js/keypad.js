@@ -676,27 +676,24 @@ var KeypadManager = {
   suggestionHandler: function kh_suggestionHandler(event) {
     var typeTag = this.suggestionBar.querySelector('.tel-type');
     var telTag = this.suggestionBar.querySelector('.tel');
-    var isAddContact = typeTag.classList.contains('add-contact');
-
-    if (isAddContact) {
+    if (this.suggestionBar.className == 'not-exist') {
       this.addContact();
-
-    } else if (this.suggestionBar.dataset.isCallLog &&
+    } else if (this.suggestionBar.className == 'call-log' &&
       event.target.className == 'avatar') {
       this.updatePhoneNumber(telTag.textContent, 'begin', false);
       this.addContact();
-
     } else {
       this.updatePhoneNumber(telTag.textContent, 'begin', false);
       this.makeCall();
     }
+    event.stopPropagation();
+
   },
 
   updateSuggestions: function kh_updateSuggestions() {
     var self = this;
     LazyLoader.load(['/dialer/js/contact_data_manager.js',
     '/dialer/js/recents_db.js'], function() {
-      delete self.suggestionBar.dataset.isCallLog;
       if (!self._phoneNumber) {
         self._clearSuggestionBar();
         return;
@@ -731,12 +728,11 @@ var KeypadManager = {
           var markedNumber = self._markMatched(tel[i].value,
             self._phoneNumber);
 
-          self._setSuggestionText(tel[i].type, contact.name[0],
-            markedNumber);
+          self._setSuggestionText(markedNumber, tel[i].type, contact.name[0]);
 
           // If the matched contact doesn't change, don't update photo
           // to prevent flashing.
-          if (contact.id != self.suggestionBar.dataset.lastId) {
+          if (contact.id !== self.suggestionBar.dataset.lastId) {
             self._setSuggestionAvatar(photo);
           }
           break;
@@ -755,13 +751,13 @@ var KeypadManager = {
           if (!!recentMatch) {
             var markedNumber = self._markMatched(recentMatch.number,
               self._phoneNumber);
-            self._setSuggestionText(null, _('callLog'), markedNumber);
-            self.suggestionBar.dataset.isCallLog = true;
+            self._setSuggestionText(markedNumber, _('callLog'));
           }
           else {
+              //No match found.  Set to add contacts mode.
               var addContactText = _('addToContacts', {
-                number: '<b>' + self._phoneNumber + '</b>'});
-              self._setSuggestionText(null, addContactText, null);
+                number: '<span>' + self._phoneNumber + '</span>'});
+              self._setSuggestionText(addContactText);
           }
         });
       });
@@ -769,24 +765,32 @@ var KeypadManager = {
   },
 
   // content setter of suggestion bar.
-  // if only "type" parameter is non-null, it sets suggestion bar to
-  // "add contact" style.
-  _setSuggestionText: function kh_setSuggestionText(name, type, tel) {
+  // only "tel":                  "Add to contact" mode.
+  // "tel" and "type":            "Call log" mode.
+  // "tel" and "type" and "name": "Contact" mode.
+  _setSuggestionText: function kh_setSuggestionText(tel, type, name) {
     var typeTag = this.suggestionBar.querySelector('.tel-type');
     var telTag = this.suggestionBar.querySelector('.tel');
     var nameTag = this.suggestionBar.querySelector('.name');
     var avatarTag = this.suggestionBar.querySelector('.avatar');
 
-    if (!name && !tel && type) {
-      typeTag.classList.add('add-contact');
+    if (tel && type && name) {
+      // Contact mode
+      this.suggestionBar.className = 'contact';
+    } else if (tel && type) {
+      // Call log mode 
+      this.suggestionBar.className = 'call-log';
+    } else if (tel) {
+      // Add to contact mode
+      this.suggestionBar.className = 'not-exist';
     } else {
-      typeTag.classList.remove('add-contact');
+      // Empty
+      this.suggestionBar.className = '';
     }
 
-    nameTag.textContent = name;
-    typeTag.innerHTML = type;
-    telTag.innerHTML = tel;
-
+    nameTag.textContent = name ? name : null;
+    typeTag.textContent = type ? type : null;
+    telTag.innerHTML = tel ? tel : null;
   },
 
   _setSuggestionAvatar: function kh_setAvatar(avatar) {
@@ -796,14 +800,12 @@ var KeypadManager = {
   },
 
   _clearSuggestionBar: function kh_clearSuggestionBar() {
-    this._setSuggestionText(null, null, null);
+    this._setSuggestionText();
     this._setSuggestionAvatar();
     delete this.suggestionBar.dataset.lastId;
-    delete self.suggestionBar.dataset.isCallLog;
   },
 
   _markMatched: function kh_markMatched(str, substr) {
-    var regex = new RegExp(substr, 'g');
-    return str.replace(regex, '<span class="matched">' + substr + '</span>');
+    return str.replace(substr, '<span>' + substr + '</span>');
   }
 };
