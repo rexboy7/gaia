@@ -84,6 +84,7 @@ suite('dialer/keypad', function() {
         mockSuggestionBar.id = 'suggestion-bar';
         mockSuggestionBar.innerHTML =
           '<div class="avatar"></div>' +
+          '<div class="match-count"></div>' +
           '<div class="name"></div>' +
           '<div class="tel-type"></div>' +
           '<div class="tel"><span class="matched"></span></div>';
