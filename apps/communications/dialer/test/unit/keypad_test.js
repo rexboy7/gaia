@@ -83,32 +83,20 @@ suite('dialer/keypad', function() {
         mockSuggestionBar = document.createElement('div');
         mockSuggestionBar.id = 'suggestion-bar';
         mockSuggestionBar.innerHTML =
-          '<div class="avatar"></div>' +
-          '<div class="match-count"></div>' +
-          '<div class="name"></div>' +
-          '<div class="tel-type"></div>' +
-          '<div class="tel"><span class="matched"></span></div>';
+          '<div id="suggestion-count"></div>' +
+          '<div class="suggestion-item">' +
+          '  <div class="avatar"></div>' +
+          '  <div class="match-count"></div>' +
+          '  <div class="name"></div>' +
+          '  <div class="tel-type"></div>' +
+          '  <div class="tel"><span class="matched"></span></div>' +
+          '</div>';
         document.body.appendChild(mockSuggestionBar);
-      });
-
-      test('#update suggestions by recent', function() {
-        var mockNumber = '0987654321';
-        var tel = mockSuggestionBar.querySelector('.tel');
-        subject._phoneNumber = '0987';
-        MockRecentsDBManager.mData = {number: mockNumber};
-        MockContactDataManager.result = {};
-
-        subject.updateSuggestions();
-        assert.equal(
-          tel.textContent,
-          mockNumber,
-          'should got recent number 0987654321 from recentsDB'
-        );
       });
 
       test('#update suggestions by contact data', function() {
         var mockNumber = '1234567890';
-        var enteredNumber = '345';
+        var enteredNumber = '3456';
         var mockResult = [{
           id: '000000',
           name: ['John'],

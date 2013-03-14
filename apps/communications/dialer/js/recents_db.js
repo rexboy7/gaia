@@ -680,24 +680,5 @@ var RecentsDBManager = {
         console.log('recents_db get failure: ', e.message);
       };
     });
-  },
-  getBeginWith: function rdbm_getBeginWith(str, callback) {
-    this._newTxn('readonly', [this._dbRecentsStore],
-                    function(error, txn, store) {
-      var cursor = store.index('number').openCursor(
-        IDBKeyRange.bound(str, str + '\ufff0'), 'prev');
-      cursor.onsuccess = function(event) {
-        var item = event.target.result;
-        if (item) {
-          if (callback(item.value))
-            item.continue();
-        } else {
-          callback();
-        }
-      };
-      cursor.onerror = function(e) {
-        console.log('recents_db get failure: ', e.message);
-      };
-    });
   }
 };

@@ -155,6 +155,8 @@ var KeypadManager = {
 
   _MAX_FONT_SIZE_DIAL_PAD: 18,
   _MAX_FONT_SIZE_ON_CALL: 16,
+  _MIN_DIGIT_TO_SHOW_SUGGESTION: 4,
+  _MAX_SUGGESTION_ITEMS: 10,
 
   _phoneNumber: '',
   _onCall: false,
@@ -229,8 +231,29 @@ var KeypadManager = {
 
   get suggestionBar() {
     delete this.suggestionBar;
-    return this.suggestionBar =
-      document.getElementById('suggestion-bar');
+    return this.suggestionBar = document.getElementById('suggestion-bar');
+  },
+
+  get suggestionCount() {
+    delete this.suggestionCount;
+    return this.suggestionCount = document.getElementById('suggestion-count');
+  },
+
+  get suggestionList() {
+    delete this.suggestionList;
+    return this.suggestionList = document.getElementById('suggestion-list');
+  },
+
+  get suggestionOverlay() {
+    delete this.suggestionOverlay;
+    return this.suggestionOverlay =
+      document.getElementById('suggestion-overlay');
+  },
+
+  get suggestionOverlayCancel() {
+    delete this.suggestionOverlayCancel;
+    return this.suggestionOverlayCancel =
+      document.getElementById('suggestion-overlay-cancel');
   },
 
   init: function kh_init(oncall) {
@@ -262,6 +285,12 @@ var KeypadManager = {
 
     this.suggestionBar.addEventListener('click',
                                         this.suggestionHandler.bind(this));
+    this.suggestionOverlay.addEventListener('click',
+                                        this.overlayHandler.bind(this));
+    this.suggestionCount.addEventListener('click',
+                                        this.showSuggestionOverlay.bind(this));
+    this.suggestionOverlayCancel.addEventListener('click',
+                                        this.hideSuggestionOverlay.bind(this));
 
     // The keypad add contact bar is only included in the normal version of
     // the keypad.
@@ -671,140 +700,166 @@ var KeypadManager = {
      request.onerror = function() {};
   },
 
+
+
   suggestionHandler: function kh_suggestionHandler(event) {
-    var typeTag = this.suggestionBar.querySelector('.tel-type');
-    var telTag = this.suggestionBar.querySelector('.tel');
-    if (this.suggestionBar.className == 'call-log' &&
-      event.target.className == 'avatar') {
+    this._suggestionItemHandler(event);
+  },
+
+  overlayHandler: function kh_suggestionHandler(event) {
+    this._suggestionItemHandler(event);
+  },
+
+  _suggestionItemHandler: function kh_suggestionItemHandler(event) {
+    var node = event.target;
+    while (node && node.className != 'suggestion-item')
+      node = node.parentNode;
+    if (node) {
+      event.stopPropagation();
+      var telTag = node.querySelector('.tel');
       this.updatePhoneNumber(telTag.textContent, 'begin', false);
-      this.addContact();
-    } else {
-      this.updatePhoneNumber(telTag.textContent, 'begin', false);
+      // If we are tapping from overlay, hide it
+      this.hideSuggestionOverlay();
       this.makeCall();
     }
-    event.stopPropagation();
-
   },
 
   updateSuggestions: function kh_updateSuggestions() {
     var self = this;
     LazyLoader.load(['/dialer/js/contact_data_manager.js',
-    '/dialer/js/recents_db.js'], function() {
-      if (self._phoneNumber.length < 4) {
+                     '/shared/style/buttons.css'], function() {
+      if (self._phoneNumber.length < self._MIN_DIGIT_TO_SHOW_SUGGESTION) {
         self._clearSuggestionBar();
         return;
       }
 
-      self._updateSuggestionsByContacts(function() {
-        self._updateSuggestionsByRecents();
-      });
+      self._updateSuggestionsByContacts();
     });
   },
+
+  _suggestionData: null,
 
   _updateSuggestionsByContacts:
   function kh_updateSuggestionsByContacts(onempty) {
     var self = this;
-    //Search Contact first.
+    //Search Contact list
     ContactDataManager.getContactData(self._phoneNumber, function(contacts) {
       if (!contacts || ! Array.isArray(contacts) || contacts.length < 1) {
         self.suggestionBar.dataset.lastId = '';
-
+        self._clearSuggestionBar();
         if (onempty)
           onempty();
         return;
       }
-
-      var contact = contacts[0];
-
-      // Update suggestions by contact API
-      var tel = contact.tel;
-      for (var i = 0; i < tel.length; i++) {
-        if (tel[i].value.contains(self._phoneNumber)) {
-          var photo = contact.photo ? contact.photo[0] : null;
-          var markedNumber = self._markMatched(tel[i].value,
-            self._phoneNumber);
-
-          self._setSuggestionText(
-            markedNumber, tel[i].type, contacts.length, contact.name[0]);
-
-          // If the matched contact doesn't change, don't update photo
-          // to prevent flashing.
-          if (contact.id !== self.suggestionBar.dataset.lastId) {
-            self._setSuggestionAvatar(photo);
-          }
-          break;
-        }
+      self.suggestionBar.hidden = false;
+      self.suggestionCount.textContent =
+        (contacts.length < self._MAX_SUGGESTION_ITEMS) ?
+        contacts.length : (self._MAX_SUGGESTION_ITEMS + '+');
+      if (contacts.length > 1) {
+        self.suggestionCount.classList.add('more');
+      } else {
+        self.suggestionCount.classList.remove('more');
       }
-      // mozContact app automatically matches international number
-      // with local number prefixed by current country code.
-      // we're considering them different here.
-      if (i == tel.length)
-        onempty();
+
+
+      // Store contacts for constructing multiple suggestions.
+      self._suggestionData = contacts;
+
+      var node = self.suggestionBar.querySelector('.suggestion-item');
+      var contact = contacts[0];
+      self._fillSuggestedContacts(node, contact);
+      // If the matched contact doesn't change, don't update photo
+      // to prevent flashing.
+      if (contacts.id !== self.suggestionBar.dataset.lastId)
+        self._setSuggestionAvatar(node, contact);
 
       self.suggestionBar.dataset.lastId = contact.id;
     });
   },
 
-  _updateSuggestionsByRecents: function kh_updateSuggestionsByRecents() {
-    var self = this;
-    RecentsDBManager.init(function() {
-      RecentsDBManager.getBeginWith(self._phoneNumber, function(recentMatch) {
-        LazyL10n.get(function localized(_) {
-          self._setSuggestionAvatar();
-          if (!!recentMatch) {
-            var markedNumber = self._markMatched(recentMatch.number,
-              self._phoneNumber);
-            self._setSuggestionText(markedNumber, _('callLog'));
-          } else {
-            // No match found.  Turn off the suggestion bar.
-            self._clearSuggestionBar();
-          }
-        });
-      });
-    });
+  _fillSuggestedContacts: function kh_fillSuggestedContacts(node, contact) {
+    var tel = contact.tel;
+    // Find matched index
+    for (var i = 0; i < tel.length; i++) {
+      if (tel[i].value.contains(this._phoneNumber))
+        break;
+    }
+    if (i == tel.length)
+      i = 0;
+
+    var markedNumber = this._markMatched(tel[i].value, this._phoneNumber);
+    this._setSuggestionItem(node, markedNumber, tel[i].type, contact.name[0]);
   },
 
-  // content setter of suggestion bar.
+  // content creator and setter of suggestion bar item.
   // only "tel":                  "Add to contact" mode.
   // "tel" and "type":            "Call log" mode.
   // "tel" and "type" and "name": "Contact" mode.
-  _setSuggestionText: function kh_setSuggestionText(tel, type, count, name) {
-    var typeTag = this.suggestionBar.querySelector('.tel-type');
-    var telTag = this.suggestionBar.querySelector('.tel');
-    var nameTag = this.suggestionBar.querySelector('.name');
-    var countTag = this.suggestionBar.querySelector('.match-count');
-    var avatarTag = this.suggestionBar.querySelector('.avatar');
+  _createSuggestionItem: function kh_createSuggestionItem() {
+    var template = document.getElementById('suggestion-item-template');
+    var itemElm = template.cloneNode(true);
+    itemElm.id = null;
+    itemElm.hidden = false;
+    this.suggestionList.appendChild(itemElm);
+    return itemElm;
+  },
 
-    if (tel && type && count && name) {
-      // Contact mode
-      this.suggestionBar.className = 'contact';
-    } else if (tel && type) {
-      // Call log mode
-      this.suggestionBar.className = 'call-log';
-    } else {
-      // Empty
-      this.suggestionBar.className = 'hidden';
-    }
+  _setSuggestionItem: function kh_setSuggestionItem(node, tel, type, name) {
+    var typeTag = node.querySelector('.tel-type');
+    var telTag = node.querySelector('.tel');
+    var nameTag = node.querySelector('.name');
 
     nameTag.textContent = name ? name : null;
     typeTag.textContent = type ? type : null;
-    countTag.textContent = count ? count : null;
     telTag.innerHTML = tel ? tel : null;
   },
 
-  _setSuggestionAvatar: function kh_setAvatar(avatar) {
-    var avatarTag = this.suggestionBar.querySelector('.avatar');
-    avatarTag.style.backgroundImage = avatar ?
-      'url(' + URL.createObjectURL(avatar) + ')' : null;
+  _setSuggestionAvatar: function kh_setAvatar(node, contact) {
+    var avatarTag = node.querySelector('.avatar');
+    var photo = contact.photo ? contact.photo[0] : null;
+    avatarTag.style.backgroundImage = photo ?
+      'url(' + URL.createObjectURL(photo) + ')' : null;
   },
 
   _clearSuggestionBar: function kh_clearSuggestionBar() {
-    this._setSuggestionText();
-    this._setSuggestionAvatar();
+    this.suggestionCount.textContent = '';
+    this.suggestionCount.classList.remove('more');
+    // Clear contents
+    this._setSuggestionItem(
+      this.suggestionBar.querySelector('.suggestion-item'));
+    this._suggestionData = null;
+    this.suggestionBar.hidden = true;
     delete this.suggestionBar.dataset.lastId;
   },
 
   _markMatched: function kh_markMatched(str, substr) {
     return str.replace(substr, '<span>' + substr + '</span>');
+  },
+
+  showSuggestionOverlay: function kh_showSuggestionList() {
+    var maxItems = Math.min(
+      this._suggestionData.length, this._MAX_SUGGESTION_ITEMS);
+    var countTag = this.suggestionOverlay.querySelector('.count');
+    var self = this;
+    LazyL10n.get(function localized(_) {
+      countTag.textContent = _('suggestionMatches', {
+        n: maxItems,
+        matchNumber: self._phoneNumber
+      });
+    });
+    for (var i = 0; i < maxItems; i++) {
+      var node = this._createSuggestionItem();
+      this._fillSuggestedContacts(node, this._suggestionData[i]);
+      this._setSuggestionAvatar(node, this._suggestionData[i]);
+    }
+    this.suggestionOverlay.classList.remove('hide');
+  },
+
+  hideSuggestionOverlay: function kh_hideSuggestionList() {
+    if (this.suggestionOverlay.classList.contains('hide'))
+      return;
+    var self = this;
+    this.suggestionOverlay.classList.add('hide');
+    self.suggestionList.innerHTML = '';
   }
 };

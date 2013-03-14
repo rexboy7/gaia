@@ -337,70 +337,119 @@ article:not(:target) #keypad-delete {
   font-family:'MozTT';
 }
 
+/* Suggestion bar */
+
 #suggestion-bar {
   margin-top: -4.9rem;
-  padding: 0.2rem 0.2rem 0.2rem 0.2rem;
+  padding: 0;
   width: 100%;
   border: 1px solid black;
   font-size: 1.8rem;
   background-color: white;
-  height: 4.9rem;
+  max-height: 4.9rem;
   overflow: hidden;
   -moz-box-sizing: border-box;
+  position: absolute;
 }
 
-#suggestion-bar.hidden {
-  visibility: hidden;
-}
-
-#suggestion-bar:active {
-  background-color: #B2F2FF;
-}
-
-#suggestion-bar > .name,
-#suggestion-bar.call-log > .tel-type {
-  display: block;
-  color: black;
-  font-weight: bold;
-}
-
-#suggestion-bar > .tel-type {
-  font-weight: normal;
-  display: inline;
-  color: gray;
-}
-
-#suggestion-bar.contact > .tel-type:after {
-  content: '|';
-  padding: 0 0.5rem;
-}
-
-#suggestion-bar > .tel {
-  display: inline;
-  color: black;
-}
-#suggestion-bar > .tel > span {
-  color: #FF4E00;
-}
-
-#suggestion-bar > .match-count {
-  float: left;
+#suggestion-count {
+  position: absolute;
+  top: 0;
+  bottom: 0;
   width: 4.3rem;
-  height: 4.3rem;
-  padding: 0;
   text-align: center;
   line-height: 4.3rem;
-  margin-right: 0.5rem;
-  border-right: solid 1px #858585;
+  margin: 0.2rem 0.2rem 0.2rem 0.2rem;
   color: #858585;
   font-weight: bold;
   font-size: 2.2rem;
 }
 
-#suggestion-bar > .avatar {
+#suggestion-count.more {
+  background: url(images/arrow-dn.gif) bottom no-repeat;
+}
+
+#suggestion-bar > .suggestion-item {
+  height: 4.9rem;
+  padding: 0.2rem;
+  border-left: solid 1px #858585;
+  margin-left: 4.9rem;
+  padding-left: 0.4rem;
+}
+
+#suggestion-bar > .suggestion-item:active {
+  background-color: #B2F2FF;
+}
+
+/* Matched item inside suggestion bar */
+.suggestion-item > .name {
+  display: block;
+  color: black;
+  font-weight: bold;
+}
+
+.suggestion-item > .tel-type {
+  font-weight: normal;
+  display: inline;
+  color: gray;
+}
+
+.suggestion-item > .tel-type:not(:empty):after {
+  content: '|';
+  padding: 0 0.3rem 0 0.3rem;
+}
+
+.suggestion-item > .tel {
+  display: inline;
+  color: black;
+}
+.suggestion-item > .tel > span {
+  color: #FF4E00;
+}
+
+.suggestion-item > .avatar {
   float: right;
   width: 4.3rem;
   height: 4.3rem;
   background-size: cover;
-  background-image: url(images/plus_sign.png);
+}
+
+#suggestion-overlay {
+  background-color: rgba(0, 0, 0, 0.9);
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 1;
+  font-size: 2rem;
+  padding: 3.5rem 2rem 1rem 2rem;
+  -moz-box-sizing: border-box;
+}
+
+#suggestion-overlay.hide {
+  opacity: 0;
+}
+
+#suggestion-overlay .suggestion-item {
+  border-top: 0.1rem solid white;
+  height: 4.9rem;
+  margin: 0.2rem;
+  padding: .6rem 0;
+}
+
+#suggestion-list {
+  height: calc(100% - 7rem);
+  overflow: auto;
+}
+
+/* Matched item inside suggestion overlay */
+#suggestion-overlay .suggestion-item > .name,
+#suggestion-overlay .suggestion-item > .tel-type,
+#suggestion-overlay .suggestion-item > .tel {
+  color: white;
+}
+#suggestion-overlay .suggestion-item > .avatar {
+  width: 4.6rem;
+  height: 4.6rem;
 }
