@@ -155,11 +155,11 @@ var KeypadManager = {
 
   _MAX_FONT_SIZE_DIAL_PAD: 18,
   _MAX_FONT_SIZE_ON_CALL: 16,
-  _MIN_DIGIT_TO_SHOW_SUGGESTION: 4,
-  _MAX_SUGGESTION_ITEMS: 10,
 
   _phoneNumber: '',
   _onCall: false,
+
+  onValueChanged: null,
 
   get phoneNumberView() {
     delete this.phoneNumberView;
@@ -229,33 +229,6 @@ var KeypadManager = {
       document.getElementById('keypad-hidebar-hide-keypad-action');
   },
 
-  get suggestionBar() {
-    delete this.suggestionBar;
-    return this.suggestionBar = document.getElementById('suggestion-bar');
-  },
-
-  get suggestionCount() {
-    delete this.suggestionCount;
-    return this.suggestionCount = document.getElementById('suggestion-count');
-  },
-
-  get suggestionList() {
-    delete this.suggestionList;
-    return this.suggestionList = document.getElementById('suggestion-list');
-  },
-
-  get suggestionOverlay() {
-    delete this.suggestionOverlay;
-    return this.suggestionOverlay =
-      document.getElementById('suggestion-overlay');
-  },
-
-  get suggestionOverlayCancel() {
-    delete this.suggestionOverlayCancel;
-    return this.suggestionOverlayCancel =
-      document.getElementById('suggestion-overlay-cancel');
-  },
-
   init: function kh_init(oncall) {
     this._onCall = !!oncall;
 
@@ -282,15 +255,6 @@ var KeypadManager = {
     this.keypad.addEventListener('mouseleave', keyHandler, true);
     this.deleteButton.addEventListener('mousedown', keyHandler);
     this.deleteButton.addEventListener('mouseup', keyHandler);
-
-    this.suggestionBar.addEventListener('click',
-                                        this.suggestionHandler.bind(this));
-    this.suggestionOverlay.addEventListener('click',
-                                        this.overlayHandler.bind(this));
-    this.suggestionCount.addEventListener('click',
-                                        this.showSuggestionOverlay.bind(this));
-    this.suggestionOverlayCancel.addEventListener('click',
-                                        this.hideSuggestionOverlay.bind(this));
 
     // The keypad add contact bar is only included in the normal version of
     // the keypad.
@@ -328,7 +292,6 @@ var KeypadManager = {
     TonePlayer.init();
 
     this.render();
-
   },
 
   moveCaretToEnd: function hk_util_moveCaretToEnd(el) {
@@ -644,7 +607,8 @@ var KeypadManager = {
     }
 
     this.formatPhoneNumber(ellipsisSide, maxFontSize);
-    this.updateSuggestions();
+    if (this.onValueChanged)
+      this.onValueChanged(this._phoneNumber);
   },
 
   restorePhoneNumber: function kh_restorePhoneNumber(ellipsisSide,
@@ -698,168 +662,5 @@ var KeypadManager = {
        }
      };
      request.onerror = function() {};
-  },
-
-
-
-  suggestionHandler: function kh_suggestionHandler(event) {
-    this._suggestionItemHandler(event);
-  },
-
-  overlayHandler: function kh_suggestionHandler(event) {
-    this._suggestionItemHandler(event);
-  },
-
-  _suggestionItemHandler: function kh_suggestionItemHandler(event) {
-    var node = event.target;
-    while (node && node.className != 'suggestion-item')
-      node = node.parentNode;
-    if (node) {
-      event.stopPropagation();
-      var telTag = node.querySelector('.tel');
-      this.updatePhoneNumber(telTag.textContent, 'begin', false);
-      // If we are tapping from overlay, hide it
-      this.hideSuggestionOverlay();
-      this.makeCall();
-    }
-  },
-
-  updateSuggestions: function kh_updateSuggestions() {
-    var self = this;
-    LazyLoader.load(['/dialer/js/contact_data_manager.js',
-                     '/shared/style/buttons.css'], function() {
-      if (self._phoneNumber.length < self._MIN_DIGIT_TO_SHOW_SUGGESTION) {
-        self._clearSuggestionBar();
-        return;
-      }
-
-      self._updateSuggestionsByContacts();
-    });
-  },
-
-  _suggestionData: null,
-
-  _updateSuggestionsByContacts:
-  function kh_updateSuggestionsByContacts(onempty) {
-    var self = this;
-    //Search Contact list
-    ContactDataManager.getContactData(self._phoneNumber, function(contacts) {
-      if (!contacts || ! Array.isArray(contacts) || contacts.length < 1) {
-        self.suggestionBar.dataset.lastId = '';
-        self._clearSuggestionBar();
-        if (onempty)
-          onempty();
-        return;
-      }
-      self.suggestionBar.hidden = false;
-      self.suggestionCount.textContent =
-        (contacts.length < self._MAX_SUGGESTION_ITEMS) ?
-        contacts.length : (self._MAX_SUGGESTION_ITEMS + '+');
-      if (contacts.length > 1) {
-        self.suggestionCount.classList.add('more');
-      } else {
-        self.suggestionCount.classList.remove('more');
-      }
-
-
-      // Store contacts for constructing multiple suggestions.
-      self._suggestionData = contacts;
-
-      var node = self.suggestionBar.querySelector('.suggestion-item');
-      var contact = contacts[0];
-      self._fillSuggestedContacts(node, contact);
-      // If the matched contact doesn't change, don't update photo
-      // to prevent flashing.
-      if (contacts.id !== self.suggestionBar.dataset.lastId)
-        self._setSuggestionAvatar(node, contact);
-
-      self.suggestionBar.dataset.lastId = contact.id;
-    });
-  },
-
-  _fillSuggestedContacts: function kh_fillSuggestedContacts(node, contact) {
-    var tel = contact.tel;
-    // Find matched index
-    for (var i = 0; i < tel.length; i++) {
-      if (tel[i].value.contains(this._phoneNumber))
-        break;
-    }
-    if (i == tel.length)
-      i = 0;
-
-    var markedNumber = this._markMatched(tel[i].value, this._phoneNumber);
-    this._setSuggestionItem(node, markedNumber, tel[i].type, contact.name[0]);
-  },
-
-  // content creator and setter of suggestion bar item.
-  // only "tel":                  "Add to contact" mode.
-  // "tel" and "type":            "Call log" mode.
-  // "tel" and "type" and "name": "Contact" mode.
-  _createSuggestionItem: function kh_createSuggestionItem() {
-    var template = document.getElementById('suggestion-item-template');
-    var itemElm = template.cloneNode(true);
-    itemElm.id = null;
-    itemElm.hidden = false;
-    this.suggestionList.appendChild(itemElm);
-    return itemElm;
-  },
-
-  _setSuggestionItem: function kh_setSuggestionItem(node, tel, type, name) {
-    var typeTag = node.querySelector('.tel-type');
-    var telTag = node.querySelector('.tel');
-    var nameTag = node.querySelector('.name');
-
-    nameTag.textContent = name ? name : null;
-    typeTag.textContent = type ? type : null;
-    telTag.innerHTML = tel ? tel : null;
-  },
-
-  _setSuggestionAvatar: function kh_setAvatar(node, contact) {
-    var avatarTag = node.querySelector('.avatar');
-    var photo = contact.photo ? contact.photo[0] : null;
-    avatarTag.style.backgroundImage = photo ?
-      'url(' + URL.createObjectURL(photo) + ')' : null;
-  },
-
-  _clearSuggestionBar: function kh_clearSuggestionBar() {
-    this.suggestionCount.textContent = '';
-    this.suggestionCount.classList.remove('more');
-    // Clear contents
-    this._setSuggestionItem(
-      this.suggestionBar.querySelector('.suggestion-item'));
-    this._suggestionData = null;
-    this.suggestionBar.hidden = true;
-    delete this.suggestionBar.dataset.lastId;
-  },
-
-  _markMatched: function kh_markMatched(str, substr) {
-    return str.replace(substr, '<span>' + substr + '</span>');
-  },
-
-  showSuggestionOverlay: function kh_showSuggestionList() {
-    var maxItems = Math.min(
-      this._suggestionData.length, this._MAX_SUGGESTION_ITEMS);
-    var countTag = this.suggestionOverlay.querySelector('.count');
-    var self = this;
-    LazyL10n.get(function localized(_) {
-      countTag.textContent = _('suggestionMatches', {
-        n: maxItems,
-        matchNumber: self._phoneNumber
-      });
-    });
-    for (var i = 0; i < maxItems; i++) {
-      var node = this._createSuggestionItem();
-      this._fillSuggestedContacts(node, this._suggestionData[i]);
-      this._setSuggestionAvatar(node, this._suggestionData[i]);
-    }
-    this.suggestionOverlay.classList.remove('hide');
-  },
-
-  hideSuggestionOverlay: function kh_hideSuggestionList() {
-    if (this.suggestionOverlay.classList.contains('hide'))
-      return;
-    var self = this;
-    this.suggestionOverlay.classList.add('hide');
-    self.suggestionList.innerHTML = '';
   }
 };

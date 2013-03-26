@@ -4,7 +4,6 @@
 'use strict';
 
 var ContactDataManager = {
-  contactData: {},
 
   _search: function cm_queryContact(options, callback) {
     // so desktop keeps working
@@ -22,23 +21,14 @@ var ContactDataManager = {
     };
   },
 
-  getContactData: function cm_getContactData(number, callback) {
+  getContactData: function cm_getContactData(number, limit, callback) {
     // Get contacts given a number
     var options = {
       filterBy: ['tel'],
       filterOp: 'contains',
       filterValue: number,
-      sortBy: 'familyName'
-    };
-
-    this._search(options, callback);
-  },
-
-  searchContactData: function cm_searchContactData(string, callback) {
-    var options = {
-      filterBy: ['tel', 'givenName', 'familyName'],
-      filterOp: 'contains',
-      filterValue: string
+      sortBy: 'familyName',
+      filterLimit: limit
     };
 
     this._search(options, callback);
