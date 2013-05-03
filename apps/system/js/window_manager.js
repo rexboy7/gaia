@@ -155,28 +155,6 @@ var WindowManager = (function() {
     }
   });
 
-  // App's height is relevant to keyboard height
-  function setAppHeight(keyboardHeight) {
-    var app = runningApps[displayedApp];
-    if (!app)
-      return;
-
-    var frame = app.frame;
-    var manifest = app.manifest;
-
-    var cssHeight =
-      window.innerHeight - StatusBar.height - keyboardHeight + 'px';
-
-    if (!screenElement.classList.contains('attention') &&
-        requireFullscreen(displayedApp)) {
-      cssHeight = window.innerHeight - keyboardHeight + 'px';
-    }
-
-    frame.style.height = cssHeight;
-
-    setInlineActivityFrameSize();
-  }
-
   // Copy the dimension of the currently displayed app
   function setInlineActivityFrameSize() {
     if (!inlineActivityFrames.length)
@@ -2122,15 +2100,13 @@ var WindowManager = (function() {
                          'attentionscreenhide'];
   appResizeEvents.forEach(function eventIterator(event) {
     window.addEventListener(event, function on(evt) {
+      var keyboardHeight = KeyboardManager.getHeight();
       if (event == 'keyboardchange') {
         // Cancel fullscreen if keyboard pops
         if (document.mozFullScreen)
           document.mozCancelFullScreen();
-
-        setAppHeight(evt.detail.height);
-      } else if (displayedApp) {
-        runningApps[displayedApp].resize();
       }
+      runningApps[displayedApp].resize();
     });
   });
 

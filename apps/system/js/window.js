@@ -505,17 +505,19 @@
   // @param {changeActivityFrame} to denote if needed to change inline
   //                              activity size
   AppWindow.prototype.resize = function aw_resize(changeActivityFrame) {
+    var keyboardHeight = KeyboardManager.getHeight();
     var cssWidth = window.innerWidth + 'px';
     var cssHeight = window.innerHeight -
-                    StatusBar.height;
-    if ('wrapper' in this.frame.dataset) {
+                    StatusBar.height -
+                    keyboardHeight;
+    if (!keyboardHeight && 'wrapper' in this.frame.dataset) {
       cssHeight -= 10;
     }
     cssHeight += 'px';
 
     if (!AttentionScreen.isFullyVisible() && !AttentionScreen.isVisible() &&
         this.isFullScreen()) {
-      cssHeight = window.innerHeight + 'px';
+      cssHeight = window.innerHeight - keyboardHeight + 'px';
     }
 
     this.frame.style.width = cssWidth;
