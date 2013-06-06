@@ -184,6 +184,17 @@ ol, ul {
   transform: translateY(0);
 }
 
+/* XXX: Workaround bug 875901, fonts may be covered unexceptedly with
+   margin-left set to select all button. May be a rendering issue. */
+.recents-edit form[role="dialog"][data-type="edit"] > menu button:last-child {
+  margin-left: 0;
+}
+
+.recents-edit form[role="dialog"][data-type="edit"] > menu button:first-child {
+  margin-right: 1rem;
+}
+
+
 .recents-edit label:not([for]).call-log-selection {
   transform: translateX(4rem);
   transition: transform 0.3s ease;
