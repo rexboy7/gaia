@@ -46,6 +46,7 @@ const GAIA_DOMAIN = Services.prefs.getCharPref("extensions.gaia.domain");
 const GAIA_APP_RELATIVEPATH = Services.prefs.getCharPref("extensions.gaia.app_relative_path");
 const GAIA_LOCALES_PATH = Services.prefs.getCharPref("extensions.gaia.locales_debug_path");
 const GAIA_OFFICIAL = Services.prefs.getBoolPref("extensions.gaia.official");
+const GAIA_DEVICE_PIXEL_SUFFIX = Services.prefs.getCharPref("extensions.gaia.device_pixel_suffix");
 // -GAIA
 
 /*
@@ -1446,6 +1447,17 @@ RequestReader.prototype =
               }
             }
             request._path = filePath + oldPath;
+            // Replace by HIDPI assets if we're in HIDPI mode and asset exists.
+            if (GAIA_DEVICE_PIXEL_SUFFIX && (oldPath.endsWith('.png') ||
+                oldPath.endsWith('.gif') || oldPath.endsWith('.jpg'))) {
+              var hidpiPath = filePath + oldPath.slice(0, -4) +
+                    GAIA_DEVICE_PIXEL_SUFFIX + oldPath.slice(-4);
+              var file =
+                    this._connection.server._handler._getFileForPath(hidpiPath);
+              if (file.exists() && file.isFile()) {
+                request._path = hidpiPath;
+              }
+            }
 
             // Handle localization files
             if (oldPath.indexOf(".properties") !== -1 && 

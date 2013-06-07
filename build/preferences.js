@@ -108,6 +108,9 @@ if (DEBUG) {
   prefs.push(["extensions.gaia.app_src_dirs", GAIA_APP_SRCDIRS]);
   prefs.push(["extensions.gaia.locales_debug_path", GAIA_LOCALES_PATH]);
   prefs.push(["extensions.gaia.official", Boolean(OFFICIAL)]);
+  prefs.push(["extensions.gaia.device_pixel_suffix",
+                                            (HIDPI == '1') ? '@2x' : '']);
+
   let appPathList = [];
   Gaia.webapps.forEach(function (webapp) {
     appPathList.push(webapp.sourceAppDirectoryName + '/' +
