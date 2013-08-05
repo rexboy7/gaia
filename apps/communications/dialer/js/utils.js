@@ -164,6 +164,21 @@ var Utils = {
         }
 
         return fontSize;
+  },
+
+  formatDuration: function ut_formatDuration(elapsed) {
+
+    function padNumber(n) {
+      return n > 9 ? n : '0' + n;
+    }
+
+    var duration = {
+      h: padNumber(elapsed.getUTCHours()),
+      m: padNumber(elapsed.getUTCMinutes()),
+      s: padNumber(elapsed.getUTCSeconds())
+    };
+    var _ = navigator.mozL10n.get;
+    return _(elapsed.getUTCHours() > 0 ?
+      'callDurationHours' : 'callDurationMinutes', duration);
   }
 };
-

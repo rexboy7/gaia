@@ -11,7 +11,8 @@ function HandledCall(aCall, aNode) {
   this.recentsEntry = {
     date: Date.now(),
     type: this.call.state,
-    number: this.call.number
+    number: this.call.number,
+    duration: new Date(0)
   };
 
   this._initialState = this.call.state;
@@ -77,10 +78,6 @@ HandledCall.prototype.startTimer = function hc_startTimer() {
   if (this._ticker)
     return;
 
-  function padNumber(n) {
-    return n > 9 ? n : '0' + n;
-  }
-
   this.durationChildNode.textContent = '00:00';
   this.durationNode.classList.add('isTimer');
   LazyL10n.get((function localized(_) {
@@ -88,13 +85,8 @@ HandledCall.prototype.startTimer = function hc_startTimer() {
       // Bug 834334: Ensure that 28.999 -> 29.000
       var delta = Math.round((Date.now() - startTime) / 1000) * 1000;
       var elapsed = new Date(delta);
-      var duration = {
-        h: padNumber(elapsed.getUTCHours()),
-        m: padNumber(elapsed.getUTCMinutes()),
-        s: padNumber(elapsed.getUTCSeconds())
-      };
-      self.durationChildNode.textContent = _(elapsed.getUTCHours() > 0 ?
-        'callDurationHours' : 'callDurationMinutes', duration);
+      self.recentsEntry.duration = elapsed;
+      self.durationChildNode.textContent = Utils.formatDuration(elapsed);
     }, 1000, this, Date.now());
   }).bind(this));
 };

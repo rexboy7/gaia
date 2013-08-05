@@ -401,11 +401,13 @@ var CallLog = {
     var type = group.type;
     var status = group.status || '';
     var contact = group.contact;
+    var duration = group.duration;
     var groupDOM = document.createElement('li');
     groupDOM.classList.add('log-item');
     groupDOM.dataset.timestamp = date;
     groupDOM.dataset.phoneNumber = number;
     groupDOM.dataset.type = type;
+    groupDOM.dataset.duration = duration;
     if (contact && contact.id) {
       groupDOM.dataset.contactId = contact.id;
     }
@@ -483,6 +485,9 @@ var CallLog = {
     callTime.textContent = Utils.prettyDate(date) + ' ';
     var retryCount = document.createElement('span');
     retryCount.className = 'retry-count';
+    var durationDOM = document.createElement('span');
+    durationDOM.className = 'call-time';
+    durationDOM.textContent = Utils.formatDuration(duration);
 
     if (group.retryCount && group.retryCount > 1) {
       retryCount.textContent = '(' + group.retryCount + ')';
@@ -490,6 +495,7 @@ var CallLog = {
 
     thirdInfo.appendChild(callTime);
     thirdInfo.appendChild(retryCount);
+    thirdInfo.appendChild(durationDOM);
 
     main.appendChild(icon);
     main.appendChild(primInfo);

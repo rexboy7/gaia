@@ -430,6 +430,7 @@ var CallLogDBManager = {
     // { id: [date<Date>, number<String>, type<String>, status<String>],
     //   lastEntryDate: <Date>, (index)
     //   retryCount: <Number>,
+    //   duration: <Date>,
     //   number: <String>, (index)
     //   contactId: <String>, (index)
     //   contactPrimaryInfo: <String>,
@@ -483,6 +484,7 @@ var CallLogDBManager = {
    *   number: <String>,
    *   lastEntryDate: <Date>,
    *   retryCount: <Number>,
+   *   duration: <Date>,
    *   contactId: <String>,
    *   contactPrimaryInfo: <String>,
    *   contactMatchingTelType: <String>,
@@ -501,6 +503,7 @@ var CallLogDBManager = {
    *   status: <String>,
    *   lastEntryDate: <Date>,
    *   retryCount: <Number>,
+   *   duration: <Date>,
    *   contact: {
    *    id: <String>,
    *    primaryInfo: <String>,
@@ -540,6 +543,7 @@ var CallLogDBManager = {
       status: group.id[3] || undefined,
       lastEntryDate: group.lastEntryDate,
       retryCount: group.retryCount,
+      duration: group.duration,
       contact: contact
     };
   },
@@ -588,7 +592,8 @@ var CallLogDBManager = {
    *        { number: <String>,
    *          type: <String>,
    *          status: <String>,
-   *          date: <Date> }
+   *          date: <Date>,
+   *          duration: <Date> }
    *
    * param callback
    *        Function to be called when the transaction is done.
@@ -625,6 +630,12 @@ var CallLogDBManager = {
           if (group.lastEntryDate <= recentCall.date) {
             group.lastEntryDate = recentCall.date;
           }
+          if (typeof group.duration == 'object') {
+            group.duration = new Date(
+              group.duration.getTime() + recentCall.duration.getTime());
+          } else {
+            group.duration = recentCall.duration;
+          }
           group.retryCount++;
           groupsStore.put(group).onsuccess = function onsuccess() {
             self._asyncReturn(callback, self._getGroupObject(group));
@@ -634,7 +645,8 @@ var CallLogDBManager = {
             id: groupId,
             number: recentCall.number,
             lastEntryDate: recentCall.date,
-            retryCount: 1
+            retryCount: 1,
+            duration: new Date(0)
           };
           Contacts.findByNumber(recentCall.number,
                                 function(contact, matchingTel) {
