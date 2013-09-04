@@ -560,11 +560,13 @@ var Contacts = (function() {
   var enterSearchMode = function enterSearchMode(evt) {
     contacts.List.initSearch(function onInit() {
       contacts.Search.enterSearchMode(evt);
+      navigation.go('search-view', 'none');
     });
   };
 
   var exitSearchMode = function exitSearchMode(evt) {
     contacts.Search.exitSearchMode(evt);
+    navigation.back('search-view', 'none');
   };
 
   var ignoreReturnKey = function ignoreReturnKey(evt) {

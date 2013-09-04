@@ -7,6 +7,10 @@ function navigationStack(currentView) {
   //  classes which will be added to the 'current' and 'next' view when the
   //  transition goes backwards.
   this.transitions = {
+    'none': {
+      forwards: {},
+      backwards: {}
+    },
     'right-left': {
       forwards: {
         next: 'app-go-left-in'
@@ -71,11 +75,19 @@ function navigationStack(currentView) {
     });
 
     var current;
+    var realCurrent = document.getElementById(_currentView);
+    var screenshotView = document.getElementById(screenshotViewId);
     var currentClassList;
     // Performance is very bad when there are too many contacts so we use
     // -moz-element and animate this 'screenshot" element.
+
+    screenshotView.classList.remove('view-upper');
+    screenshotView.classList.remove('view-under');
+    realCurrent.classList.remove('view-upper');
+    realCurrent.classList.remove('view-under');
+
     if (transition.indexOf('go-deeper') === 0) {
-      current = document.getElementById(screenshotViewId);
+      current = screenshotView;
       currentClassList = current.classList;
       if (transition.indexOf('search') !== -1) {
         currentClassList.add('search');
@@ -84,8 +96,9 @@ function navigationStack(currentView) {
       }
       currentClassList.remove('hide');
     } else {
-      current = document.getElementById(_currentView);
+      current = realCurrent;
     }
+    current.classList.add('view-under');
 
     var forwardsClasses = this.transitions[transition].forwards;
     var backwardsClasses = this.transitions[transition].backwards;
@@ -101,8 +114,10 @@ function navigationStack(currentView) {
       next.classList.add(forwardsClasses.next);
     }
 
+    next.classList.remove('view-under');
+    next.classList.add('view-upper');
+
     this.stack.push({ view: nextView, transition: transition});
-    next.style.zIndex = this.stack.length;
     _currentView = nextView;
   };
 
@@ -117,7 +132,6 @@ function navigationStack(currentView) {
     var currentView = this.stack.pop();
     var current = document.getElementById(currentView.view);
     var currentClassList = current.classList;
-    current.style.zIndex = this.stack.length;
 
     var nextView = this.stack[this.stack.length - 1];
     var transition = currentView.transition;
@@ -138,16 +152,29 @@ function navigationStack(currentView) {
         }
       );
     }
-    var next;
+
+    currentClassList.remove('view-under');
+    currentClassList.add('view-upper');
+
+    var realNext = document.getElementById(_currentView);
+    var screenshotView = document.getElementById(screenshotViewId);
+    screenshotView.classList.remove('view-upper');
+    screenshotView.classList.remove('view-under');
+    realNext.classList.remove('view-upper');
+    realNext.classList.remove('view-under');
     var nextClassList;
+    var next;
     // Performance is very bad when there are too many contacts so we use
     // -moz-element and animate this 'screenshot" element.
     if (transition.indexOf('go-deeper') === 0) {
-      next = document.getElementById(screenshotViewId);
+      next = screenshotView;
     } else {
-      next = document.getElementById(_currentView);
+      next = realNext;
     }
     nextClassList = next.classList;
+
+    nextClassList.remove('view-upper');
+    nextClassList.add('view-under');
 
     // Add backwards class to next view.
     if (backwardsClasses.next) {
@@ -165,6 +192,7 @@ function navigationStack(currentView) {
           nextClassList.remove('contact-list');
         }
       });
+      currentClassList.remove('view-upper');
     }
 
     waitForAnimation(current, callback);

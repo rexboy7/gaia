@@ -671,3 +671,11 @@ section[role="region"] > header .icon.icon-settings
   height: 100%;
   overflow: scroll;
 }
+
+.view-under {
+  z-index: 0;
+}
+
+.view-upper {
+  z-index: 1;
+}
