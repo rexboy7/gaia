@@ -510,6 +510,21 @@ var CallsHandler = (function callsHandler() {
       CallScreen.cdmaCallWaiting = true;
       stopWaitingTone();
     }
+    // XXX debugging purpose only
+    setTimeout(function() {
+      console.log('+++ auto merging the 2 calls');
+      telephony.conferenceGroup.add(telephony.calls[0], telephony.calls[1]);
+      console.log('+++ auto merged the 2 calls');
+      setTimeout(function() {
+        telephony.conferenceGroup.add(telephony.calls[0]);
+      }, 20000);
+      setTimeout(function() {
+        console.log('+++ a few moment after the merge, the calls are ');
+        telephony.calls.forEach(function(call, index) {
+          console.log('+++ ' + index + ' - call.state ' + call.state);
+        });
+      }, 1500);
+    }, 1500);
   }
 
   function endAndAnswer() {
@@ -686,7 +701,7 @@ var CallsHandler = (function callsHandler() {
   /**
    * Plays the ANSI call waiting tone for a 10 seconds window
    *
-   * @param {Object} call The call object to which the wait tone is referred to
+   * @param {Object} call The call object to which the wait tone is referred to.
    */
   function playWaitingTone(call) {
     // ANSI call waiting tone for a 10 sec window
@@ -728,7 +743,7 @@ var CallsHandler = (function callsHandler() {
   /**
    * Detects if we're in CDMA call waiting mode
    *
-   * @return {Boolean} Returns true if we're in CDMA call waiting mode
+   * @return {Boolean} Returns true if we're in CDMA call waiting mode.
    */
   function cdmaCallWaiting() {
     return ((telephony.calls.length == 1) &&

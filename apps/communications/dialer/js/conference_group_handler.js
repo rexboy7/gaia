@@ -11,6 +11,9 @@ var ConferenceGroupHandler = (function() {
   function onCallsChanged() {
     var calls = telephony.conferenceGroup.calls;
     groupLine.hidden = !calls.length;
+    if (!calls.length) {
+      CallScreen.hideGroups();
+    }
 
     LazyL10n.get(function localized(_) {
       groupLabel.textContent = _('group-call',
