@@ -22,6 +22,7 @@ var ConferenceGroupHandler = (function() {
   }
 
   function onStateChange() {
+    console.log('1111');
     switch (telephony.conferenceGroup.state) {
       case 'resuming':
         groupLine.classList.remove('held');
@@ -32,3 +33,4 @@ var ConferenceGroupHandler = (function() {
     }
   }
 })();
+
