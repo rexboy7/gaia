@@ -72,6 +72,19 @@ var CallsHandler = (function callsHandler() {
         }
       });
     }
+    if (navigator.mozBluetooth) {
+      var req = navigator.mozBluetooth.getDefaultAdapter();
+      req.onsuccess = function getAdapterSuccess() {
+        var defaultAdapter = req.result;
+        if (defaultAdapter) {
+          defaultAdapter.onscostatuschanged = function scoStatusChanged(evt) {
+            if (evt.status) {
+              CallScreen.turnSpeakerOff();
+            }
+          };
+        }
+      };
+    }
 
     postToMainWindow('ready');
   }

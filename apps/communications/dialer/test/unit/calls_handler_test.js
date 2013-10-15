@@ -1,6 +1,7 @@
 'use strict';
 
 requireApp('communications/dialer/test/unit/mock_moztelephony.js');
+requireApp('communications/dialer/test/unit/mock_mozbluetooth.js');
 requireApp('communications/dialer/test/unit/mock_call.js');
 requireApp('communications/dialer/test/unit/mock_handled_call.js');
 requireApp('communications/dialer/test/unit/mock_call_screen.js');
@@ -28,6 +29,13 @@ var mocksHelperForCallsHandler = new MocksHelper([
   'SettingsURL',
   'Swiper'
 ]).init();
+
+function switchReadOnlyProperty(originObject, propName, targetObj) {
+  Object.defineProperty(originObject, propName, {
+    configurable: true,
+    get: function() { return targetObj; }
+  });
+}
 
 suite('calls handler', function() {
   var realMozTelephony;
@@ -1028,8 +1036,9 @@ suite('calls handler', function() {
     });
   });
 
-  suite('> headphone support', function() {
+  suite('> headphone and bluetooth support', function() {
     var realACM;
+    var realMozBluetooth;
     var acmStub;
 
     suiteSetup(function() {
@@ -1040,10 +1049,15 @@ suite('calls handler', function() {
 
       realACM = navigator.mozAudioChannelManager;
       navigator.mozAudioChannelManager = acmStub;
+
+      realMozBluetooth = navigator.mozBluetooth;
+      MockMozBluetooth.init();
+      switchReadOnlyProperty(navigator, 'mozBluetooth', MockMozBluetooth);
     });
 
     suiteTeardown(function() {
       navigator.mozAudioChannelManager = realACM;
+      switchReadOnlyProperty(navigator, 'mozBluetooth', realMozBluetooth);
     });
 
     suite('> pluging headphones in', function() {
@@ -1058,6 +1072,19 @@ suite('calls handler', function() {
       test('should turn the speakerOff', function() {
         var turnOffSpy = this.sinon.spy(MockCallScreen, 'turnSpeakerOff');
         headphonesChange.yield();
+        assert.isTrue(turnOffSpy.calledOnce);
+      });
+    });
+
+    suite('> connecting to bluetooth headset', function() {
+      test('should turn the speakerOff when coonnected', function() {
+        CallsHandler.setup();
+        MockMozBluetooth.triggerOnGetAdapterSuccess();
+        var turnOffSpy = this.sinon.spy(MockCallScreen, 'turnSpeakerOff');
+
+        MockMozBluetooth.triggerOnScostatuschanged(false);
+        assert.isFalse(turnOffSpy.calledOnce);
+        MockMozBluetooth.triggerOnScostatuschanged(true);
         assert.isTrue(turnOffSpy.calledOnce);
       });
     });
