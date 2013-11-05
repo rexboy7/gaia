@@ -45,6 +45,7 @@ var CallScreen = {
     self.statusMessage.querySelector('p').textContent = text;
     self.statusMessage.classList.add('visible');
     self.statusMessage.addEventListener('transitionend', function tend() {
+      evt.stopPropagation();
       self.statusMessage.removeEventListener('transitionend', tend);
       setTimeout(function hide() {
         self.statusMessage.classList.remove('visible');
@@ -52,7 +53,9 @@ var CallScreen = {
     });
   },
 
-  set singleLine(enabled) {
+  updateSingleLine: function cs_updateSingleLine() {
+    var enabled =
+      (calls.querySelectorAll('section:not([hidden])').length <= 1);
     this.calls.classList.toggle('single-line', enabled);
     this.calls.classList.toggle('big-duration', enabled);
   },
@@ -138,7 +141,10 @@ var CallScreen = {
     }
 
     /* We need CSS transitions for the status bar state and the regular state */
-    screen.addEventListener('transitionend', function trWait() {
+    screen.addEventListener('transitionend', function trWait(evt) {
+      if (evt.target != screen) {
+        return;
+      }
       screen.removeEventListener('transitionend', trWait);
       callback();
     });
@@ -146,6 +152,12 @@ var CallScreen = {
 
   insertCall: function cs_insertCall(node) {
     this.calls.appendChild(node);
+    this.updateSingleLine();
+  },
+
+  removeCall: function cs_removeCall(node) {
+    this.calls.removeChild(node);
+    this.updateSingleLine();
   },
 
   moveToGroup: function cs_moveToGroup(node) {

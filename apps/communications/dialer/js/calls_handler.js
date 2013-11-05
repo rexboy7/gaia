@@ -5,7 +5,7 @@ var CallsHandler = (function callsHandler() {
     document.location.host;
 
   // Changing this will probably require markup changes
-  var CALLS_LIMIT = 2;
+  var CALLS_LIMIT = 4;
 
   var handledCalls = [];
   var toneInterval = null; // Timer used to play the waiting tone
@@ -137,17 +137,8 @@ var CallsHandler = (function callsHandler() {
 
     if (handledCalls.length === 0) {
       exitCallScreen(false);
-    } else {
-      // Letting the CallScreen know how to display the call duration
-      // (depending on how many calls/conference group are on)
-      var openLines = telephony.calls.length +
-        (telephony.conferenceGroup.calls.length ? 1 : 0);
-
-      CallScreen.singleLine = (openLines == 1);
-
-      if (!displayed && !closing) {
-        toggleScreen();
-      }
+    } else if (!displayed && !closing) {
+      toggleScreen();
     }
   }
 
@@ -221,8 +212,8 @@ var CallsHandler = (function callsHandler() {
     handledCalls.splice(index, 1);
 
     if (handledCalls.length > 0) {
-      // Only hiding the call if we have another one to display
-      removedCall.hide();
+      // Only hiding the incoming bar if we have another one to display.
+      // Let handledCall catches disconnect event itself.
       CallScreen.hideIncoming();
 
       var remainingCall = handledCalls[0];

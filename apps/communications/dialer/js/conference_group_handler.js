@@ -20,6 +20,7 @@ var ConferenceGroupHandler = (function() {
   function onCallsChanged() {
     var calls = telephony.conferenceGroup.calls;
     groupLine.hidden = !calls.length;
+    CallScreen.updateSingleLine();
     if (!calls.length) {
       CallScreen.hideGroupDetails();
     }
@@ -52,6 +53,7 @@ var ConferenceGroupHandler = (function() {
       case '':
         // Exiting conference call
         CallsHandler.checkCalls();
+        window.dispatchEvent(new CustomEvent('groupcallended'));
         break;
     }
   }

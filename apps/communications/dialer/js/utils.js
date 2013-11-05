@@ -1,6 +1,8 @@
 'use strict';
 
 var Utils = {
+  callEndPromptTime: 2000,
+
   prettyDate: function ut_prettyDate(time) {
     var _ = navigator.mozL10n.get;
     var dtf = new navigator.mozL10n.DateTimeFormat();

@@ -7,6 +7,7 @@ function HandledCall(aCall) {
   this.call = aCall;
 
   aCall.addEventListener('statechange', this);
+  window.addEventListener('groupcallended', this.clearGroupState.bind(this));
 
   aCall.ongroupchange = (function onGroupChange() {
     if (this.call.group) {
@@ -296,16 +297,21 @@ HandledCall.prototype.updateDirection = function hc_updateDirection() {
 };
 
 HandledCall.prototype.remove = function hc_remove() {
-  this.call.removeEventListener('statechange', this);
-  this.photo = null;
-
+  var self = this;
   clearInterval(this._ticker);
   this._ticker = null;
-
-  if (this.node.parentNode) {
-    this.node.parentNode.removeChild(this.node);
-  }
-  this.node = null;
+  self.photo = null;
+  self.call.removeEventListener('statechange', self);
+  document.removeEventListener('groupcallended', this);
+  LazyL10n.get(function localized(_) {
+    self.durationNode.classList.remove('isTimer');
+    self.durationChildNode.textContent = _('callEnded');
+  });
+  this.node.classList.add('ended');
+  setTimeout(function(evt) {
+    CallScreen.removeCall(self.node);
+    self.node = null;
+  }, Utils.callEndPromptTime);
 };
 
 HandledCall.prototype.connected = function hc_connected() {
@@ -313,7 +319,7 @@ HandledCall.prototype.connected = function hc_connected() {
     this.recentsEntry.status = 'connected';
   }
 
-  this.node.hidden = false;
+  this.show();
   this.node.classList.remove('held');
 
   this.startTimer();
@@ -358,10 +364,16 @@ HandledCall.prototype.show = function hc_show() {
   if (this.node) {
     this.node.hidden = false;
   }
+  CallScreen.updateSingleLine();
 };
 
 HandledCall.prototype.hide = function hc_hide() {
   if (this.node) {
     this.node.hidden = true;
   }
+  CallScreen.updateSingleLine();
+};
+
+HandledCall.prototype.clearGroupState = function hc_clearGroupState() {
+  this._leftGroup = false;
 };
