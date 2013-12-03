@@ -43,7 +43,11 @@ var MockMozTelephony = {
     this.mTriggerCallsChanged();
     this.mTriggerGroupCallsChanged();
   },
-
+     if (activeHc.length) {
+       CallScreen.setCallerContactImage(activeHc[0].photo);
+     } else if (telephony.active == telephony.conferenceGroup) {
+       CallScreen.setCallerContactImage(null);
+     }
   mSuiteTeardown: function() {
     this.oncallschanged = null;
     this.conferenceGroup.oncallschanged = null;

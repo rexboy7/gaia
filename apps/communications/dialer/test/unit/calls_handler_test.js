@@ -278,12 +278,13 @@ suite('calls handler', function() {
 
     suite('> extra call ending', function() {
       var hideSpy;
+      var firstHC;
 
       setup(function() {
         var firstCall = new MockCall('543552', 'incoming');
         var extraCall = new MockCall('12334', 'incoming');
 
-        telephonyAddCall.call(this, firstCall, {trigger: true});
+        firstHC = telephonyAddCall.call(this, firstCall, {trigger: true});
 
         var extraHC = telephonyAddCall.call(this, extraCall, {trigger: true});
         hideSpy = this.sinon.spy(extraHC, 'hide');
@@ -295,6 +296,22 @@ suite('calls handler', function() {
         var hideSpy = this.sinon.spy(MockCallScreen, 'hideIncoming');
         MockMozTelephony.mTriggerCallsChanged();
         assert.isTrue(hideSpy.calledOnce);
+      });
+
+      test('should switch image to current active call (if exists)',
+      function() {
+        firstHC.photo = 'photo1';
+        MockMozTelephony.active = firstHC.call;
+        MockMozTelephony.mTriggerCallsChanged();
+        assert.equal(MockCallScreen.mSetCallerContactImageArg, firstHC.photo);
+      });
+
+      test('should switch image to wallpaper if group call is active',
+      function() {
+        MockMozTelephony.active = MockMozTelephony.conferenceGroup;
+        MockMozTelephony.mTriggerCallsChanged();
+        assert.isTrue(MockCallScreen.mSetCallerContactImageCalled);
+        assert.isNull(MockCallScreen.mSetCallerContactImageArg);
       });
     });
 

@@ -222,6 +222,17 @@ var CallsHandler = (function callsHandler() {
       // Let handledCall catches disconnect event itself.
       CallScreen.hideIncoming();
 
+      // Switch image back to active call for call waiting phone
+      // hanged up (by current device or by remote) without answering.
+      var activeHc = handledCalls.filter(function(hc) {
+        return hc.call == telephony.active;
+      });
+      if (activeHc.length) {
+        CallScreen.setCallerContactImage(activeHc[0].photo);
+      } else if (telephony.active == telephony.conferenceGroup) {
+        CallScreen.setCallerContactImage(null);
+      }
+
       var remainingCall = handledCalls[0];
       if (remainingCall.call.state == 'incoming') {
         // The active call ended, showing the incoming call
