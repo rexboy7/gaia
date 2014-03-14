@@ -102,6 +102,10 @@
       "rules": {
         "minimumAccessLevel": "certified"
       }
+    },
+    "widget": {
+      "description": "Widget layout control",
+      "rules": {}
     }
   },
   "datastores-owned": {
