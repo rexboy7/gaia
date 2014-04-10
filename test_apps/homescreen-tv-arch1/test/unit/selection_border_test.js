@@ -58,7 +58,7 @@ suite('SelectionBorder', function() {
       assert.equal(selector.selectedItems[0].border.style.width, '100px');
       assert.equal(selector.selectedItems[0].border.style.height, '100px');
       assert.equal(selector.borders.length, 0);
-    });    
+    });
 
     test('deselect sampleUI1', function() {
       selector.select(sampleUI1);
@@ -143,7 +143,7 @@ suite('SelectionBorder', function() {
       assert.equal(selector.selectedItems[0].border.style.width, '100px');
       assert.equal(selector.selectedItems[0].border.style.height, '100px');
       assert.equal(selector.borders.length, 0);
-    });    
+    });
 
     test('select sampleUI1 and sampleUI2', function() {
       selector.select(sampleUI1);

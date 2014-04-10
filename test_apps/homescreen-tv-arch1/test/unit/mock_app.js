@@ -1,3 +1,5 @@
+'use strict';
+
 var idGen = 0;
 
 function MockApp(opts) {

@@ -1,3 +1,4 @@
+'use strict';
 (function(exports) {
 
   function MockWidgetEditor(options) {

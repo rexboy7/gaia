@@ -1,6 +1,5 @@
 'use strict';
-/* global MockApplications, MockAppList, MockSelectionBorder, MockWidgetManager,
-          MockWidgetEditor, MockOverlayManager, MockSpatialNavigator,
+/* global MockApplications, MockAppList, MockWidgetEditor, MockSpatialNavigator,
           MocksHelper, Homescreen, KeyEvent */
 
 require('/shared/test/unit/mocks/mock_navigator_moz_apps.js');

@@ -1,5 +1,5 @@
 'use strict';
-(function(exports){
+(function(exports) {
   var uuid = 0;
   var MockSystemConnection = {
     callbacks: {

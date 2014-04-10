@@ -1,6 +1,5 @@
 'use strict';
-/* global AppList, MockApplications, MockSpatialNavigator, MockSelectionBorder,
-          MockOverlayManager, MocksHelper, Blob */
+/* global AppList, MockApplications, MockSpatialNavigator, MocksHelper, Blob */
 
 mocha.globals(['Applications', 'OverlayManager', 'SelectionBorder',
                'SpatialNavigator']);

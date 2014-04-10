@@ -6,14 +6,6 @@ requireApp('homescreen-tv-arch1/js/spatial_navigator.js');
 
 suite('SpatialNavigator', function() {
 
-  suiteSetup(function() {
-    
-  });
-
-  suiteTeardown(function() {
-    
-  });
-
   suite('predefined list - without overlapping', function() {
     var spatialNav;
     /*  |--------------------------|
@@ -163,11 +155,11 @@ suite('SpatialNavigator', function() {
   suite('predefined list with overlapping', function() {
     var spatialNav;
     /*  |----item 2---------------|
-     *  | item 1  
+     *  | item 1
      *  |--------+------ item 3 ---|
      *  |        | item 5 | item 6 |
      *  item 4 --+--------+--------|
-     *  | item 7 |        |  
+     *  | item 7 |        |
      *  |--------+--------+---item 8
      *
      */

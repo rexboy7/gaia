@@ -1,5 +1,5 @@
 'use strict';
-/* global navigator, Applications, MockNavigatormozApps, MockAppsMgmt, MockApp */
+/* global Applications, MockNavigatormozApps, MockAppsMgmt, MockApp */
 
 require('/shared/test/unit/mocks/mock_navigator_moz_apps.js');
 requireApp('homescreen-tv-arch1/test/unit/mock_app.js');
@@ -26,7 +26,7 @@ suite('Applications', function() {
   var fakeApp4;
   var fakeApp5;
   var fakeApp6;
-  
+
   function createMockApps() {
     fakeApp1 = new MockApp({
       'origin': 'https://test-app1.gaiamobile.org',
@@ -319,7 +319,7 @@ suite('Applications', function() {
           } else {
             fakeXHR.requests[0].response = fakeBlob;
             fakeXHR.requests[0].status = 200;
-            fakeXHR.requests[0].onload();  
+            fakeXHR.requests[0].onload();
           }
         });
       }
@@ -338,12 +338,12 @@ suite('Applications', function() {
 
       test('getIconBlob for multiple entry points', function(done) {
         doGetIconBlobTest(fakeApp6.origin, 'app6_1', 60,
-                          'https://test-app6.gaiamobile.org/subapp1/icon_60.png',
+                         'https://test-app6.gaiamobile.org/subapp1/icon_60.png',
                           true, false, done);
       });
 
       test('getIconBlob prefer small icon', function(done) {
-        // We use a bad icon url. the XHR won't be called and 
+        // We use a bad icon url. the XHR won't be called.
         doGetIconBlobTest(fakeApp4.origin, '', 1,
                           'https://test-app4.gaiamobile.org/fake-icon-32.jpg',
                           false, false, done);
