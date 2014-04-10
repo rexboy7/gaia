@@ -6,6 +6,8 @@ var MockWidgetWindowHelper = {
 };
 
 var MockWidgetWindow = function widgetWindow(config) {
+  this.instanceID = 'MockWidgetWindow-' +
+                    MockWidgetWindowHelper.mInstances.length;
   this.setStyle = function() {};
   this.open = function() {};
   this.close = function() {};

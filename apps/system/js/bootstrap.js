@@ -58,7 +58,7 @@ window.addEventListener('load', function startup() {
   window.addEventListener('ftuskip', doneWithFTU);
 
   window.widgetFactory = new WidgetFactory();
-  window.widgetManager = new WidgetManager();
+  window.widgetManager = new WidgetManager().start();
 
   SourceView.init();
   Shortcuts.init();
