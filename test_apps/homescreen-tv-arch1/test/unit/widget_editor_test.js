@@ -1,7 +1,7 @@
 'use strict';
 /* global MockApplications, MockAppList, MockOverlayManager,
-          MockSpacialNavigator, MockSelectionBorder,
-          LayoutEditor, URL, WidgetEditor*/
+          MockSpacialNavigator, MockSelectionBorder, MockLayoutEditor,
+          URL, WidgetEditor*/
 
 mocha.globals(['WidgetEditor']);
 
@@ -11,12 +11,12 @@ requireApp('homescreen-tv-arch1/test/unit/mock_app_list.js');
 requireApp('homescreen-tv-arch1/test/unit/mock_overlay_manager.js');
 requireApp('homescreen-tv-arch1/test/unit/mock_spatial_navigator.js');
 requireApp('homescreen-tv-arch1/test/unit/mock_selection_border.js');
-requireApp('homescreen-tv-arch1/js/layout_editor.js');
+requireApp('homescreen-tv-arch1/test/unit/mock_layout_editor.js');
 
 var options = {};
 
 var mocksForWidgetEditor = new MocksHelper([
-  'Applications', 'AppList', 'OverlayManager',
+  'Applications', 'AppList', 'OverlayManager', 'LayoutEditor',
   'SelectionBorder', 'SpatialNavigator'
 ]).init();
 
@@ -94,9 +94,7 @@ suite('WidgetEditor', function() {
       this.sinon.spy(widgetEditor, 'handlePlaceClicked');
       this.sinon.stub(widgetEditor, 'handleAppRemoved', function() {});
       this.sinon.stub(widgetEditor, 'handleAppUpdated', function() {});
-      console.log('test: start');
       widgetEditor.start();
-      console.log('test: stop');
       widgetEditor.stop();
     });
 
@@ -118,9 +116,9 @@ suite('WidgetEditor', function() {
 
     test('Should not respond to uninstall/update events', function() {
       Applications.trigger('uninstall');
-      //Applications.trigger('update');
+      Applications.trigger('update');
       assert.isFalse(widgetEditor.handleAppRemoved.called);
-      //assert.isFalse(widgetEditor.handleAppUpdated.called);
+      assert.isFalse(widgetEditor.handleAppUpdated.called);
     });
   });
 
@@ -140,7 +138,6 @@ suite('WidgetEditor', function() {
 
     test('Should show widget editor if not shown', function() {
       widgetEditor.show();
-
       assert.isFalse(widgetEditor.dom.hidden);
       assert.isTrue(widgetEditor.spatialNav.focus.called);
       assert.equal(widgetEditor.fire.args[0][0], 'shown');
@@ -149,7 +146,6 @@ suite('WidgetEditor', function() {
     test('Should not change widget editor if already shown', function() {
       widgetEditor.show();
       widgetEditor.show();
-
       assert.isFalse(widgetEditor.dom.hidden);
       assert.isFalse(widgetEditor.spatialNav.focus.called);
     });
@@ -169,7 +165,6 @@ suite('WidgetEditor', function() {
 
     test('Should hide widget editor if not hidden', function() {
       widgetEditor.hide();
-
       // Should fire closed event
       assert.isTrue(widgetEditor.dom.hidden);
       assert.equal(widgetEditor.fire.args[0][0], 'closed');
@@ -178,7 +173,6 @@ suite('WidgetEditor', function() {
     test('Should not change widget editor if already hidden', function() {
       widgetEditor.hide();
       widgetEditor.hide();
-
       // Should not fire closed event
       assert.isTrue(widgetEditor.dom.hidden);
       assert.isFalse(widgetEditor.fire.called);
@@ -205,18 +199,17 @@ suite('WidgetEditor', function() {
     setup(function() {
       widgetEditor = new WidgetEditor(options);
       widgetEditor.start();
+      this.sinon.spy(widgetEditor.editor, 'exportConfig');
     });
 
     teardown(function() {
+      widgetEditor.editor.exportConfig.restore();
       widgetEditor.stop();
     });
 
     test('Should have layout editor config', function() {
-      var layoutEditor = new LayoutEditor();
-      layoutEditor.init(options.container, options.targetSize, options.offset);
-      var layoutConfig = layoutEditor.exportConfig();
-      var exportConfig = widgetEditor.editor.exportConfig();
-      assert.equal(layoutConfig.length, exportConfig.length);
+      widgetEditor.exportConfig();
+      assert.isTrue(widgetEditor.editor.exportConfig.called);
     });
   });
 
@@ -235,16 +228,14 @@ suite('WidgetEditor', function() {
     });
 
     test('Should invoke importConfig if config exist', function() {
-      var config = widgetEditor.editor.exportConfig();
+      var config = [{}, {}];
       widgetEditor.importConfig(config);
-
       assert.isTrue(widgetEditor.editor.reset.called);
       assert.isTrue(widgetEditor.fillAppInfo.called);
     });
 
     test('Should not invoke importConfig if config not exist', function() {
       widgetEditor.importConfig();
-
       assert.isFalse(widgetEditor.editor.reset.called);
       assert.isFalse(widgetEditor.fillAppInfo.called);
     });
@@ -340,7 +331,6 @@ suite('WidgetEditor', function() {
       var places = widgetEditor.editor.placeHolders;
       widgetEditor.spatialNav.focus(places[2]);
       widgetEditor.togglePlace(places[2]);
-
       // Empty place, show appList
       assert.isFalse(widgetEditor.revokeUrl.called);
       assert.isFalse(widgetEditor.editor.removeWidget.called);
@@ -352,7 +342,6 @@ suite('WidgetEditor', function() {
       places[2].app = {origin: '', entryPoint: ''};
       widgetEditor.spatialNav.focus(places[2]);
       widgetEditor.togglePlace(places[2]);
-
       // Widget place, revokeUrl and removeWidget
       assert.isTrue(widgetEditor.revokeUrl.called);
       assert.isTrue(widgetEditor.editor.removeWidget.called);
