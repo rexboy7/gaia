@@ -22,7 +22,7 @@
       }
       var idx = this.mCallbacks[type].indexOf(callback);
       if (idx > -1) {
-        this.mCallbacks[type].slice(idx, 1);
+        this.mCallbacks[type].splice(idx, 1);
       }
     },
     trigger: function(type) {

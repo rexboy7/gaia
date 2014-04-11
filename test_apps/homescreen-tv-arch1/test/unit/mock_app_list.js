@@ -7,16 +7,16 @@
     return MockAppList.singleton;
   }
 
-  MockAppList.singleton = {
-    on: function() {},
-    off: function() {},
+  MockAppList.singleton = evt({
     init: function() {},
     uninit: function() {},
     show: function() {
       this.shown = true;
+      return true;
     },
     hide: function() {
       this.shown = false;
+      return true;
     },
     isShown: function() {
       return this.shown;
@@ -27,7 +27,7 @@
       }
     },
     reset: function() {}
-  };
+  });
 
   MockAppList.mTeardown = MockAppList.singleton.reset;
   exports.MockAppList = MockAppList;
