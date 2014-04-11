@@ -1,3 +1,5 @@
+'use strict';
+
 (function(exports) {
 
   function MockSpatialNavigator(collection, func) {

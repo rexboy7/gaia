@@ -1,6 +1,6 @@
 'use strict';
 /* global MockAppsMgmt, MockasyncStorage, MockSystemConnection, MocksHelper,
-          evt, Applications, AppList, WidgetManager */
+          Applications, WidgetManager */
 
 mocha.globals(['systemConnection']);
 mocha.globals(['asyncStorage']);
@@ -183,7 +183,7 @@ suite('WidgetManager', function() {
       ];
       var eventList = widgetManager.compareConfig(oldCfg, newCfg);
       assert.equal(eventList.length, 4);
-      for(var i = 0; i < eventList.length; i++) {
+      for (var i = 0; i < eventList.length; i++) {
         assert.equal(eventList[i].action, 'remove');
         assert.equal(eventList[i].config, oldCfg[i]);
       }
@@ -200,7 +200,7 @@ suite('WidgetManager', function() {
       ];
       var eventList = widgetManager.compareConfig(oldCfg, newCfg);
       assert.equal(eventList.length, 4);
-      for(var i = 0; i < eventList.length; i++) {
+      for (var i = 0; i < eventList.length; i++) {
         assert.equal(eventList[i].action, 'add');
         assert.equal(eventList[i].config, newCfg[i]);
       }
@@ -221,7 +221,7 @@ suite('WidgetManager', function() {
       ];
       var eventList = widgetManager.compareConfig(oldCfg, newCfg);
       assert.equal(eventList.length, 2);
-      for(var i = 0; i < eventList.length; i++) {
+      for (var i = 0; i < eventList.length; i++) {
         assert.equal(eventList[i].action, 'add');
       }
     });
@@ -241,7 +241,7 @@ suite('WidgetManager', function() {
       ];
       var eventList = widgetManager.compareConfig(oldCfg, newCfg);
       assert.equal(eventList.length, 2);
-      for(var i = 0; i < eventList.length; i++) {
+      for (var i = 0; i < eventList.length; i++) {
         assert.equal(eventList[i].action, 'remove');
       }
     });
@@ -352,7 +352,7 @@ suite('WidgetManager', function() {
 
     test('dispatchMessageToIAC', function() {
       widgetManager.save(newCfg);
-      var eventList = widgetManager.compareConfig(oldCfg, config);
+      widgetManager.compareConfig(oldCfg, config);
       assert.isTrue(widgetManager.dispatchMessageToIAC.called);
       assert.isTrue(widgetManager.systemConn.addWidget.called);
       assert.isTrue(widgetManager.systemConn.removeWidget.called);
@@ -408,7 +408,7 @@ suite('WidgetManager', function() {
 
     test('Handle app uninstall, app not in widget config', function() {
       Applications.fire('uninstall', fakeAppEntry3);
-      var widgetConfig = widgetManager.widgetConfig;
+      widgetManager.widgetConfig;
 
       // Should have 4 entry in widget config, same as initial config
       assert.equal(widgetManager.widgetConfig.length, 4);
@@ -418,7 +418,7 @@ suite('WidgetManager', function() {
 
     test('Handle app uninstall, app in widget config', function() {
       Applications.fire('uninstall', fakeAppEntry2);
-      var widgetConfig = widgetManager.widgetConfig;
+      widgetManager.widgetConfig;
 
       // Should have 3 entry in widget config
       assert.equal(widgetManager.widgetConfig.length, 3);

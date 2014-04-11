@@ -139,7 +139,7 @@ suite('OverlayManager', function() {
 
     var showAllCalledCount = invokeSystemConnCallback('showAll');
     assert.equal(OverlayManager._widgetState, 'shown');
-    
+
     setTimeout(function() {
       assert.isTrue(firstCalled);
       assert.equal(calledCountFrist, 1);
