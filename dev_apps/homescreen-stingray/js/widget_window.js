@@ -29,6 +29,14 @@
 
     CLASS_NAME: 'WidgetWindow',
 
+    /**
+     * Argument:
+     * w: width
+     * h: height
+     * x: left position
+     * y: top position
+     * opacity: opacity
+     */
     setStyle: function(arg) {
       this.width = arg.w || this.width;
       this.height = arg.h || this.height;
@@ -58,20 +66,7 @@
 
 
   };
-  // Widget.prototype.__proto__ = AppWindow.prototype;
+
   exports.WidgetWindow = WidgetWindow;
 }(window));
 
-window.addEventListener('load', function() {
-  window.widgetFactory = new WidgetFactory();
-  window.widgetManager = new WidgetManager();
-
-
-  var origin = document.location.protocol + '//' +
-    'clock.gaiamobile.org' + (window.location.port ?
-    (':' + window.location.port) : '');
-  var entryPoint = origin + '/index.html';
-  widgetFactory.createWidget({
-    widgetOrigin: origin
-  });
-});

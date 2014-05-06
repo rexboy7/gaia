@@ -65,6 +65,9 @@
    * @type {Boolean}
    */
   AppWindow.SUSPENDING_ENABLED = false;
+  SettingsListener.observe('app-suspending.enabled', false, function(value) {
+    AppWindow.SUSPENDING_ENABLED = !!value;
+  });
 
   /**
    * Change this if new window has its own styles.
@@ -1519,6 +1522,7 @@
    * @param  {String} animation The animation class name.
    */
   AppWindow.prototype.open = function aw_open(animation) {
+    debugger;
     // Request "open" to our internal transition controller.
     if (this.transitionController) {
       this.debug('open with ' + animation || this.openAnimation);

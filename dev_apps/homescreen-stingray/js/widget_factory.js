@@ -25,6 +25,7 @@
       var app = new WidgetWindow(config, widgetOverlay);
       // XXX: Separate styles.
       app.setStyle(args);
+      debugger;
       this.publish('launchwidget', app.instanceID);
 
       return app;
