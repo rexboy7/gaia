@@ -18,4 +18,6 @@ window.addEventListener('load', function() {
     x: 50,
     y: 50
   });
+  setTimeout(function() {widgetManager.hideAll()}, 5000);
+  setTimeout(function() {widgetManager.showAll()}, 10000);
 });

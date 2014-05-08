@@ -7,6 +7,17 @@
   };
 
   WidgetFactory.prototype = {
+    /**
+     * Add a widget window and put it into management.
+     * @param {object} args Arguments for creating widget. Including:
+     * widgetOrigin:     origin URI for widget
+     * widgetEntryPoint: (optional) entry point name that need to be used. The
+     *                   name specified must consist with the manifest file.
+     * x:                left position of widget
+     * y:                top position of widget
+     * w:                width of widget
+     * h:                height of widget
+     */
     createWidget: function(args) {
       var manifestURL = args.widgetOrigin + '/manifest.webapp';
       var appInfo = applications.getByManifestURL(manifestURL);
@@ -25,7 +36,6 @@
       var app = new WidgetWindow(config, widgetOverlay);
       // XXX: Separate styles.
       app.setStyle(args);
-      debugger;
       this.publish('launchwidget', app.instanceID);
 
       return app;
