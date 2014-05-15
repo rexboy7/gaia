@@ -49,6 +49,40 @@
     }
 
   // *** ConnectionManager:1 methods
+    this.prepareForConnection =
+    function(protocol, peerCM, peerCID, direction, callback) {
+      return this.action('PrepareForConnection', {
+        request: {
+          RemoteProtocolInfo: {
+            type: this.types.string,
+            value: protocol
+          },
+          PeerConnectionManager: {
+            type: this.types.string,
+            value: peerCM
+          },
+          PeerConnectionID: {
+            type: this.types.i4,
+            value: peerCID
+          },
+          Direction: {
+            type: this.types.string,
+            value: direction
+          }
+        },
+        response: {
+          ConnectionIDs: {
+            type: this.types.string
+          },
+          AVTransportID: {
+            type: this.types.i4
+          },
+          RcsID: {
+            type: this.types.i4
+          }
+        }
+      }, callback);
+    };
 
     this.getCurrentConnectionIDs = function( callback ) {
 
