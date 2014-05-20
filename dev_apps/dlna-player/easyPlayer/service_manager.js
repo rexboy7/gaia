@@ -1,4 +1,4 @@
-/* globals Plug */
+/* globals Plug, deviceManager */
 'use strict';
 
 (function(exports) {
@@ -30,31 +30,36 @@
       this.debugEl.appendChild(logEl);
     },
 
-    appendConfigDocument: function sm_appendConfigDocument(serviceWrapper) {
+    appendMixinProperties: function sm_appendConfigDocument(serviceWrapper) {
       var parser = new DOMParser();
       serviceWrapper.configDocument =
           parser.parseFromString(serviceWrapper.svc.config, 'text/xml');
+      serviceWrapper.friendlyName = serviceWrapper.configDocument.
+        getElementsByTagName('friendlyName')[0].textContent;
     },
 
     updateService: function sm_updateService(service) {
       var mediaServer = new this.serviceConstructor(service, { debug: false });
-      this.appendConfigDocument(mediaServer);
-
+      this.appendMixinProperties(mediaServer);
 
       if (!this.savedServices[service.id]) {
         this.savedServices[service.id] = mediaServer;
+        deviceManager.addService(mediaServer);
 
-        // Add server node
-        var serverItem = document.createElement('div');
-        var serverName = mediaServer.configDocument.
-          getElementsByTagName('friendlyName')[0].textContent;
-        serverItem.className = 'server';
-        serverItem.textContent = serverName;
-        serverItem.dataset.serviceId = service.id;
+        var serverItem = this.serverView(mediaServer);
         this.listElement.appendChild(serverItem);
-
         mediaServer.serverItem = serverItem;
       }
+    },
+
+    serverView: function sm_serverView(serviceWrapper) {
+      // Add server node
+      var serverItem = document.createElement('div');
+      var serverName = serviceWrapper.friendlyName;
+      serverItem.className = 'server';
+      serverItem.textContent = serverName;
+      serverItem.dataset.serviceId = serviceWrapper.svc.id;
+      return serverItem;
     },
 
     onServices: function sm_onServices(services) {
