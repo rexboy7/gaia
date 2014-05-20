@@ -1,3 +1,4 @@
+/* globals plug, deviceManager */
 (function(exports) {
   var DEBUG = false;
   'use strict';
@@ -5,6 +6,7 @@
   var savedServices = {};
 
   var debugEl;
+  var avtSelector;
   var audioPlayer;
   var videoPlayer;
   var imagePlayer;
@@ -69,11 +71,18 @@
   function playFile(evt) {
     evt.preventDefault();
     var fileType = evt.target.dataset.type;
+    var fileProtocol = evt.target.dataset.protocol;
     var fileFormat = evt.target.dataset.mime.split('/')[1].toLowerCase();
 //    if (fileFormat == 'mpeg' || fileFormat == 'mp4') {
 //       Workaround for mp4 is not supported by mac desktop
 //      fileType = 'unknown';
 //    }
+    var avtId = avtSelector.options[avtSelector.selectedIndex].value;
+    if (avtId != 'local') {
+      deviceManager.play(avtId, evt.target.href, evt.target.dataset.res);
+      return;
+    }
+
 
     switchPlayer(fileType);
 
@@ -105,6 +114,11 @@
     }
   }
 
+  function escapeXML(string) {
+    string = '<DIDL-Lite xmlns:dlna="urn:schemas-dlna-org:device-1-0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:upnp="urn:schemas-upnp-org:metadata-1-0/upnp/" xmlns="urn:schemas-upnp-org:metadata-1-0/DIDL-Lite/">' + string + '</DIDL-Lite>';
+    return string;
+  }
+
   function browseFolder(serviceId, folderId, folderElement) {
     var mediaServer = savedServices[serviceId];
     if (!mediaServer) {
@@ -122,7 +136,8 @@
       var data = response.data.Result;
       if (data.indexOf('xmlns:dlna') == -1) {
         data = data.replace('<DIDL-Lite ',
-          '<DIDL-Lite xmlns:dlna="urn:schemas-dlna-org:device-1-0" ');
+          '<DIDL-Lite xmlns:dlna="urn:schemas-dlna-org:device-1-0" ')
+          .replace(/<unknown\>/g, '&lt;unknown&gt;');
       }
       var parser = new DOMParser();
       var serializer = new XMLSerializer();
@@ -155,16 +170,19 @@
           sublist.appendChild(newElem);
         } else if (item.tagName == 'item') {
           var linkElem = item.getElementsByTagName('res')[0];
-          var link, mime;
+          var link, protocol, mime;
           if (linkElem) {
             link = linkElem.textContent;
-            mime = linkElem.getAttribute('protocolInfo').split(':')[2];
+            protocol = linkElem.getAttribute('protocolInfo');
+            mime = protocol.split(':')[2];
           }
           var fileType = detectTypeByMime(mime);
           newElem = document.createElement('a');
           newElem.addEventListener('click', playFile);
           newElem.dataset.mime = mime;
+          newElem.dataset.protocol = protocol;
           newElem.dataset.type = fileType;
+          newElem.dataset.res = escapeXML(item.outerHTML);
           newElem.href = link;
           newElem.textContent = title;
           newElem.className = fileType;
@@ -215,6 +233,9 @@
   function onServices(services) {
     var idx = services.length;
     services.addEventListener('servicefound', function servicefound(e) {
+      for(var  i = 0; i < services.length; i++ ){
+        console.log(services[i].id);
+      }
       updateService(services[idx]);
       idx++;
     });
@@ -224,9 +245,9 @@
     ' found in the current network');
 
     // Remove offline services
-    for (savedServiceId in savedServices) {
+    for (var savedServiceId in savedServices) {
       var removed = true;
-      for (i = 0; i < services.length; i++) {
+      for (var i = 0; i < services.length; i++) {
         if (services[i].id == savedServiceId) {
           removed = false;
           break;
@@ -238,8 +259,8 @@
     }
 
     // Update services individually
-    for (i = 0; i < services.length; i++) {
-      updateService(services[i]);
+    for (var j = 0; j < services.length; j++) {
+      updateService(services[j]);
     }
   }
 
@@ -263,7 +284,7 @@
 
       browseFolder(service.id, null, serverItem);
     }
-
+/*
     mediaServer.getSystemUpdateId().then(function(response) {
       if (response && response.data) {
         debugLog('Service[' + serverName + '] is reporting UpdateId=[' +
@@ -277,7 +298,7 @@
       }
     }).then(null, function(error) { // Handle any errors
       debugLog('An error occurred: ' + error.description);
-    });
+    });*/
   }
 
   function discover() {
@@ -307,6 +328,7 @@
     playerToggler = document.getElementById('playerToggler');
     unknownPlayer = document.getElementById('unknownPlayer');
     discoverButton = document.getElementById('discoverButton');
+    avtSelector = document.getElementById('AVTList');
 
     currentPlayer = imagePlayer;
     togglePlayer(false);

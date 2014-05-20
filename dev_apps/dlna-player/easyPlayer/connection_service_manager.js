@@ -11,7 +11,7 @@
 
     listElementId: 'rendererList',
     serviceType: 'upnp:urn:schemas-upnp-org:service:ConnectionManager:1',
-    serviceConstructor: Plug.UPnP_ContentDirectory
+    serviceConstructor: Plug.UPnP_ConnectionManager
   };
   exports.ConnectionServiceManager = ConnectionServiceManager;
 })(window);
