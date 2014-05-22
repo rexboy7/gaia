@@ -1,0 +1,27 @@
+  html {
+    font-size: 62.5%;
+  }
+  body {
+    margin: 0px;
+    padding: 0px;
+    height: 100%;
+    font-size: 1.6rem;
+  }
+  .view-body {
+    position: absolute;
+    width: 100%;
+    height: calc(100% - 11rem);
+    overflow: scroll;
+  }
+  #controllers {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 6rem;
+  }
+
+  ul {
+    margin: 0;
+    padding-left: 20px;
+  }

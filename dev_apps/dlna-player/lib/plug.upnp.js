@@ -162,11 +162,7 @@
       var value, error;
 
       if (callback) {
-        try {
-          value = callback.call(promise.binding, event.detail);
-        } catch(e) {
-          error = e;
-        }
+        value = callback.call(promise.binding, event.detail);
       } else {
         value = event.detail;
       }
@@ -827,7 +823,6 @@
     var pool = [];
     return {
         get: function () {
-            console.log("7");
             return pool.pop() || new XMLHttpRequest({mozSystem: true});
         },
         release: function( xhr ) {

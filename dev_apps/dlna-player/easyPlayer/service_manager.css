@@ -1,3 +1,4 @@
+
   #folderList a,
   #folderList div {
     padding-top: 3px;
@@ -12,15 +13,21 @@
     display: block;
     padding-top: 3px;
     padding-left: 20px;
+    height: 5rem;
+    line-height: 5rem;
+    width: 100%;
+    border-bottom: 0.1rem solid #E6E6E3;
   }
-
-  a.folder {
+  li {
+    cursor: pointer;
+  }
+  li.folder {
     color: #FF9900;
     padding-left: 40px;
     background: url(image/folder_closed.png) left center no-repeat,
                 url(image/icon_folder.png) left 20px center no-repeat;
   }
-  a.folder.opened {
+  li.folder.opened {
     background: url(image/folder_opened.png) left center no-repeat,
                 url(image/icon_folder.png) left 20px center no-repeat;
   }
@@ -44,30 +51,30 @@
     background: url(image/icon_server.png) left center no-repeat;
     font-weight: bold;
   }
-  .sublist {
-    margin-left: 20px;
-  }
   .player {
     position: fixed;
     bottom: 20px;
     right: 20px;
   }
   #controlButtons {
-    position: fixed;
     bottom: 0px;
     right: 20px;
   }
-  a:hover {
+  li:hover {
     color: #003399;
   }
-  a:visited {
+  li:visited {
     color: #999999;
   }
   .hide {
     display: none;
   }
   .needRefresh {
-    cursor: hand;
+    cursor: pointer;
     padding-left: 40px;
     color: #00CC66;
+  }
+  #trackInfoBar {
+    background-color: #AAAAAA;
+    text-align: right;
   }

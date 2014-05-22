@@ -29,7 +29,7 @@
     evt.preventDefault();
     var elem = evt.target;
 
-    if (elem.nextSibling && elem.nextSibling.tagName == 'DIV') {
+    if (elem.nextSibling && elem.nextSibling.tagName == 'UL') {
       // folder is opened. Close it.
       elem.parentElement.removeChild(elem.nextSibling);
       elem.classList.remove('opened');
@@ -38,7 +38,7 @@
       debugLog(elem.serviceId, 'debug');
       elem.classList.add('opened');
       browseFolder(
-        elem.dataset.serviceId, elem.hash.substr(1), evt.target);
+        elem.dataset.serviceId, elem.dataset.href, evt.target);
     }
   }
 
@@ -79,7 +79,7 @@
 //    }
     var avtId = avtSelector.options[avtSelector.selectedIndex].value;
     if (avtId != 'local') {
-      deviceManager.play(avtId, evt.target.href, evt.target.dataset.res);
+      deviceManager.play(avtId, evt.target.dataset.href, evt.target.dataset.res);
       return;
     }
 
@@ -87,7 +87,7 @@
     switchPlayer(fileType);
 
     currentPlayer.hidden = false;
-    currentPlayer.src = evt.target.href;
+    currentPlayer.src = evt.target.dataset.href;
     currentPlayer.oncanplay = function() {
       this.play();
     };
@@ -144,7 +144,7 @@
       var xmlResponse = parser.parseFromString(data, 'application/xml');
       var lists = xmlResponse.documentElement.children;
 
-      var sublist = document.createElement('div');
+      var sublist = document.createElement('ul');
       sublist.className = 'sublist';
 
       for (var i = 0; i < lists.length; i++) {
@@ -159,11 +159,11 @@
 
         var newElem;
         if (item.tagName == 'container') {
-          newElem = document.createElement('a');
+          newElem = document.createElement('li');
 
           newElem.dataset.serviceId = serviceId;
           newElem.addEventListener('click', toggleFolder);
-          newElem.href = '#' + item.getAttribute('id');
+          newElem.dataset.href = item.getAttribute('id');
           newElem.textContent = title;
           newElem.className = 'folder';
 
@@ -177,13 +177,13 @@
             mime = protocol.split(':')[2];
           }
           var fileType = detectTypeByMime(mime);
-          newElem = document.createElement('a');
+          newElem = document.createElement('li');
           newElem.addEventListener('click', playFile);
           newElem.dataset.mime = mime;
           newElem.dataset.protocol = protocol;
           newElem.dataset.type = fileType;
           newElem.dataset.res = escapeXML(item.outerHTML);
-          newElem.href = link;
+          newElem.dataset.href = link;
           newElem.textContent = title;
           newElem.className = fileType;
           sublist.appendChild(newElem);
