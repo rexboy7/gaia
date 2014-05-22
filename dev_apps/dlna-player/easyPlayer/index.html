@@ -17,13 +17,25 @@
     <link href="app.css" rel="stylesheet">
     <link href="/shared/style/lists.css" rel="stylesheet">
     <link href="/shared/style/headers.css" rel="stylesheet">
+    <link href="/shared/style/toolbars.css" rel="stylesheet">
+    <link href="/shared/style/buttons.css" rel="stylesheet">
+    <style>
+      [role="toolbar"] button {
+        font-size: 1.5rem;
+        color: #E7E7E7;
+      }
+    </style>
   </head>
   <body role="application" class="skin-organic">
-    <section role="region">
+    <section role="region" id="main" class="panel">
       <header>
-        <h1>My DLNA Player</h1>
+        <h1>My DLNA Player
+          <select name="select" id="AVTList">
+            <option value="local">Local player</option>
+          </select>
+        </h1>
       </header>
-      <article class="view-body">
+      <article id="contentList">
         <header>
           <h2>Folder List</h2>
         </header>
@@ -32,36 +44,37 @@
           <h2>Renderer List</h2>
         </header>
         <div id="rendererList"></div>
-        <header>
-          <h2>AVTransport List</h2>
-        </header>
-        <select name="select" id="AVTList">
-          <option value="local">Local player</option>
-        </select>
         <div id="debug"></div>
       </article>
-    </section>
-    <div id="controllers">
-      <audio id="audioPlayer" autoplay="true" class="player" controls="true"></audio>
-      <video id="videoPlayer" autoplay="true" class="player" controls="true"></video>
-      <iframe id="unknownPlayer" class="player"></iframe>
-      <img id="imagePlayer" class="player"></img>
-      <div id="controlButtons">
-        <button id="remotePrev">|&#9664;</button>
-        <button id="remoteRewind">&#9664;&#9664;</button>
-        <button id="remotePlay">&#9658;</button>
-        <button id="remotePause">&#9616;&#9616;</button>
-        <button id="remoteStop">&#9632;</button>
-        <button id="remoteFF">&#9658;&#9658;</button>
-        <button id="remoteNext">&#9658;|</button>
-        <button id="discoverButton">discover</button>
-        <button id="playerToggler">hide/show</button>
-        <button id="audioToggler">music</button>
-        <button id="videoToggler">video</button>
-        <button id="imageToggler">image</button>
-        <button id="unknownToggler">unknown</button>
-        <div id="trackInfoBar">&nbsp;</div>
+      <div id="trackInfoBar">&nbsp;</div>
+      <div id="playerTogglers" role="toolbar">
+        <button id="discoverButton"></button>
+        <button id="toPlayerPage"></button>
       </div>
+    </section>
+    <section id="playerPanel" role="region" class="panel">
+        <header>
+          <h1>Player</h1>
+        </header>
+        <article>
+        <audio id="audioPlayer" autoplay="true" class="player" controls="true"></audio>
+        <video id="videoPlayer" autoplay="true" class="player" controls="true"></video>
+        <iframe id="unknownPlayer" class="player"></iframe>
+        <img id="imagePlayer" class="player"></img>
+      </article>
+      <div id="playerTogglers" role="toolbar">
+        <button id="toDirectoryPage"></button>
+      </div>
+    </section>
+    <div id="controlButtons" role="toolbar">
+      <button id="remotePrev">|&#9664;</button>
+      <button id="remoteRewind">&#9664;&#9664;</button>
+      <button id="remotePlay">&#9658;</button>
+      <button id="remotePause">&#9616;&#9616;</button>
+      <button id="remoteStop">&#9724;</button>
+      <button id="remoteFF">&#9658;&#9658;</button>
+      <button id="remoteNext">&#9658;|</button>
     </div>
+
   </body>
 </html>
