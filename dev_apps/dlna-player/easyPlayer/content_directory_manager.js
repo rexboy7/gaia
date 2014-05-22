@@ -55,7 +55,15 @@
     }
   }
 
+  function togglePanel(name) {
+    if (!name) {
+      name = 'main';
+    }
+    window.location.hash = name;
+  }
+
   function switchPlayer(type) {
+    var oldPlayer = currentPlayer;
     if (type == 'audio') {
       currentPlayer = audioPlayer;
     } else if (type == 'video') {
@@ -65,7 +73,11 @@
     } else if (type == 'unknown') {
       currentPlayer = unknownPlayer;
     }
+    if (oldPlayer != currentPlayer && currentPlayer != imagePlayer) {
+      oldPlayer.src = '';
+    }
     togglePlayer(true);
+    togglePanel('playerPanel');
   }
 
   function playFile(evt) {
@@ -325,23 +337,22 @@
     audioPlayer = document.getElementById('audioPlayer');
     videoPlayer = document.getElementById('videoPlayer');
     imagePlayer = document.getElementById('imagePlayer');
-    playerToggler = document.getElementById('playerToggler');
     unknownPlayer = document.getElementById('unknownPlayer');
     discoverButton = document.getElementById('discoverButton');
     avtSelector = document.getElementById('AVTList');
+    directoryPage = document.getElementById('toDirectoryPage');
+    toPlayerPage = document.getElementById('toPlayerPage');
 
     currentPlayer = imagePlayer;
-    togglePlayer(false);
+    togglePlayer(true);
 
-    playerToggler.addEventListener('click', togglePlayer);
-    audioToggler.addEventListener('click', switchPlayer.bind(null, 'audio'));
-    videoToggler.addEventListener('click', switchPlayer.bind(null, 'video'));
-    imageToggler.addEventListener('click', switchPlayer.bind(null, 'image'));
-    unknownToggler.addEventListener(
-                                'click', switchPlayer.bind(null, 'unknown'));
     discoverButton.addEventListener('click', discover);
+    directoryPage.addEventListener('click', togglePanel.bind(null, ''));
+    toPlayerPage.addEventListener('click',
+      togglePanel.bind(null, 'playerPanel'));
 
     discover();
+    togglePanel();
   }
 
   exports.ContentDirectoryManager = {
