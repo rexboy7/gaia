@@ -49,16 +49,15 @@
           connectionService = this.devices[deviceId][sid];
         }
       }
-        avtService.stop(0).then(function(e) {
-          avtService.setAVTransportURI(0, mediaUrl, mediaMetadata)
-          .then(function() {
-            avtService.play(0).then(null, function(e) {
-              console.log("errorrr");
-            });
-          }).then(null, function(e) {
-          });
-        }).then(null, function(e) {
+      avtService.stop(0).then(function(e) {
+        return avtService.setAVTransportURI(0, mediaUrl, mediaMetadata);
+      }).then(function(e) {
+        return avtService.play(0).then(function() {
+          return avtManager.updateMediaInfo();
         });
+      }).then(null, function(e) {
+        console.log('Error:' + e.description);
+      });
     }
   };
 

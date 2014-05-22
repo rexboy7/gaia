@@ -14,30 +14,54 @@
     <script defer type="text/javascript" src="device_manager.js"></script>
     <script defer type="text/javascript" src="easy_player.js"></script>
     <link rel="stylesheet" href="service_manager.css" type="text/css">
+    <link href="app.css" rel="stylesheet">
+    <link href="/shared/style/lists.css" rel="stylesheet">
+    <link href="/shared/style/headers.css" rel="stylesheet">
   </head>
-  <body>
-    <h1>Plug.UPnP_ContentDirectory Example: Getting a Media Server's UpdateId</h1>
-    <div id="folderList"></div>
-    Renderer
-    <div id="rendererList"></div>
-    AVT
-    <div>
-      <select name="select" id="AVTList">
-        <option value="local">Local player</option>
-      </select>
-    </div>
-    <div id="debug"></div>
-    <audio id="audioPlayer" autoplay="true" class="player" controls="true"></audio>
-    <video id="videoPlayer" autoplay="true" class="player" controls="true"></video>
-    <iframe id="unknownPlayer" class="player"></iframe>
-    <img id="imagePlayer" class="player"></img>
-    <div id="controlButtons">
-      <button id="discoverButton">discover</button>
-      <button id="playerToggler">hide/show</button>
-      <button id="audioToggler">music</button>
-      <button id="videoToggler">video</button>
-      <button id="imageToggler">image</button>
-      <button id="unknownToggler">unknown</button>
+  <body role="application" class="skin-organic">
+    <section role="region">
+      <header>
+        <h1>My DLNA Player</h1>
+      </header>
+      <article class="view-body">
+        <header>
+          <h2>Folder List</h2>
+        </header>
+        <div id="folderList"></div>
+        <header>
+          <h2>Renderer List</h2>
+        </header>
+        <div id="rendererList"></div>
+        <header>
+          <h2>AVTransport List</h2>
+        </header>
+        <select name="select" id="AVTList">
+          <option value="local">Local player</option>
+        </select>
+        <div id="debug"></div>
+      </article>
+    </section>
+    <div id="controllers">
+      <audio id="audioPlayer" autoplay="true" class="player" controls="true"></audio>
+      <video id="videoPlayer" autoplay="true" class="player" controls="true"></video>
+      <iframe id="unknownPlayer" class="player"></iframe>
+      <img id="imagePlayer" class="player"></img>
+      <div id="controlButtons">
+        <button id="remotePrev">|&#9664;</button>
+        <button id="remoteRewind">&#9664;&#9664;</button>
+        <button id="remotePlay">&#9658;</button>
+        <button id="remotePause">&#9616;&#9616;</button>
+        <button id="remoteStop">&#9632;</button>
+        <button id="remoteFF">&#9658;&#9658;</button>
+        <button id="remoteNext">&#9658;|</button>
+        <button id="discoverButton">discover</button>
+        <button id="playerToggler">hide/show</button>
+        <button id="audioToggler">music</button>
+        <button id="videoToggler">video</button>
+        <button id="imageToggler">image</button>
+        <button id="unknownToggler">unknown</button>
+        <div id="trackInfoBar">&nbsp;</div>
+      </div>
     </div>
   </body>
 </html>

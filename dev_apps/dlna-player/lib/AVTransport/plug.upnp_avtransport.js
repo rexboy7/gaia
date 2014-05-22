@@ -319,11 +319,11 @@
   // *** AVTransport:2 methods
 
     if(this.upnpType === 'urn:schemas-upnp-org:service:AVTransport:2') {
-        
+
         // TODO
-        
+
     }
-    
+
   };
 
   UPnPAVTransport.prototype = Object.create( Plug.UPnP.prototype );
