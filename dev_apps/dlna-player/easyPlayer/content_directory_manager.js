@@ -15,6 +15,7 @@
   var currentPlayer;
   var playerToggler;
   var folderList;
+  var debugPanel;
 
   function debugLog(msg, level) {
     if (!DEBUG && level == 'debug') {
@@ -342,6 +343,11 @@
     avtSelector = document.getElementById('AVTList');
     directoryPage = document.getElementById('toDirectoryPage');
     toPlayerPage = document.getElementById('toPlayerPage');
+    debugPanel = document.getElementById('debug');
+    if (!DEBUG) {
+      debugPanel.style.display = 'none';
+    }
+
 
     currentPlayer = imagePlayer;
     togglePlayer(true);
