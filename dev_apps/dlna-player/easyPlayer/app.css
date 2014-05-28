@@ -35,12 +35,13 @@
     overflow: scroll;
   }
   #trackInfoBar {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 4rem;
-  background-color: #AAAAAA;
-  text-align: right;
+  float: right;
+  overflow: hidden;
+  color: #E6E6E3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: calc(100% - 11.5rem);
+  height: 100%;
 }
 
   .panel:target {
@@ -49,4 +50,8 @@
   }
   section[role="region"] [role="toolbar"]{
     position: absolute;
+  }
+
+  #controlButtons[role="toolbar"] button {
+    width: calc(100% / 7 - 0.5rem);
   }
