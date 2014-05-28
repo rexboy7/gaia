@@ -29,27 +29,34 @@
   <body role="application" class="skin-organic">
     <section role="region" id="main" class="panel">
       <header>
-        <h1>My DLNA Player
-          <select name="select" id="AVTList">
-            <option value="local">Local player</option>
-          </select>
-        </h1>
+        <h1>My DLNA Player</h1>
       </header>
       <article id="contentList">
         <header>
-          <h2>Folder List</h2>
-        </header>
-        <div id="folderList"></div>
-        <header>
           <h2>Renderer List</h2>
         </header>
-        <div id="rendererList"></div>
+        <ul>
+          <li class="server">
+            <select name="select" id="AVTList" class="button icon-dialog">
+              <option value="local">Local player</option>
+            </select>
+          </li>
+        </ul>
+        <header>
+          <h2>Folder List</h2>
+        </header>
+        <ul id="folderList"></ul>
+        <header style='display: none'>
+          <h2>Renderer List</h2>
+        </header>
+        <ul id="rendererList" style='display: none'></ul>
         <div id="debug"></div>
       </article>
-      <div id="trackInfoBar">&nbsp;</div>
+
       <div id="playerTogglers" role="toolbar">
         <button id="discoverButton"></button>
         <button id="toPlayerPage"></button>
+        <div id="trackInfoBar">&nbsp;</div>
       </div>
     </section>
     <section id="playerPanel" role="region" class="panel">

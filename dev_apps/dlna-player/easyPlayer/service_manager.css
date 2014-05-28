@@ -17,9 +17,11 @@
     line-height: 5rem;
     width: auto;
     border-bottom: 0.1rem solid #E6E6E3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   li {
-    cursor: pointer;
   }
   li.folder {
     color: #FF9900;

@@ -54,7 +54,7 @@
 
     serverView: function sm_serverView(serviceWrapper) {
       // Add server node
-      var serverItem = document.createElement('div');
+      var serverItem = document.createElement('li');
       var serverName = serviceWrapper.friendlyName;
       serverItem.className = 'server';
       serverItem.textContent = serverName;

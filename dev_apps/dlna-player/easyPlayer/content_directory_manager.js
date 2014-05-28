@@ -285,7 +285,7 @@
       savedServices[service.id] = mediaServer;
 
       // Add server node
-      var serverItem = document.createElement('div');
+      var serverItem = document.createElement('li');
       var serverName = mediaServer.configDocument.
         getElementsByTagName('friendlyName')[0].textContent;
       serverItem.className = 'server';
