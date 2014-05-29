@@ -44,14 +44,22 @@
   height: 100%;
 }
 
-  .panel:target {
-    transform: translateX(0);
-    visibility: visible;
-  }
-  section[role="region"] [role="toolbar"]{
-    position: absolute;
-  }
+.panel:target {
+  transform: translateX(0);
+  visibility: visible;
+}
+section[role="region"] [role="toolbar"]{
+  position: absolute;
+}
 
-  #controlButtons[role="toolbar"] button {
-    width: calc(100% / 7 - 0.5rem);
-  }
+#controlButtons[role="toolbar"] button {
+  width: calc(100% / 7 - 0.5rem);
+}
+
+section[role="region"] > header:first-child .icon.loud-icon {
+  background-image: url(/style/speaker_loud_icon.png);
+}
+
+section[role="region"] > header:first-child .icon.quiet-icon {
+  background-image: url(/style/speaker_regular_icon.png);
+}

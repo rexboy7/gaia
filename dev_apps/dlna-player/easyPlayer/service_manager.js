@@ -9,6 +9,7 @@
 
   ServiceManager.prototype = {
     listElementId: 'elementList',
+    serviceName: 'ConnectionManager',
     serviceType: 'upnp:urn:schemas-upnp-org:service:ConnectionManager:1',
     serviceConstructor: Plug.UPnP_ContentDirectory,
     savedServices: {},
@@ -91,6 +92,10 @@
       for (var j = 0; j < services.length; j++) {
         this.updateService(services[j]);
       }
+    },
+
+    get currentService() {
+      return deviceManager.getSelectedService(this.serviceName);
     },
 
     remove: function sm_remove(serviceId) {

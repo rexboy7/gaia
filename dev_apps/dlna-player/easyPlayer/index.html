@@ -12,6 +12,7 @@
     <script defer type="text/javascript" src="connection_service_manager.js"></script>
     <script defer type="text/javascript" src="avtransport_manager.js"></script>
     <script defer type="text/javascript" src="device_manager.js"></script>
+    <script defer type="text/javascript" src="rendercontrol_manager.js"></script>
     <script defer type="text/javascript" src="easy_player.js"></script>
     <link rel="stylesheet" href="service_manager.css" type="text/css">
     <link href="app.css" rel="stylesheet">
@@ -26,9 +27,17 @@
       }
     </style>
   </head>
-  <body role="application" class="skin-organic">
+  <body role="application" class="skin-dark">
     <section role="region" id="main" class="panel">
       <header>
+        <menu type="toolbar">
+          <button id="remoteQuiet">
+            <span class="icon quiet-icon">Volume -</span>
+          </button>
+          <button id="remoteLoud">
+            <span class="icon loud-icon">Volume +</span>
+          </button>
+        </menu>
         <h1>My DLNA Player</h1>
       </header>
       <article id="contentList">
@@ -50,6 +59,10 @@
           <h2>Renderer List</h2>
         </header>
         <ul id="rendererList" style='display: none'></ul>
+        <header>
+          <h2>Renderer Control List</h2>
+        </header>
+        <ul id="renderCtrlList" style='display: none'></ul>
         <div id="debug"></div>
       </article>
 
