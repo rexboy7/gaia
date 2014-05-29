@@ -1,5 +1,5 @@
 /* globals ConnectionServiceManager, ContentDirectoryManager, AVTManager,
-   DeviceManager */
+   DeviceManager, RenderCtrlManager */
 'use strict';
 
 function EasyPlayer() {
@@ -7,6 +7,7 @@ function EasyPlayer() {
   ContentDirectoryManager.init();
   window.avtManager = new AVTManager().init();
   window.deviceManager = new DeviceManager().init();
+  window.renderCtrlManager = new RenderCtrlManager().init();
 }
 
 window.easyPlayer = new EasyPlayer();
