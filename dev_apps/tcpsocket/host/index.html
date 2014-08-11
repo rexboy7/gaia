@@ -8,7 +8,7 @@
 
 <base target='_blank'>
 
-<title>WebRTC client</title>
+<title>WebRTC host</title>
 
 <!-- <link rel='stylesheet' href='css/main.css' /> -->
 
@@ -16,11 +16,11 @@
 
 <body>
 
-
 <script defer src='../lib/js/adapter.js'></script>
 <script defer src='../lib/js/tcp_socket_peer.js'></script>
-<script defer src='../lib/js/presentation.js'></script>
-<script defer src='js/user.js'></script>
+<script defer src='../lib/js/present_host_adapter.js'></script>
+
+<script defer src='js/host.js'></script>
 <input id="chattxt"></input>
 <button id="sendbutton">Send</button>
 </body>
