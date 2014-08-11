@@ -13,21 +13,20 @@ var TCPSocketPeer = {
   pc: new RTCPeerConnection(pc_config, pc_constraints),
   dc: null,
   socket: null,
-  init: function p_init() {
+  init: function tsp_init() {
     this.socket = navigator.mozTCPSocket.open('127.0.0.1', 8105);
     this.socket.onopen = this.onopen.bind(this);
     this.socket.ondata = this.ondata.bind(this);
     this.socket.onclose = this.onclose.bind(this);
   },
-  onopen: function p_onopen() {
+  onopen: function tsp_onopen() {
     console.log("opened");
   },
-  ondata: function p_ondata(evt) {
+  ondata: function tsp_ondata(evt) {
     var message = JSON.parse(evt.data);
     if (!message || !message.event) {
       return;
     }
-    console.log(message);
 
     switch (message.event) {
       case 'created':
@@ -39,7 +38,6 @@ var TCPSocketPeer = {
         break;
       case 'memberadded':
         // Other members joined
-        console.log(this);
         this.onRemoteJoin && this.onRemoteJoin();
         break;
       case 'memberleft':
@@ -59,11 +57,11 @@ var TCPSocketPeer = {
         this.gotRemoteAnswer(message.data);
     }
   },
-  onclose: function p_onclose() {
+  onclose: function tsp_onclose() {
 
   },
 /////////////////////////////////////
-  sendOffer: function p_sendOffer() {
+  sendOffer: function tsp_sendOffer() {
     console.log(this.rank + ":sendoffer");
     // create Data channel and set receiver for it
     // (we call onDataChannel manually since it's only triggered on answer side)
@@ -76,11 +74,11 @@ var TCPSocketPeer = {
       });
     }.bind(this), error);
   },
-  serializeSend: function p_serializeSend(message) {
+  serializeSend: function tsp_serializeSend(message) {
     console.log(message);
     this.socket.send(JSON.stringify(message));
   },
-  gotRemoteOffer: function p_gotRemoteOffer(offer) {
+  gotRemoteOffer: function tsp_gotRemoteOffer(offer) {
     console.log(this.rank + ":gotremoteoffer");
     if (this.rank == 'guest') {
       return;
@@ -96,8 +94,7 @@ var TCPSocketPeer = {
     }.bind(this), error);
     this.pc.ondatachannel = this.onDataChannel.bind(this);
   },
-  gotRemoteAnswer: function p_gotRemoteAnswer(answer) {
-    console.log(this.rank + ":gotremoteanswer");
+  gotRemoteAnswer: function tsp_gotRemoteAnswer(answer) {
     if (this.rank == 'host') {
       return;
     }
@@ -105,28 +102,27 @@ var TCPSocketPeer = {
   },
 
   //////
-  onDataChannel: function p_onDataChannel(evt) {
-    console.log(this.rank + ":ondatachannel");
+  onDataChannel: function tsp_onDataChannel(evt) {
     this.dc = evt.channel;
-    this.dc.onmessage = this.onReceiveData.bind(this);
+    this.dc.onmessage = function(evt) {
+      this.onDataChannelReceive && this.onDataChannelReceive(JSON.parse(evt.data));
+    }.bind(this);
     this.dc.onopen = this.onDataChannelOpened.bind(this);
   },
   onDataChannelOpened: function p_onDataChannelOpened(ev) {
-    console.log("ondatachannelopened");
-    this.dc.send("Hello this is " + this.rank + " speaking");
+//    this.dc.send("Hello this is " + this.rank + " speaking");
   },
-  onReceiveData: function p_onReceiveData(evt) {
-    console.log("onreceivedata");
-    this.log(evt.data);
+  dataChannelSend: function tsp_send(type, data, id) {
+    this.dc.onerror = function(e) {
+      console.log("ERROR:" + e);
+    };
+    this.dc.send(JSON.stringify({
+      event: type,
+      data: data,
+      id: id
+    }));
   },
-  send: function p_send(type, data) {
-    console.log("send");
-    this.dc.send({
-      type: type,
-      data: data
-    });
-  },
-  log: function p_log(message) {
+  log: function tsp_log(message) {
     var div = document.createElement('div');
     div.textContent = message;
     document.body.appendChild(div);

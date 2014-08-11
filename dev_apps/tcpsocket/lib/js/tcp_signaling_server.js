@@ -8,7 +8,7 @@ var connections = [];
 // =================
 function serializeSend(connection, message) {
   console.log(message);
-    connection.send(JSON.stringify(message));
+  connection.send(JSON.stringify(message));
 }
 server.onconnect = function (evt) {
   var connection = evt;
@@ -35,7 +35,6 @@ server.onconnect = function (evt) {
     });
   };
   connection.onerror = function(e) {
-    debugger;
     console.log(e);
     throw e;
   }
