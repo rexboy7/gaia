@@ -6,10 +6,10 @@ sendbutton.addEventListener('click', function() {
   session.postMessage(chattxt.value);
 })
 
-// For guest
-Presentation.onavailablechange = function(e) {
-  console.log("This is client presenting");
-  //Presentation.log("state:" + e.session.state);
-  var session = Presentation.requestSession('../presenter/index.html');
+// For presenter
+Presentation.onpresent = function(e) {
+  Presentation.log("This is client presenting");
+  Presentation.log("state:" + e.session.state);
+  session = e.session;
   session.onmessage = this.log.bind(this);
 };
