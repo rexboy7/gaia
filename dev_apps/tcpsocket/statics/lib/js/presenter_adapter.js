@@ -8,6 +8,7 @@ var PresenterAdapter = {
   pc: new RTCPeerConnection(pc_config, pc_constraints),
   dc: null,
   parent: null,
+  session: null,
   init: function pc_init() {
     window.addEventListener('message', this._handleMessage.bind(this));
     // Presenter side:
@@ -36,45 +37,41 @@ var PresenterAdapter = {
     if (!message) {
       return;
     }
+    console.log("SIGNALING_EVT" + message.event);
     switch(message.event) {
       case 'initpresent':
-        this.parent = evt.source;
         console.log(this.parent);
-        this.id = message.id;
-        this._sendOffer();
+        SecondarySessionSignaler.parent = this.parent = evt.source;
+        this.session = new PresentationSession(SecondarySessionSignaler);
+        this.session.id = message.id;
+        this.session._sendOffer();
         break;
       case 'presentanswer':
-        this.pc.setRemoteDescription(new RTCSessionDescription(message.data));
+        this.session._receiveAnswer(message);
         break;
     };
   },
-  _sendOffer: function pc_sendOffer() {
-    this._onDataChannel({channel: this.pc.createDataChannel('present')});
-    this.pc.createOffer(function(offer) {
-      this.parent.postMessage({event: 'presentoffer', data: offer.toJSON(), id: this.id}, '*');
-      this.pc.setLocalDescription(offer);
-    }.bind(this)  , error);
-  },
-  _onDataChannel: function pc_onDataChannel(evt) {
-    console.log("dtc");
-    this.dc = evt.channel;
-    this.dc.onmessage = this._onDataChannelReceive.bind(this);
-    this.dc.onopen = this._onDataChannelOpened.bind(this);
-    console.log("presenter._onDataChannel");
-    // TODO: call onpresent and send session object to it
-  },
-  _onDataChannelReceive: function pc_onDataChannelReceive(evt) {
-    console.log("dtcr");
-    this.log(evt.data);
-  },
-  _onDataChannelOpened: function pc_onDataChannelOpened(evt) {
-    this.dc.send("I'm presenter");
-  },
+
   log: function pc_log(message) {
     var div = document.createElement('div');
     div.textContent = message;
     document.body.appendChild(div);
   }
-}
+};
+
+var Presentation = {
+  onpresent: null,
+  log: PresenterAdapter.log
+};
+
+var SecondarySessionSignaler = {
+  parent: null,
+  send: function sss_sendMessage(event, data, id) {
+    parent.postMessage({event: event, data: data, id: id}, '*');
+  },
+  onpresent: function sss_onpresent(evt) {
+    Presentation.onpresent(evt);
+  }
+};
 
 PresenterAdapter.init();
