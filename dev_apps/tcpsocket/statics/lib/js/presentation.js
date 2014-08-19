@@ -1,10 +1,10 @@
 'use strict';
 
 var Presentation = {
-  __proto__: TCPSocketPeer,
+  __proto__: PureHTTPPeer,
   sessions: {},
   init: function() {
-    TCPSocketPeer.init.apply(this);
+    PureHTTPPeer.init.apply(this);
   },
   onDataChannelOpened: function pr_onRemoteJoin() {
     this.onavailablechange && this.onavailablechange({available: true});

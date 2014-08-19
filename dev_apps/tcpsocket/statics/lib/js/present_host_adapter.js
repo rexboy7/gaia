@@ -1,14 +1,14 @@
 var PresentHostAdapter = {
-  __proto__: TCPSocketPeer,
+  __proto__: PureHTTPPeer,
   init: function() {
-    TCPSocketPeer.init.apply(this);
-    window.addEventListener("message", this);
+    PureHTTPPeer.init.apply(this);
+    window.addEventListener("message", this.handleWindowEvent.bind(this));
   },
   presentWindows: {},
   //onDataChannelOpened: function pha_onDataChannelOpened() {
 
   //}
-  handleEvent: function pha_handleEvent(evt) {
+  handleWindowEvent: function pha_handleWindowEvent(evt) {
     switch(evt.type) {
       case 'message':
         var message = evt.data;
