@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+<title>Presentation API client</title>
+<script>
+  var roomNum = <%= roomNum %>;
+  var rank = 'primary';
+  var eventUrl = '/events/' + rank + '/' + roomNum;
+</script>
+
+<script defer src='/statics/lib/js/adapter.js'></script>
+<script defer src='/statics/lib/js/pure_http_peer.js'></script>
+<script defer src='/statics/lib/js/presentation.js'></script>
+<script defer src='/statics/client/js/user.js'></script>
+</head>
+
+<body>
+<h1> Room number: <%= roomNum %></h1>
+<input id="chattxt"></input>
+<button id="sendbutton">Send</button>
+</body>
+</html>
