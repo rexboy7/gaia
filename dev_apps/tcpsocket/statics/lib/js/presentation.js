@@ -74,6 +74,7 @@ PresentationSession.prototype = {
     this.pc.ondatachannel = this.onDataChannel.bind(this);
   },
   onDataChannel: function ps_onDataChannel(evt) {
+    console.log("Ondatachannel");
     this.dc = evt.channel;
     this.dc.onmessage = this.onDataChannelReceive.bind(this);
     this.dc.onopen = this.onDataChannelOpened.bind(this);

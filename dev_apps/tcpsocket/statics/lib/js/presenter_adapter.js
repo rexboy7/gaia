@@ -39,6 +39,7 @@ var PresenterAdapter = {
     switch(message.event) {
       case 'initpresent':
         this.parent = evt.source;
+        console.log(this.parent);
         this.id = message.id;
         this._sendOffer();
         break;
@@ -55,6 +56,7 @@ var PresenterAdapter = {
     }.bind(this)  , error);
   },
   _onDataChannel: function pc_onDataChannel(evt) {
+    console.log("dtc");
     this.dc = evt.channel;
     this.dc.onmessage = this._onDataChannelReceive.bind(this);
     this.dc.onopen = this._onDataChannelOpened.bind(this);
@@ -62,6 +64,7 @@ var PresenterAdapter = {
     // TODO: call onpresent and send session object to it
   },
   _onDataChannelReceive: function pc_onDataChannelReceive(evt) {
+    console.log("dtcr");
     this.log(evt.data);
   },
   _onDataChannelOpened: function pc_onDataChannelOpened(evt) {

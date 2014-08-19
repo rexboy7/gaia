@@ -10,6 +10,6 @@ sendbutton.addEventListener('click', function() {
 Presentation.onavailablechange = function(e) {
   console.log("This is client presenting");
   //Presentation.log("state:" + e.session.state);
-  var session = Presentation.requestSession('/statics/presenter/index.html');
+  session = Presentation.requestSession('/statics/presenter/index.html');
   session.onmessage = this.log.bind(this);
 };
