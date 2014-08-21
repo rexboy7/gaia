@@ -78,6 +78,9 @@ app.post('/secondaryicecandidate', function(req, res) {
 
 function removeFromRoom(pool, roomNum, req) {
   pool[roomNum].splice(pool[roomNum.indexOf(req)], 1);
+  if(pool === secondary) {
+    notifySecondarychange(roomNum);
+  }
 };
 
 function notifySecondarychange(roomNum) {
