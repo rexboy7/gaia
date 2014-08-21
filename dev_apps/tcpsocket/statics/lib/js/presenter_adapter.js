@@ -37,10 +37,8 @@ var PresenterAdapter = {
     if (!message) {
       return;
     }
-    console.log("SIGNALING_EVT" + message.event);
     switch(message.event) {
       case 'initpresent':
-        console.log(this.parent);
         SecondarySessionSignaler.parent = this.parent = evt.source;
         this.session = new PresentationSession(SecondarySessionSignaler);
         this.session.id = message.id;
@@ -71,6 +69,9 @@ var SecondarySessionSignaler = {
   },
   onpresent: function sss_onpresent(evt) {
     Presentation.onpresent(evt);
+  },
+  onclose: function sss_onclose(evt, id) {
+    parent.postMessage({event: 'closesession', id: id}, '*');
   }
 };
 

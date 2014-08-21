@@ -11,19 +11,28 @@ function error(e) {
 
 var PureHTTPPeer = {
   rank: rank, // 'host' or 'guest'
-  pc: new RTCPeerConnection(pc_config, pc_constraints),
+  pc: null,
   dc: null,
   evtSrc: null,
+  onsecondarychange: null,
+  ondatachannelopened: null,
+  get isIdle() {
+    return !(this.dc);
+  },
   init: function php_init() {
+    this.pc && this.pc.close();
+    this.evtSrc && this.evtSrc.close();
+
+    this.pc = new RTCPeerConnection(pc_config, pc_constraints);
     this.evtSrc = new EventSource(eventUrl);
-    this.evtSrc.addEventListener('availablechange', this);
+    this.evtSrc.addEventListener('secondarychange', this);
     this.evtSrc.addEventListener('icecandidate', this);
     this.evtSrc.addEventListener('requestsession', this);
     this.evtSrc.addEventListener('offer', this);
     this.evtSrc.addEventListener('answer', this);
     this.evtSrc.addEventListener('ping', this);
     this.evtSrc.onerror = error;
-    this.evtSrc.onclose = this.onclose.bind(this);
+    this.evtSrc.onclose = this.reset.bind(this);
     this.pc.onicecandidate = function (e) {
       if (e.candidate == null) {
         return;
@@ -35,26 +44,26 @@ var PureHTTPPeer = {
       });
       this.pc.onicecandidate = null;
     }.bind(this);
+    this.pc.onsignalingstatechange = function() {
+    }.bind(this);
   },
-  onopen: function tsp_onopen() {
-    console.log("opened");
+  onopen: function php_onopen() {
   },
-  handleEvent: function tsp_ondata(evt) {
+  handleEvent: function php_ondata(evt) {
     var message = JSON.parse(evt.data);
     switch (evt.type) {
-      case 'availablechange':
+      case 'secondarychange':
         this.rank = 'primary';
         this.log(message.length + ' screens available:' + message);
-        // TODO: make screen selectable.
-        this.sendOffer();
+        this.emit('secondarychange', message.screens);
         break;
       case 'offer':
-        console.log(message);
         this.rank = 'secondary';
-        this.gotRemoteOffer(message.data);
+        if (this.isIdle) {
+          this.gotRemoteOffer(message.data);
+        }
         break;
       case 'answer':
-        console.log(message);
         this.gotRemoteAnswer(message.data);
         break;
       case 'ping':
@@ -65,12 +74,9 @@ var PureHTTPPeer = {
         break;
     }
   },
-  onclose: function tsp_onclose() {
 
-  },
 /////////////////////////////////////
-  sendOffer: function tsp_sendOffer() {
-    console.log(this.rank + ":sendoffer");
+  sendOffer: function php_sendOffer(secondaryId) {
     // create Data channel and set receiver for it
     // (we call onDataChannel manually since it's only triggered on answer side)
     this.onDataChannel({channel: this.pc.createDataChannel("myc")});
@@ -79,11 +85,12 @@ var PureHTTPPeer = {
       this.serializeSend({
         event: 'offer',
         data: offer,
-        roomNum: roomNum
+        roomNum: roomNum,
+
       });
     }.bind(this), error);
   },
-  serializeSend: function tsp_serializeSend(message) {
+  serializeSend: function php_serializeSend(message) {
     var xhr = new XMLHttpRequest();
     xhr.open('post', '/' + message.event);
 
@@ -93,8 +100,7 @@ var PureHTTPPeer = {
     xhr.send(JSON.stringify(message));
     //xhr.onload = this.log.bind();
   },
-  gotRemoteOffer: function tsp_gotRemoteOffer(offer) {
-    console.log(this.rank + ":gotremoteoffer");
+  gotRemoteOffer: function php_gotRemoteOffer(offer) {
     this.pc.setRemoteDescription(new RTCSessionDescription(offer), function() {
       this.pc.createAnswer(function(answer) {
         this.pc.setLocalDescription(answer);
@@ -107,32 +113,27 @@ var PureHTTPPeer = {
     }.bind(this), error);
     this.pc.ondatachannel = this.onDataChannel.bind(this);
   },
-  gotRemoteAnswer: function tsp_gotRemoteAnswer(answer) {
-    console.log("gotRemoteAnswer");
+  gotRemoteAnswer: function php_gotRemoteAnswer(answer) {
     if (this.rank == 'host') {
       return;
     }
     this.pc.setRemoteDescription(new RTCSessionDescription(answer));
-    console.log("gotRemoteAnswer");
   },
 
   //////
-  onDataChannel: function tsp_onDataChannel(evt) {
+  onDataChannel: function php_onDataChannel(evt) {
     this.dc = evt.channel;
     this.dc.onmessage = function(evt) {
-      console.log("bbbb");
-      this.onDataChannelReceive && this.onDataChannelReceive(JSON.parse(evt.data));
+      this.emit('datachannelreceive', JSON.parse(evt.data));
     }.bind(this);
-    console.log("dddd");
-    this.dc.onopen = this.onDataChannelOpened.bind(this);
+    this.dc.onopen = this._onDataChannelOpened.bind(this);
     this.dc.onerror = error;
-    console.log("dddd");
+    this.dc.onclose = this.reset.bind(this);
   },
-  onDataChannelOpened: function p_onDataChannelOpened(ev) {
-    console.log("Open");
-//    this.dc.send("Hello this is " + this.rank + " speaking");
+  _onDataChannelOpened: function p_onDataChannelOpened(evt) {
+    this.emit('datachannelopen', evt);
   },
-  dataChannelSend: function tsp_send(type, data, id) {
+  dataChannelSend: function php_send(type, data, id) {
     this.dc.onerror = function(e) {
       console.log("ERROR:" + e);
     };
@@ -142,9 +143,18 @@ var PureHTTPPeer = {
       id: id
     }));
   },
-  log: function tsp_log(message) {
+  reset: function php_reset() {
+    this.init();
+  },
+  log: function php_log(message) {
     var div = document.createElement('div');
     div.textContent = message;
     document.body.appendChild(div);
+  },
+  emit: function php_emit(eventname, data) {
+    var cbname = 'on' + eventname;
+    if (typeof this[cbname] == 'function' ) {
+      this[cbname](data);
+    }
   }
 }

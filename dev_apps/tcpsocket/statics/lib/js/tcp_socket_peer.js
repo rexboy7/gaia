@@ -20,7 +20,6 @@ var TCPSocketPeer = {
     this.socket.onclose = this.onclose.bind(this);
   },
   onopen: function tsp_onopen() {
-    console.log("opened");
   },
   ondata: function tsp_ondata(evt) {
     var message = JSON.parse(evt.data);
@@ -62,7 +61,6 @@ var TCPSocketPeer = {
   },
 /////////////////////////////////////
   sendOffer: function tsp_sendOffer() {
-    console.log(this.rank + ":sendoffer");
     // create Data channel and set receiver for it
     // (we call onDataChannel manually since it's only triggered on answer side)
     this.onDataChannel({channel: this.pc.createDataChannel("myc")});
@@ -79,7 +77,6 @@ var TCPSocketPeer = {
     this.socket.send(JSON.stringify(message));
   },
   gotRemoteOffer: function tsp_gotRemoteOffer(offer) {
-    console.log(this.rank + ":gotremoteoffer");
     if (this.rank == 'guest') {
       return;
     }
