@@ -8,7 +8,11 @@
   var rank = 'primary';
   var eventUrl = '/events/' + rank + '/' + roomNum;
 </script>
-
+<style>
+  #peerList {
+    width: 100px;
+  }
+</style>
 <script defer src='/statics/lib/js/adapter.js'></script>
 <script defer src='/statics/lib/js/pure_http_peer.js'></script>
 <script defer src='/statics/lib/js/presentation_session.js'></script>
@@ -18,7 +22,16 @@
 
 <body>
 <h1> Room number: <%= roomNum %></h1>
-<input id="chattxt"></input>
-<button id="sendbutton">Send</button>
+<section>
+  <input id="chattxt"></input>
+  <button id="sendbutton">Send</button>
+</section>
+<hr />
+<section>
+  <select id="peerList" size=10></select>
+  <button id="btnConnect">connect</button>
+  <button id="btnDisconnect">disconnect</button>
+</section>
+<div id="status"></div>
 </body>
 </html>

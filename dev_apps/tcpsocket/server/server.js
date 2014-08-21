@@ -27,17 +27,16 @@ app.get('/secondary/:roomNum', function(req, res) {
 
 app.get('/events/primary/:roomNum', function(req, res) {
   var roomNum = req.params.roomNum;
-  console.log(req.params.myname);
   sendSSEHeader(res);
-  console.log(roomNum);
-  console.log(!!primary[roomNum]);
   if (!!primary[roomNum]) {
     primary[roomNum].push(res);
   } else {
     primary[roomNum] = [res];
   }
+  console.log("Secondary:" + (secondary[roomNum] ? secondary[roomNum].length : 0));
+  console.log("Primary:" + (primary[roomNum] ? primary[roomNum].length : 0));
   if (secondary[roomNum]) {
-    notifyAvailablechange(roomNum);
+    notifySecondarychange(roomNum);
   }
   res.on('close', removeFromRoom.bind(null, primary, roomNum, res));
 });
@@ -51,9 +50,9 @@ app.get('/events/secondary/:roomNum', function(req, res) {
   } else {
     secondary[roomNum] = [res];
   }
-  console.log("???" + secondary[roomNum].length);
-  console.log("???" + primary[roomNum].length);
-  notifyAvailablechange(roomNum);
+  console.log("Secondary:" + (secondary[roomNum] ? secondary[roomNum].length : 0));
+  console.log("Primary:" + (primary[roomNum] ? primary[roomNum].length : 0));
+  notifySecondarychange(roomNum);
   res.on('close', removeFromRoom.bind(null, secondary, roomNum, res));
 });
 
@@ -78,27 +77,26 @@ app.post('/secondaryicecandidate', function(req, res) {
 });
 
 function removeFromRoom(pool, roomNum, req) {
-  console.log("HEHEHE Removed ^_^" + roomNum);
   pool[roomNum].splice(pool[roomNum.indexOf(req)], 1);
 };
 
-function notifyAvailablechange(roomNum) {
+function notifySecondarychange(roomNum) {
   // TODO: use true IDs
   var secondaryId = [];
   for(var i = 0; i < secondary[roomNum].length; i++) {
     secondaryId.push(i);
   }
-  primaryBroadcast(roomNum, 'availablechange', { screens: secondaryId });
+  primaryBroadcast(roomNum, 'secondarychange', { screens: secondaryId });
 }
 
 function primaryBroadcast(roomNum, event, data) {
-  primary[roomNum].forEach(function(res) {
+  primary[roomNum] && primary[roomNum].forEach(function(res) {
     appendSSE(res, event, data);
   });
 }
 
 function secondaryBroadcast(roomNum, event, data) {
-  secondary[roomNum].forEach(function(res) {
+  secondary[roomNum] && secondary[roomNum].forEach(function(res) {
     appendSSE(res, event, data);
   });
 }
@@ -116,14 +114,13 @@ function sendSSEHeader(res) {
 }
 
 function appendSSE(res, event, data) {
-  //console.log(res);
   if (typeof data == 'object') {
     data = JSON.stringify(data);
   }
   console.log("event: " + event);
-  console.log("data: " + data + '\n');
   console.log(res.write("event: " + event + '\n'));
   console.log(res.write("data: " + data + '\n\n'));
+  console.log("=======\n\n")
 }
 
 function debugHeaders(req) {

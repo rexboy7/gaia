@@ -12,7 +12,6 @@ function serializeSend(connection, message) {
 }
 server.onconnect = function (evt) {
   var connection = evt;
-  console.log("server.onconnect:" + connection);
   connections.push(evt);
   if (connections.length == 1) {
     serializeSend(connection, {event: 'created'});
@@ -26,7 +25,6 @@ server.onconnect = function (evt) {
   }
 
   connection.ondata = function(evt) {
-    console.log("server.ondata");
     connections.forEach(function(members) {
       if (members != evt) {
         // Broadcasting data to other sockets.
@@ -39,7 +37,6 @@ server.onconnect = function (evt) {
     throw e;
   }
   connections.onclose = function(evt) {
-    console.log("server.onclose");
     connections.splice(connections.indexOf(evt));
     connections.forEach(function(members) {
       members.send({
@@ -50,10 +47,3 @@ server.onconnect = function (evt) {
   };
 };
 
-
-// =================
-//socket.onopen = function () {
-//  console.log("socket.onopen");
-//  socket.send("123");
-//};
-//console.log(2);
