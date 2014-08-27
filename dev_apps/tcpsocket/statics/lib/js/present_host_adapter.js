@@ -9,7 +9,6 @@ var PresentHostAdapter = {
   },
 
   handleWindowEvent: function pha_handleWindowEvent(evt) {
-    console.log("EVTTTTTTTTTT" + evt.type);
     switch(evt.type) {
       case 'message':
         var message = evt.data;
@@ -29,6 +28,9 @@ var PresentHostAdapter = {
             this.presentWindows[message.id].close();
             delete this.presentWindows[evt.data.id];
             break;
+          case 'icecandidate':
+            this.channelPeer.dataChannelSend('secondaryicecandidate', message.data, message.id);
+            break;
         }
         break;
     }
@@ -43,6 +45,7 @@ var PresentHostAdapter = {
         this.presentWindows[message.data] = new PresentWindow(message.data);
         break;
       case 'presentanswer':
+      case 'icecandidate':
         //  @event presentanswer: {
         //    event: 'presentanswer'
         //    data: answer SDP from remote client side
@@ -53,7 +56,6 @@ var PresentHostAdapter = {
         break;
     }
   }
-
 };
 
 function PresentWindow(url) {
@@ -78,10 +80,10 @@ PresentWindow.prototype = {
     return;
   }
     switch(message.event) {
-
     case 'presentanswer':
+    case 'icecandidate':
       this.frame.contentWindow.postMessage({
-          event: 'presentanswer',
+          event: message.event,
           data: message.data,
           id: message.id}, '*');
       break;
