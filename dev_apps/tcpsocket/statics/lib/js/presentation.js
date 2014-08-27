@@ -1,5 +1,7 @@
 'use strict';
-
+function error(e) {
+  throw e;
+}
 var Presentation = {
   channelPeer: PureHTTPPeer,
   sessions: {},
@@ -8,7 +10,6 @@ var Presentation = {
 
   lblStatus: document.getElementById('lblStatus'),
   init: function() {
-    console.log("INIT");
     this.channelPeer.init();
     this.channelPeer.ondatachannelopen = this.onDataChannelOpened.bind(this);
     this.channelPeer.ondatachannelreceive = this.onDataChannelReceive.bind(this);
@@ -17,7 +18,6 @@ var Presentation = {
 
   },
   onDataChannelOpened: function pr_onRemoteJoin() {
-    console.log("ONDATACHANNELOPENED");
     this._emit('availablechange', {available: true});
   },
   // TODO: implement onRemoteLeave, check if remote server exists.
@@ -25,17 +25,19 @@ var Presentation = {
     if (!url) {
       return;
     }
-    console.log("REQUESTSESSION");
     var session = new PresentationSession(PrimarySessionSignaler);
     session.request(url);
     this.sessions[url] = session;
     return session;
   },
   onDataChannelReceive: function p_onDataChannelReceive(message) {
-    console.log("EXPECT:PRESENTOFFER");
     switch(message.event) {
       case 'presentoffer':
         this.sessions[message.id]._sendAnswer(message.data);
+        break;
+      case 'secondaryicecandidate':
+        var q = new RTCIceCandidate(message.data);
+        this.sessions[message.id].pc.addIceCandidate(q);
         break;
     }
   },
@@ -70,7 +72,7 @@ var Presentation = {
 
 var PrimarySessionSignaler = {
   send: function pss_sendMessage(event, data, id) {
-    Presentation.channelPeer.dataChannelSend('presentanswer', data, id);
+    Presentation.channelPeer.dataChannelSend(event, data, id);
   },
   onpresent: function pss_onopened() {}
 };

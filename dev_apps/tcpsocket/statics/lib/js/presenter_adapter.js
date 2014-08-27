@@ -1,8 +1,3 @@
-var pc_config = {'iceServers':[{'url':'stun:23.21.150.121'}]}
-var pc_constraints = {
-  'optional': [
-    {'RtpDataChannels': true}
-  ]};
 
 var PresenterAdapter = {
   pc: new RTCPeerConnection(pc_config, pc_constraints),
@@ -47,6 +42,10 @@ var PresenterAdapter = {
       case 'presentanswer':
         this.session._receiveAnswer(message);
         break;
+      case 'icecandidate':
+        this.session.pc.addIceCandidate(new RTCIceCandidate(message.data));
+        break;
+
     };
   },
 

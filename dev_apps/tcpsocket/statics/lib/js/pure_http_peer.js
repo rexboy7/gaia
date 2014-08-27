@@ -1,11 +1,21 @@
-var pc_config = {'iceServers':[{'url':'stun:23.21.150.121'}]}
-var pc_constraints = {
+var pc_config = webrtcDetectedBrowser === 'firefox' ?
+  {'iceServers':[{'url':'stun:23.21.150.121'}]} : // number IP
+  {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
+
+var pc_constraints = webrtcDetectedBrowser === 'firefox' ? {
   'optional': [
+    {'DtlsSrtpKeyAgreement': true},
     {'RtpDataChannels': true}
-  ]};
+  ]} : {
+  'optional': [
+    {'DtlsSrtpKeyAgreement': true},
+    {'RtpDataChannels': true}
+  ]}
+  ;
 var serverURL = '127.0.0.1';
 var serverPort = 8000;
 function error(e) {
+  console.log(e);
   throw e;
 }
 
@@ -79,7 +89,13 @@ var PureHTTPPeer = {
   sendOffer: function php_sendOffer(secondaryId) {
     // create Data channel and set receiver for it
     // (we call onDataChannel manually since it's only triggered on answer side)
-    this.onDataChannel({channel: this.pc.createDataChannel("myc")});
+    try{
+      this.onDataChannel({channel: this.pc.createDataChannel("sendDataChannel", {reliable: false})});
+    } catch(e) {
+      alert('Failed to create data channel. ' +
+            'You need Chrome M25 or later with RtpDataChannel enabled');
+      trace('createDataChannel() failed with exception: ' + e.message);
+    }
     this.pc.createOffer(function(offer) {
       this.pc.setLocalDescription(offer);
       this.serializeSend({
@@ -134,9 +150,7 @@ var PureHTTPPeer = {
     this.emit('datachannelopen', evt);
   },
   dataChannelSend: function php_send(type, data, id) {
-    this.dc.onerror = function(e) {
-      console.log("ERROR:" + e);
-    };
+    this.dc.onerror = error;
     this.dc.send(JSON.stringify({
       event: type,
       data: data,
