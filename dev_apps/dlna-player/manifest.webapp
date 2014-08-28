@@ -2,7 +2,7 @@
   "name": "dlnaPlayer",
   "description": "Gaia dlna player",
   "type": "certified",
-  "launch_path": "/easyPlayer/index.html",
+  "launch_path": "index.html",
   "developer": {
     "name": "Evan Shapiro",
     "url": "https://github.com/mozilla-b2g/gaia"
@@ -41,9 +41,7 @@
   },
   "default_locale": "en-US",
   "icons": {
-    "60": "/style/icons/Music_60.png",
-    "90": "/style/icons/Music_90.png",
-    "120": "/style/icons/Music_120.png"
+    "128": "/style/icons/Blank.png"
   },
   "orientation": "default"
 }

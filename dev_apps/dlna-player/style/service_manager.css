@@ -26,31 +26,31 @@
   li.folder {
     color: #FF9900;
     padding-left: 40px;
-    background: url(image/folder_closed.png) left center no-repeat,
-                url(image/icon_folder.png) left 20px center no-repeat;
+    background: url(images/folder_closed.png) left center no-repeat,
+                url(images/icon_folder.png) left 16px center no-repeat;
   }
   li.folder.opened {
-    background: url(image/folder_opened.png) left center no-repeat,
-                url(image/icon_folder.png) left 20px center no-repeat;
+    background: url(images/folder_opened.png) left center no-repeat,
+                url(images/icon_folder.png) left 16px center no-repeat;
   }
   .audio {
     color: #00CC66;
-    background: url(image/icon_music.png) left center no-repeat;
+    background: url(images/icon_music.png) left center no-repeat;
   }
   .video {
     color: #00CC66;
-    background: url(image/icon_video.png) left center no-repeat;
+    background: url(images/icon_video.png) left center no-repeat;
   }
   .image {
     color: #00CC66;
-    background: url(image/icon_image.png) left center no-repeat;
+    background: url(images/icon_image.png) left center no-repeat;
   }
   .unknown {
     color: #00CC66;
-    background: url(image/icon_unknown.png) left center no-repeat;
+    background: url(images/icon_unknown.png) left center no-repeat;
   }
   .server {
-    background: url(image/icon_server.png) left center no-repeat;
+    background: url(images/icon_server.png) left center no-repeat;
     font-weight: bold;
   }
   .player {
@@ -81,11 +81,11 @@
   }
 
   #discoverButton {
-    background: url(search.png) center center no-repeat;
+    background: url(images/search-icon.png) center center / 30px no-repeat;
   }
   #toPlayerPage {
-    background: url(image/iconaction_media_playlistfilter.png)  top center no-repeat;
+    background: url(images/player.png) center center / 30px no-repeat;
   }
   #toDirectoryPage {
-    background: url(image/iconaction_media_albumfilter.png) top center no-repeat;
+    background: url(images/playlist.png) center center / 16px no-repeat;
   }

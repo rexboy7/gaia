@@ -2,12 +2,11 @@
    DeviceManager, RenderCtrlManager */
 'use strict';
 
-function EasyPlayer() {
+function DlnaPlayer() {
   window.connectionServiceManager = new ConnectionServiceManager().init();
   ContentDirectoryManager.init();
   window.avtManager = new AVTManager().init();
   window.deviceManager = new DeviceManager().init();
-  window.renderCtrlManager = new RenderCtrlManager().init();
 }
 
-window.easyPlayer = new EasyPlayer();
+window.dlnaPlayer = new DlnaPlayer();
