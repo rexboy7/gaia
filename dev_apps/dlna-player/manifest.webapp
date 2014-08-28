@@ -18,7 +18,8 @@
     "deprecated-hwvideo": {},
     "audio-channel-content": {},
     "systemXHR": {},
-    "bluetooth": {}
+    "bluetooth": {},
+    "udp-socket": {}
   },
   "locales": {
     "ar": {
