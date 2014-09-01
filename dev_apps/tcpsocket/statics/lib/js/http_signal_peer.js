@@ -1,25 +1,8 @@
-var pc_config = webrtcDetectedBrowser === 'firefox' ?
-  {'iceServers':[{'url':'stun:23.21.150.121'}]} : // number IP
-  {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
+(function(exports) {
+'use strict';
 
-var pc_constraints = webrtcDetectedBrowser === 'firefox' ? {
-  'optional': [
-    {'DtlsSrtpKeyAgreement': true},
-    {'RtpDataChannels': true}
-  ]} : {
-  'optional': [
-    {'DtlsSrtpKeyAgreement': true},
-    {'RtpDataChannels': true}
-  ]}
-  ;
-var serverURL = '127.0.0.1';
-var serverPort = 8000;
-function error(e) {
-  console.log(e);
-  throw e;
-}
 
-var PureHTTPPeer = {
+var HTTPSignalPeer = {
   rank: rank, // 'host' or 'guest'
   pc: null,
   dc: null,
@@ -68,7 +51,7 @@ var PureHTTPPeer = {
         this.emit('secondarychange', message.screens);
         break;
       case 'offer':
-        this.rank = 'secondary';
+        this.rank = 'secondary_host';
         if (this.isIdle) {
           this.gotRemoteOffer(message.data);
         }
@@ -130,7 +113,7 @@ var PureHTTPPeer = {
     this.pc.ondatachannel = this.onDataChannel.bind(this);
   },
   gotRemoteAnswer: function php_gotRemoteAnswer(answer) {
-    if (this.rank == 'host') {
+    if (this.rank == 'secondary_host') {
       return;
     }
     this.pc.setRemoteDescription(new RTCSessionDescription(answer));
@@ -172,3 +155,9 @@ var PureHTTPPeer = {
     }
   }
 }
+
+exports.HTTPSignalPeer = HTTPSignalPeer;
+
+
+})(window);
+

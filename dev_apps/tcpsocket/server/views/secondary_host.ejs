@@ -1,0 +1,25 @@
+2<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+<meta charset="utf-8" />
+<title>Presentation API client</title>
+<script>
+  var roomNum = <%= roomNum %>;
+  var rank = 'secondary_host';
+  var eventUrl = '/events/' + rank + "/" + roomNum;
+</script>
+<!-- Polyfill libraries -->
+<script defer src='/statics/lib/js/adapter.js'></script>
+<script defer src='/statics/lib/js/http_signal_peer.js'></script>
+<script defer src='/statics/lib/js/server_config.js'></script>
+<script defer src='/statics/lib/js/polyfill_presentation_session.js'></script>
+<script defer src='/statics/lib/js/polyfill_secondary_host.js'></script>
+
+
+<body>
+<article>
+<h1> Room number: <%= roomNum %></h1>
+</article>
+</body>
+</html>

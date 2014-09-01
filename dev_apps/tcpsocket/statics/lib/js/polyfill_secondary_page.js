@@ -1,5 +1,7 @@
+(function(exports) {
+'use strict';
 
-var PresenterAdapter = {
+var PolyfillSecondaryPage = {
   pc: new RTCPeerConnection(pc_config, pc_constraints),
   dc: null,
   parent: null,
@@ -58,7 +60,7 @@ var PresenterAdapter = {
 
 var Presentation = {
   onpresent: null,
-  log: PresenterAdapter.log
+  log: PolyfillSecondaryPage.log
 };
 
 var SecondarySessionSignaler = {
@@ -74,4 +76,8 @@ var SecondarySessionSignaler = {
   }
 };
 
-PresenterAdapter.init();
+PolyfillSecondaryPage.init();
+
+exports.navigator.presentation = Presentation;
+
+})(window);

@@ -1,5 +1,8 @@
-var PresentHostAdapter = {
-  channelPeer: PureHTTPPeer,
+(function(exports) {
+'use strict';
+
+var PolyfillSecondaryHost = {
+  channelPeer: HTTPSignalPeer,
   presentWindows: {},
   init: function() {
     this.channelPeer.init();
@@ -94,4 +97,5 @@ PresentWindow.prototype = {
   }
 }
 
-PresentHostAdapter.init();
+PolyfillSecondaryHost.init();
+})(window);

@@ -10,17 +10,18 @@
 
 <title>WebRTC host</title>
 
-<!-- <link rel='stylesheet' href='css/main.css' /> -->
-
+<!-- Polyfill libraries -->
+<script defer src='/statics/lib/js/adapter.js'></script>
+<script defer src='/statics/lib/js/server_config.js'></script>
+<script defer src='/statics/lib/js/polyfill_presentation_session.js'></script>
+<script defer src='/statics/lib/js/polyfill_secondary_page.js'></script>
+<!-- User script -->
+<script defer src='/statics/secondary_page/js/secondary_page.js'></script>
 </head>
 
 <body>
 
-<script defer src='../lib/js/adapter.js'></script>
-<script defer src='../lib/js/tcp_socket_peer.js'></script>
-<script defer src='../lib/js/present_host_adapter.js'></script>
 
-<script defer src='js/host.js'></script>
 <input id="chattxt"></input>
 <button id="sendbutton">Send</button>
 </body>
