@@ -20,9 +20,9 @@ app.get('/primary/:roomNum', function(req, res) {
   res.render("primary");
 });
 
-app.get('/secondary/:roomNum', function(req, res) {
+app.get('/secondary_host/:roomNum', function(req, res) {
   res.locals.roomNum = req.params.roomNum;
-  res.render("secondary");
+  res.render("secondary_host");
 });
 
 app.get('/events/primary/:roomNum', function(req, res) {
@@ -42,7 +42,7 @@ app.get('/events/primary/:roomNum', function(req, res) {
 });
 
 
-app.get('/events/secondary/:roomNum', function(req, res) {
+app.get('/events/secondary_host/:roomNum', function(req, res) {
   var roomNum = req.params.roomNum;
   sendSSEHeader(res);
   if (!!secondary[roomNum]) {

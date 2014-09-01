@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html>
 <head>
-
+<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+<meta charset="utf-8" />
 <title>Presentation API client</title>
 <script>
   var roomNum = <%= roomNum %>;
@@ -13,11 +14,14 @@
     width: 100px;
   }
 </style>
+<!-- Polyfill libraries -->
 <script defer src='/statics/lib/js/adapter.js'></script>
-<script defer src='/statics/lib/js/pure_http_peer.js'></script>
-<script defer src='/statics/lib/js/presentation_session.js'></script>
-<script defer src='/statics/lib/js/presentation.js'></script>
-<script defer src='/statics/client/js/user.js'></script>
+<script defer src='/statics/lib/js/http_signal_peer.js'></script>
+<script defer src='/statics/lib/js/server_config.js'></script>
+<script defer src='/statics/lib/js/polyfill_presentation_session.js'></script>
+<script defer src='/statics/lib/js/polyfill_primary.js'></script>
+<!-- User script -->
+<script defer src='/statics/primary/js/primary.js'></script>
 </head>
 
 <body>

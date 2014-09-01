@@ -1,9 +1,8 @@
+(function(exports) {
 'use strict';
-function error(e) {
-  throw e;
-}
+
 var Presentation = {
-  channelPeer: PureHTTPPeer,
+  channelPeer: HTTPSignalPeer,
   sessions: {},
   peerList: document.getElementById('peerList'),
   btnConnect: document.getElementById('btnConnect'),
@@ -79,4 +78,6 @@ var PrimarySessionSignaler = {
 
 Presentation.init();
 
+exports.navigator.presentation = Presentation;
 
+})(window);

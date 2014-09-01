@@ -7,8 +7,8 @@ sendbutton.addEventListener('click', function() {
 });
 
 // For guest
-Presentation.onavailablechange = function(e) {
-  session = Presentation.requestSession('/statics/presenter/index.html');
+navigator.presentation.onavailablechange = function(e) {
+  session = navigator.presentation.requestSession('/statics/secondary_page/index.html');
   session.onmessage = this.log.bind(this);
 };
 var UI = {

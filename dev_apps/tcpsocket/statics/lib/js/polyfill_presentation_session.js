@@ -1,3 +1,6 @@
+(function(exports) {
+'use strict';
+
 function PresentationSession(signaler) {
   this.signaler = signaler;
   this._currentstate = 'disconnected';
@@ -72,3 +75,7 @@ PresentationSession.prototype = {
 
   _url: null
 };
+
+exports.PresentationSession = PresentationSession;
+
+})(window);
