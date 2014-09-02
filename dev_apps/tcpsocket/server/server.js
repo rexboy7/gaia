@@ -16,13 +16,11 @@ var secondary = {};
 
 
 app.get('/primary/:roomNum', function(req, res) {
-  res.locals.roomNum = req.params.roomNum;
-  res.render("primary");
+  fs.createReadStream(__dirname + '/../statics/primary/index.html').pipe(res);
 });
 
 app.get('/secondary_host/:roomNum', function(req, res) {
-  res.locals.roomNum = req.params.roomNum;
-  res.render("secondary_host");
+  fs.createReadStream(__dirname + '/../statics/secondary_host/index.html').pipe(res);
 });
 
 app.get('/events/primary/:roomNum', function(req, res) {

@@ -98,4 +98,10 @@ PresentWindow.prototype = {
 }
 
 PolyfillSecondaryHost.init();
+
+var roomTag = document.getElementById('room');
+if (roomTag) {
+  roomTag.textContent = roomNum;
+}
+
 })(window);

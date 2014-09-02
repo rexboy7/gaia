@@ -4,11 +4,6 @@
 <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
 <meta charset="utf-8" />
 <title>Presentation API client</title>
-<script>
-  var roomNum = <%= roomNum %>;
-  var rank = 'primary';
-  var eventUrl = '/events/' + rank + '/' + roomNum;
-</script>
 <style>
   #peerList {
     width: 100px;
@@ -16,8 +11,8 @@
 </style>
 <!-- Polyfill libraries -->
 <script defer src='/statics/lib/js/adapter.js'></script>
-<script defer src='/statics/lib/js/http_signal_peer.js'></script>
 <script defer src='/statics/lib/js/server_config.js'></script>
+<script defer src='/statics/lib/js/http_signal_peer.js'></script>
 <script defer src='/statics/lib/js/polyfill_presentation_session.js'></script>
 <script defer src='/statics/lib/js/polyfill_primary.js'></script>
 <!-- User script -->
@@ -25,7 +20,7 @@
 </head>
 
 <body>
-<h1> Room number: <%= roomNum %></h1>
+<h1> Room number: <span id="room"></span></h1>
 <section>
   <input id="chattxt"></input>
   <button id="sendbutton">Send</button>
