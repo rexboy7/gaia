@@ -14,7 +14,6 @@ var Presentation = {
     this.channelPeer.ondatachannelreceive = this.onDataChannelReceive.bind(this);
     this.channelPeer.onsecondarychange = this.updateSecondaryList.bind(this);
     this.btnConnect.onclick = this.connectPeer.bind(this);
-
   },
   onDataChannelOpened: function pr_onRemoteJoin() {
     this._emit('availablechange', {available: true});
@@ -79,5 +78,10 @@ var PrimarySessionSignaler = {
 Presentation.init();
 
 exports.navigator.presentation = Presentation;
+
+var roomTag = document.getElementById('room');
+if (roomTag) {
+  roomTag.textContent = roomNum;
+}
 
 })(window);

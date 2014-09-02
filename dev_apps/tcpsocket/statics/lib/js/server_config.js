@@ -1,5 +1,10 @@
 'use strict';
 
+var _globals = window.location.href.split('/');
+var roomNum = _globals.pop();
+var rank = _globals.pop();
+var eventUrl = '/events/' + rank + "/" + roomNum;
+
 var pc_config = webrtcDetectedBrowser === 'firefox' ?
   {'iceServers':[{'url':'stun:23.21.150.121'}]} : // number IP
   {'iceServers': [{'url': 'stun:stun.l.google.com:19302'}]};
