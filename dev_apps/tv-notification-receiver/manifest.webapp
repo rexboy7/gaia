@@ -1,0 +1,35 @@
+{
+  "name": "TV Notification Receiver",
+  "type": "certified",
+  "role": "system",
+  "description": "TV Notification Receiver",
+  "launch_path": "/index.html",
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "locales": {
+    "en-US": {
+      "name": "TV Notification Receiver",
+      "description": "TV Notification Receiver"
+    },
+    "zh-TW": {
+      "name": "TV Notification Receiver",
+      "description": "TV Notification Receiver"
+    }
+  },
+  "default_locale": "en-US",
+  "icons": {
+    "128": "/style/icons/Blank.png"
+  },
+  "permissions": {
+    "systemXHR":{}
+  },
+  "connections": {
+    "tv-notification-bringup": {
+      "description": "Communication with presentation polyfil in system apps for receiving notifcation",
+      "handler_path": "/message_handler.html",
+      "rules": {}
+    }
+  }
+}
