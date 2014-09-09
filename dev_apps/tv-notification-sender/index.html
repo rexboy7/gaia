@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
+    <meta charset="utf-8">
+    <title>Notification Sender</title>
+    <link rel="stylesheet" type="text/css" href="style/sender.css">
+    <!-- use Contacts to query contact name -->
+    <script defer src="/shared/js/lazy_loader.js"></script>
+    <script defer src="/shared/js/dialer/contacts.js"></script>
+    <script defer src="/shared/js/simple_phone_matcher.js"></script>
+
+    <script defer src='js/polyfill/adapter.js'></script>
+    <script defer src='js/polyfill/server_config.js'></script>
+    <script defer src='js/polyfill/http_signal_peer.js'></script>
+    <script defer src='js/polyfill/polyfill_presentation_session.js'></script>
+    <script defer src='js/polyfill/polyfill_primary.js'></script>
+
+    <script defer src="js/conn.js"></script>
+    <script defer src="js/call_sender.js"></script>
+    <script defer src="js/sms_sender.js"></script>
+    <script defer src="js/index.js"></script>
+
+    <!-- Lazy load these:
+    <script defer type="application/javascript" src="/shared/js/fb/fb_request.js"></script>
+    <script defer type="application/javascript" src="/shared/js/fb/fb_data_reader.js"></script>
+    <script defer type="application/javascript" src="/shared/js/fb/fb_reader_utils.js"></script>
+    -->
+  </head>
+  <body>
+  </body>
+</html>
