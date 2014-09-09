@@ -11,53 +11,45 @@
   // Most used DOM elements
   var dom = {};
 
+  var HOMESCREEN_MANIFEST = 'homescreen.manifestURL';
   var MSG_MIGRATE_CON = 'migrate';
   var TXT_MSG = 'migrate';
 
   function notifyHomescreenApp() {
-    navigator.mozApps.getSelf().onsuccess = function(evt) {
-      var app = evt.target.result;
-      if (app.connect) {
-        app.connect(MSG_MIGRATE_CON).then(function onConnAccepted(ports) {
-          // Get the token data info to attach to message
-          var message = {
-            txt: TXT_MSG
-          };
-          ports.forEach(function(port) {
-            port.postMessage(message);
-          });
-        }, function onConnRejected(reason) {
-          console.error('Cannot notify homescreen: ', reason);
-        });
-      } else {
-        console.error('mozApps does not have a connect method. ' +
-                      'Cannot launch the collection migration process');
+    _getHomescreenManifestURL(function(url) {
+      // Get default homescreen manifest URL from settings, and will only notify
+      // vertical homescreen to perform data migration
+      if (url !== 'app://verticalhome.gaiamobile.org/manifest.webapp') {
+        return;
       }
+
+      navigator.mozApps.getSelf().onsuccess = function(evt) {
+        var app = evt.target.result;
+        if (app.connect) {
+          app.connect(MSG_MIGRATE_CON).then(function onConnAccepted(ports) {
+            // Get the token data info to attach to message
+            var message = {
+              txt: TXT_MSG
+            };
+            ports.forEach(function(port) {
+              port.postMessage(message);
+            });
+          }, function onConnRejected(reason) {
+            console.error('Cannot notify homescreen: ', reason);
+          });
+        } else {
+          console.error('mozApps does not have a connect method. ' +
+                        'Cannot launch the collection migration process');
+        }
+      };
+    });
+  }
+
+  function _getHomescreenManifestURL(callback) {
+    var req = navigator.mozSettings.createLock().get(HOMESCREEN_MANIFEST);
+    req.onsuccess = function() {
+      callback(req.result[HOMESCREEN_MANIFEST]);
     };
-  }
-
-  function _initProgressBar() {
-    dom.tutorialProgressBar.style.width =
-      'calc(100% / ' + Tutorial._stepsConfig.steps.length + ')';
-  }
-
-  function _setProgressBarStep(step) {
-    dom.tutorialProgressBar.style.transform =
-      'translate(' + ((step - 1) * 100) + '%)';
-    if (Tutorial._stepsConfig) {
-      dom.tutorialProgress.setAttribute('aria-valuetext', navigator.mozL10n.get(
-        'progressbar', {
-          step: step,
-          total: Tutorial._stepsConfig.steps.length
-        }));
-      dom.tutorialProgress.setAttribute('aria-valuemin', 1);
-      dom.tutorialProgress.setAttribute('aria-valuemax',
-        Tutorial._stepsConfig.steps.length);
-    } else {
-      dom.tutorialProgress.removeAttribute('aria-valuetext');
-      dom.tutorialProgress.removeAttribute('aria-valuemin');
-      dom.tutorialProgress.removeAttribute('aria-valuemax');
-    }
   }
 
   /**
@@ -78,7 +70,7 @@
         }
         // Dont block progress on failure to load media
         if (evt.type === 'error') {
-          console.log('Failed to load tutorial media: ' + src);
+          console.error('Failed to load tutorial media: ' + src);
         }
         resolve(evt);
       }
@@ -115,9 +107,7 @@
     'tutorial-step-image',
     'tutorial-step-video',
     'forward-tutorial',
-    'back-tutorial',
-    'tutorial-progress',
-    'tutorial-progress-bar'
+    'back-tutorial'
   ];
 
   /**
@@ -173,7 +163,7 @@
       elementIDs.forEach(function(name) {
         dom[Utils.camelCase(name)] = document.getElementById(name);
         if (!dom[Utils.camelCase(name)]) {
-          console.log('Cache DOM elements: couldnt cache: ' + name);
+          console.error('Cache DOM elements: couldnt cache: ' + name);
         }
       }, this);
 
@@ -247,14 +237,6 @@
       dom.forwardTutorial.addEventListener('click', this);
       dom.backTutorial.addEventListener('click', this);
 
-      // toggle the layout based number of steps and whether we'll show the
-      // progress bar or not
-      if (this._stepsConfig.steps.length > 3) {
-        dom.tutorial.dataset.progressbar = true;
-        _initProgressBar();
-      } else {
-        delete dom.tutorial.dataset.progressbar;
-      }
       // Set the first step
       this._currentStep = 1;
     },
@@ -315,7 +297,6 @@
         imgElement.hidden = false;
         videoElement.hidden = true;
       }
-      _setProgressBarStep(this._currentStep);
       return stepPromise;
     },
 
@@ -359,7 +340,8 @@
      * @memberof Tutorial
      */
     done: function() {
-      FinishScreen.init();
+      var isUpgrade = this._stepsKey && this._stepsKey !== 'default';
+      FinishScreen.init(isUpgrade);
       dom.tutorial.classList.remove('show');
       dom.tutorialStepVideo.removeAttribute('src');
       dom.tutorialStepImage.removeAttribute('src');
@@ -439,7 +421,6 @@
       this._currentStep = 1;
       this._stepsConfig = this.config = null;
       if (this._initialized) {
-        _setProgressBarStep(this._currentStep);
         dom.tutorial.classList.remove('show');
         this._initialized = false;
       }

@@ -1,7 +1,7 @@
 /* globals FtuLauncher, MockAppWindowManager, MockL10n, MockMobileOperator,
            MockNavigatorMozMobileConnections, MockNavigatorMozTelephony,
            MockSettingsListener, MocksHelper, MockSIMSlot, MockSIMSlotManager,
-           MockSystem, MockTouchForwarder, SimPinDialog, StatusBar, System,
+           MockSystem, MockTouchForwarder, StatusBar, System,
            AppWindowManager */
 
 'use strict';
@@ -37,7 +37,8 @@ var mocksForStatusBar = new MocksHelper([
 suite('system/Statusbar', function() {
   var mobileConnectionCount = 2;
   var fakeStatusBarNode, fakeTopPanel, fakeStatusBarBackground,
-      fakeStatusBarIcons, fakeStatusBarConnections,
+      fakeStatusBarIcons, fakeStatusbarIconsMax, fakeStatusbarIconsMin,
+      fakeStatusBarConnections,
       fakeStatusBarCallForwardings, fakeStatusBarTime, fakeStatusBarLabel,
       fakeStatusBarBattery;
   var realMozL10n, realMozMobileConnections, realMozTelephony, fakeIcons = [];
@@ -62,6 +63,14 @@ suite('system/Statusbar', function() {
     fakeStatusBarIcons = document.createElement('div');
     fakeStatusBarIcons.id = 'statusbar-icons';
     document.body.appendChild(fakeStatusBarIcons);
+
+    fakeStatusbarIconsMax = document.createElement('div');
+    fakeStatusbarIconsMax.id = 'statusbar-maximized';
+    fakeStatusBarIcons.appendChild(fakeStatusbarIconsMax);
+
+    fakeStatusbarIconsMin = document.createElement('div');
+    fakeStatusbarIconsMin.id = 'statusbar-minimized';
+    fakeStatusBarIcons.appendChild(fakeStatusbarIconsMin);
 
     fakeStatusBarConnections = document.createElement('div');
     fakeStatusBarConnections.id = 'statusbar-connections';
@@ -104,7 +113,7 @@ suite('system/Statusbar', function() {
     function statusBarReady() {
 
       StatusBar.ELEMENTS.forEach(function testAddElement(elementName) {
-        var elt =document.getElementById('statusbar-' + elementName);
+        var elt = document.getElementById('statusbar-' + elementName);
         if (elt) {
           elt.parentNode.removeChild(elt);
         }
@@ -115,6 +124,7 @@ suite('system/Statusbar', function() {
           elt = document.createElement('div');
         }
         elt.id = 'statusbar-' + elementName;
+        elt.style = 'width: 10px;';
         elt.hidden = true;
         fakeStatusBarNode.appendChild(elt);
         fakeIcons[elementName] = elt;
@@ -122,11 +132,14 @@ suite('system/Statusbar', function() {
 
       // executing init again
       StatusBar.init();
+      StatusBar.finishInit();
 
       var signalElements = document.querySelectorAll('.statusbar-signal');
       var dataElements = document.querySelectorAll('.statusbar-data');
+      var roamingElems = document.querySelectorAll('.sb-icon-roaming');
 
       fakeIcons.signals = {};
+      fakeIcons.roaming = {};
       Array.prototype.slice.call(signalElements).forEach(
         function(signal, index) {
           fakeIcons.signals[mobileConnectionCount - index - 1] = signal;
@@ -135,6 +148,10 @@ suite('system/Statusbar', function() {
       fakeIcons.data = {};
       Array.prototype.slice.call(dataElements).forEach(function(data, index) {
         fakeIcons.data[mobileConnectionCount - index - 1] = data;
+      });
+
+      Array.prototype.slice.call(roamingElems).forEach(function(data, index) {
+        fakeIcons.roaming[mobileConnectionCount - index - 1] = data;
       });
 
       done();
@@ -163,6 +180,81 @@ suite('system/Statusbar', function() {
       assert.equal(Object.keys(fakeIcons.signals).length,
         mobileConnectionCount);
       assert.equal(Object.keys(fakeIcons.data).length, mobileConnectionCount);
+    });
+  });
+
+  suite('init when FTU is running', function() {
+    setup(function() {
+      this.sinon.stub(StatusBar, 'finishInit');
+    });
+
+    test('skipping FTU finishes initialization', function() {
+      var evt = new CustomEvent('ftuskip');
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.finishInit.called);
+    });
+
+    test('finish init immediately during upgrade', function() {
+      FtuLauncher.mIsUpgrading = true;
+      var evt = new CustomEvent('ftuopen');
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.finishInit.called);
+    });
+
+    test('finish init only after ftu', function() {
+      FtuLauncher.mIsUpgrading = false;
+      var evt = new CustomEvent('ftuopen');
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.finishInit.notCalled);
+      evt = new CustomEvent('ftudone');
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.finishInit.called);
+    });
+  });
+
+  suite('handle FTU progress events', function() {
+    setup(function() {
+      this.sinon.stub(StatusBar, 'addSettingsListener');
+    });
+
+    test('data step displays connections', function() {
+      this.sinon.stub(StatusBar, 'createConnectionsElements');
+      var evt = new CustomEvent('iac-ftucomms', {
+        detail: {
+          type: 'step',
+          hash: '#data_3g'
+        }
+      });
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.createConnectionsElements.called);
+      assert.isTrue(StatusBar.addSettingsListener
+                    .calledWith('ril.data.enabled'));
+    });
+
+    test('wifi step activates wifi', function() {
+      this.sinon.stub(StatusBar, 'setActiveWifi');
+      var evt = new CustomEvent('iac-ftucomms', {
+        detail: {
+          type: 'step',
+          hash: '#wifi'
+        }
+      });
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.setActiveWifi.called);
+      assert.isTrue(StatusBar.addSettingsListener
+                    .calledWith('wifi.enabled'));
+    });
+
+    test('timezone step activates time', function() {
+      this.sinon.stub(StatusBar, 'toggleTimeLabel');
+      var evt = new CustomEvent('iac-ftucomms', {
+        detail: {
+          type: 'step',
+          hash: '#date_and_time'
+        }
+      });
+      StatusBar.handleEvent(evt);
+      assert.isTrue(StatusBar.toggleTimeLabel.called);
     });
   });
 
@@ -244,6 +336,7 @@ suite('system/Statusbar', function() {
     test('first launch', function() {
       System.locked = true;
       StatusBar.init();
+      StatusBar.finishInit();
       assert.equal(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, true);
     });
@@ -260,8 +353,8 @@ suite('system/Statusbar', function() {
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
     });
-    test('attentionscreen show', function() {
-      var evt = new CustomEvent('attentionscreenshow');
+    test('attention opening', function() {
+      var evt = new CustomEvent('attentionopened');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
@@ -269,7 +362,7 @@ suite('system/Statusbar', function() {
     test('attentionsceen hide', function() {
       // Test this when lockscreen is off.
       System.locked = false;
-      var evt = new CustomEvent('attentionscreenhide');
+      var evt = new CustomEvent('attentionclosed');
       StatusBar.handleEvent(evt);
       assert.notEqual(StatusBar.clock.timeoutID, null);
       assert.equal(StatusBar.icons.time.hidden, false);
@@ -289,6 +382,15 @@ suite('system/Statusbar', function() {
       this.sinon.useFakeTimers();
       System.locked = false;
       var evt = new CustomEvent('moztimechange');
+      StatusBar.handleEvent(evt);
+      this.sinon.clock.tick();
+      assert.notEqual(StatusBar.clock.timeoutID, null);
+      assert.equal(StatusBar.icons.time.hidden, false);
+      this.sinon.clock.restore();
+    });
+    test('timeformatchange while timeformat changed', function() {
+      this.sinon.useFakeTimers();
+      var evt = new CustomEvent('timeformatchange');
       StatusBar.handleEvent(evt);
       this.sinon.clock.tick();
       assert.notEqual(StatusBar.clock.timeoutID, null);
@@ -620,7 +722,7 @@ suite('system/Statusbar', function() {
 
           StatusBar.update.signal.call(StatusBar);
 
-          assert.equal(dataset.roaming, 'true');
+          assert.equal(fakeIcons.roaming[0].hidden, false);
           assert.equal(dataset.level, 4);
           assert.notEqual(dataset.searching, 'true');
         });
@@ -826,18 +928,25 @@ suite('system/Statusbar', function() {
       StatusBar.settingValues['ril.cf.enabled'] = defaultValue;
     });
 
+    test('createCallForwardingsElements shouldn\'t display icons', function() {
+      StatusBar.createCallForwardingsElements();
+      assert.isTrue(StatusBar.icons.callForwardings.hidden);
+    });
+
     function slotIndexTests(slotIndex) {
       suite('slot: ' + slotIndex, function() {
         test('call forwarding enabled', function() {
           StatusBar.settingValues['ril.cf.enabled'][slotIndex] = true;
           StatusBar.update.callForwarding.call(StatusBar);
-          assert.isFalse(StatusBar.icons.callForwardings[slotIndex].hidden);
+          assert.isFalse(
+            StatusBar.icons.callForwardingsElements[slotIndex].hidden);
         });
 
         test('call forwarding disabled', function() {
           StatusBar.settingValues['ril.cf.enabled'][slotIndex] = false;
           StatusBar.update.callForwarding.call(StatusBar);
-          assert.isTrue(StatusBar.icons.callForwardings[slotIndex].hidden);
+          assert.isTrue(
+            StatusBar.icons.callForwardingsElements[slotIndex].hidden);
         });
       });
     }
@@ -848,6 +957,11 @@ suite('system/Statusbar', function() {
   });
 
   suite('data connection', function() {
+    test('createConnectionsElements shouldn\'t display icons', function() {
+      StatusBar.createConnectionsElements();
+      assert.isTrue(StatusBar.icons.connections.hidden);
+    });
+
     function slotIndexTests(slotIndex) {
       suite('slot: ' + slotIndex, function() {
         suite('data connection unavailable', function() {
@@ -1344,7 +1458,7 @@ suite('system/Statusbar', function() {
         getTopMostWindow: function() {
           return app;
         },
-
+        config: {},
         _element: null,
         get element() {
           if (!this._element) {
@@ -1352,6 +1466,10 @@ suite('system/Statusbar', function() {
             var title = document.createElement('div');
             title.classList.add('titlebar');
             element.appendChild(title);
+
+            var chrome = document.createElement('div');
+            chrome.className = 'chrome';
+            element.appendChild(chrome);
             this._element = element;
           }
 
@@ -1612,58 +1730,139 @@ suite('system/Statusbar', function() {
     });
   });
 
-  suite('Appearance', function() {
-    test('set opaque should render properly', function() {
-      StatusBar.setAppearance('opaque');
-      assert.isTrue(StatusBar.background.classList.contains('opaque'));
+  suite('Icons', function() {
+    test('visibility should be updated on screen resize', function() {
+      var spyUpdateIconVisibility =
+        this.sinon.spy(StatusBar, '_updateIconVisibility');
+
+      var evt = new CustomEvent('resize');
+      StatusBar.handleEvent(evt);
+      assert.isTrue(spyUpdateIconVisibility.called);
     });
 
-    test('set semi-transparent should render properly', function() {
-      StatusBar.setAppearance('semi-transparent');
-      assert.isFalse(StatusBar.background.classList.contains('opaque'));
+    test('visibility update should get the status bars width', function() {
+      var spyGetMaximizedStatusBarWidth =
+        this.sinon.spy(StatusBar, '_getMaximizedStatusBarWidth');
+      var spyGetMinimizedStatusBarWidth =
+        this.sinon.spy(StatusBar, '_getMinimizedStatusBarWidth');
+
+      StatusBar._updateIconVisibility();
+      assert.isTrue(spyGetMaximizedStatusBarWidth.called);
+      assert.isTrue(spyGetMinimizedStatusBarWidth.called);
     });
 
-    test('simpinshow event should set opaque', function() {
-      StatusBar.handleEvent({type: 'simpinshow'});
-      assert.isTrue(StatusBar.background.classList.contains('opaque'));
-    });
+    suite('when only 2 icons fit in the maximized status bar', function() {
+      var iconWithPriority1;
+      var iconWithPriority2;
+      var iconWithPriority3;
+      var getMaximizedStatusBarWidthStub;
+      var getMinimizedStatusBarWidthStub;
 
-    test('simpinclose event should set semi-transparent', function() {
-      StatusBar.handleEvent({type: 'simpinclose'});
-      assert.isFalse(StatusBar.background.classList.contains('opaque'));
-    });
-
-    suite('iac-change-appearance-statusbar event', function() {
-      test('should keep semi-transparent on SIM unlocked', function() {
-        SimPinDialog.visible = false;
-        StatusBar.handleEvent({
-          type: 'iac-change-appearance-statusbar',
-          detail: 'semi-transparent'
+      setup(function() {
+        // Reset all the icons to be hidden.
+        StatusBar.PRIORITIES.forEach(function(iconObj) {
+          var iconId = iconObj[0];
+          StatusBar.icons[StatusBar.toCamelCase(iconId)].hidden = true;
         });
 
-        assert.isFalse(StatusBar.background.classList.contains('opaque'));
+        iconWithPriority1 =
+          StatusBar.icons[StatusBar.toCamelCase(StatusBar.PRIORITIES[0][0])];
+        iconWithPriority2 =
+          StatusBar.icons[StatusBar.toCamelCase(StatusBar.PRIORITIES[1][0])];
+        iconWithPriority3 =
+          StatusBar.icons[StatusBar.toCamelCase(StatusBar.PRIORITIES[2][0])];
+
+        iconWithPriority1.hidden = false;
+        iconWithPriority2.hidden = false;
+        iconWithPriority3.hidden = false;
+
+        // The maximized status bar can fit icons with priority 1 and 2.
+        getMaximizedStatusBarWidthStub = sinon.stub(StatusBar,
+          '_getMaximizedStatusBarWidth', function() {
+            return StatusBar._getIconWidth(StatusBar.PRIORITIES[0]) +
+              StatusBar._getIconWidth(StatusBar.PRIORITIES[1]);
+          });
+        // The minimized status bar can only fit the highest priority icon.
+        getMinimizedStatusBarWidthStub = sinon.stub(StatusBar,
+          '_getMinimizedStatusBarWidth', function() {
+            return StatusBar._getIconWidth(StatusBar.PRIORITIES[0]);
+          });
+
+        StatusBar._updateIconVisibility();
       });
 
-      test('should keep opaque on SIM unlocked', function() {
-        SimPinDialog.visible = false;
-        StatusBar.handleEvent({
-          type: 'iac-change-appearance-statusbar',
-          detail: 'opaque'
-        });
-
-        assert.isTrue(StatusBar.background.classList.contains('opaque'));
+      teardown(function() {
+        getMaximizedStatusBarWidthStub.restore();
+        getMinimizedStatusBarWidthStub.restore();
       });
 
-      test('should set opaque when SIM is locked', function() {
-        StatusBar.background.classList.remove('opaque');
-        SimPinDialog.visible = true;
-        StatusBar.handleEvent({
-          type: 'iac-change-appearance-statusbar',
-          detail: 'semi-transparent'
-        });
+      test('the maximized status bar should hide icon #3', function() {
+        StatusBar._updateIconVisibility();
 
-        assert.isTrue(StatusBar.background.classList.contains('opaque'));
+        // Icon #1 is always visible.
+        assert.isFalse(StatusBar.statusbarIcons.classList
+          .contains('sb-hide-' + StatusBar.PRIORITIES[0][0]));
+        // Icon #2 is visible in the maximized status bar.
+        assert.isFalse(StatusBar.statusbarIcons.classList
+          .contains('sb-hide-' + StatusBar.PRIORITIES[1][0]));
+        // Icon #3 is hidden in the maximized status bar.
+        assert.isTrue(StatusBar.statusbarIcons.classList
+          .contains('sb-hide-' + StatusBar.PRIORITIES[2][0]));
       });
+
+      test('the minimized status bar should hide icon #2', function() {
+        StatusBar._updateIconVisibility();
+
+        // Icon #1 is always visible.
+        assert.isFalse(StatusBar.statusbarIconsMin.classList
+          .contains('sb-hide-' + StatusBar.PRIORITIES[0][0]));
+        // Icon #2 is hidden in the minimized status bar.
+        assert.isTrue(StatusBar.statusbarIconsMin.classList
+          .contains('sb-hide-' + StatusBar.PRIORITIES[1][0]));
+        // Icon #2 is not hidden in the minimized status bar.
+        assert.isFalse(StatusBar.statusbarIconsMin.classList
+          .contains('sb-hide-' + StatusBar.PRIORITIES[2][0]));
+      });
+    });
+  });
+
+  suite('_getIconWidth', function() {
+    test('should return the stored value for fixed size icons', function() {
+      // Get the index of emergency cb icon in StatusBar.PRIORITIES.
+      var iconIndex;
+      StatusBar.PRIORITIES.some(function(iconObj, i) {
+        if (iconObj[0] === 'emergency-cb-notification') {
+          iconIndex = i;
+          return true;
+        }
+        return false;
+      });
+
+      var emergencyCbNotificationIcon = StatusBar.icons.emergencyCbNotification;
+      emergencyCbNotificationIcon.hidden = false;
+
+      assert.ok(StatusBar.PRIORITIES[iconIndex][1]);
+      assert.equal(StatusBar._getIconWidth(StatusBar.PRIORITIES[iconIndex]),
+          16 + 4);
+    });
+
+    test('should compute the width of variable size icons', function() {
+      // Get the index of time icon in StatusBar.PRIORITIES.
+      var iconIndex;
+      StatusBar.PRIORITIES.some(function(iconObj, i) {
+        if (iconObj[0] === 'time') {
+          iconIndex = i;
+          return true;
+        }
+        return false;
+      });
+
+      var timeIcon = StatusBar.icons.time;
+      timeIcon.hidden = false;
+
+      assert.isNull(StatusBar.PRIORITIES[iconIndex][1]);
+      assert.equal(StatusBar._getIconWidth(StatusBar.PRIORITIES[iconIndex]),
+        timeIcon.clientWidth);
     });
   });
 });

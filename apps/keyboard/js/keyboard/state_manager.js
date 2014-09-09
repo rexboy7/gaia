@@ -10,7 +10,14 @@ var StateManager = function(app) {
   this._layoutName = undefined;
 };
 
+// Don't switch away IMEngine right away since the transition won't
+// start until then, and we need to keep the keyboard responsive to user
+// touch when visible.
+// (This number corresponds to BLUR_CHANGE_DELAY in input management.)
+StateManager.prototype.DEACTIVATE_DELAY = 120;
+
 StateManager.prototype.start = function() {
+  this.app.console.log('StateManager.start()');
   // Start with inactive state.
   this._isActive = false;
 
@@ -36,6 +43,7 @@ StateManager.prototype.start = function() {
 };
 
 StateManager.prototype.stop = function() {
+  this.app.console.log('StateManager.stop()');
   window.removeEventListener('hashchange', this);
   window.removeEventListener('visibilitychange', this);
   navigator.mozInputMethod.removeEventListener('inputcontextchange', this);
@@ -47,6 +55,7 @@ StateManager.prototype.stop = function() {
 StateManager.prototype.handleEvent = function(evt) {
   var active = (!document.hidden &&
                 !!navigator.mozInputMethod.inputcontext);
+  this.app.console.info('StateManager.handleEvent()', evt, active);
 
   switch (evt.type) {
     case 'hashchange':
@@ -70,10 +79,19 @@ StateManager.prototype.handleEvent = function(evt) {
 };
 
 StateManager.prototype._updateActiveState = function(active) {
+  this.app.console.log('StateManager._updateActiveState()', active);
   if (active) {
+    this.app.console.time('activate');
     // Make sure we are working in parallel,
     // since eventually IMEngine will be switched.
     this.app.inputMethodManager.updateInputContextData();
+
+    // Before switching away, clean up anything pending in the previous
+    // active layout.
+    // We however don't clear active target here because the user might
+    // want to input continuously between two layouts.
+    this.app.candidatePanelManager.hideFullPanel();
+    this.app.candidatePanelManager.updateCandidates([]);
 
     // Perform the following async actions with a promise chain.
     // Switch the layout,
@@ -83,7 +101,9 @@ StateManager.prototype._updateActiveState = function(active) {
       // ... load the layout rendering,
       .then(this._updateLayoutRendering.bind(this))
       // ... load l10n.js (if it's not loaded yet.)
-      .then(this.app.l10nLoader.load.bind(this.app.l10nLoader));
+      .then(this.app.l10nLoader.load.bind(this.app.l10nLoader))
+      // ... make sure error is not silently ignored.
+      .catch(function(e) { (e !== undefined) && console.error(e); });
   } else {
     // Do nothing if we are already hidden.
     if (active === this._isActive) {
@@ -95,41 +115,72 @@ StateManager.prototype._updateActiveState = function(active) {
     this.app.settingsPromiseManager.set({
       'keyboard.current': undefined
     });
-    // Finish off anything pending except removing the rendering --
-    // input management need it for transition.
-    this.app.candidatePanelManager.hideFullPanel();
-    this.app.candidatePanelManager.updateCandidates([]);
-    this.app.targetHandlersManager.activeTargetsManager.clearAllTargets();
-    this.app.inputMethodManager.switchCurrentIMEngine('default');
+
+    var imManager = this.app.inputMethodManager;
+
+    // Finish off anything pending except removing the rendering after a delay
+    // -- input management need it for transition.
+    this._delayDeactivate()
+      // ... cancel everything
+      .then(function() {
+        this.app.console.log('StateManager._delayDeactivate()::then');
+        this.app.candidatePanelManager.hideFullPanel();
+        this.app.candidatePanelManager.updateCandidates([]);
+        this.app.targetHandlersManager.activeTargetsManager.clearAllTargets();
+      }.bind(this))
+      // ... switch away IMEngine
+      .then(imManager.switchCurrentIMEngine.bind(imManager, 'default'))
+      // ... make sure error is not silently ignored.
+      .catch(function(e) { (e !== undefined) && console.error(e); });
   }
 
   this._isActive = active;
 };
 
-StateManager.prototype._preloadLayout = function() {
-  var layoutLoader = this.app.layoutManager.loader;
-  var p = layoutLoader.getLayoutAsync(this._layoutName).then(function(layout) {
-      var imEngineName = layout.imEngine;
-      var imEngineLoader = this.app.inputMethodManager.loader;
-      // Ask the loader to start loading IMEngine
-      if (imEngineName) {
-        var p = imEngineLoader.getInputMethodAsync(imEngineName);
-        return p;
+StateManager.prototype._delayDeactivate = function() {
+  this.app.console.log('StateManager._delayDeactivate()');
+  var p = new Promise(function(resolve, reject) {
+    setTimeout(function() {
+      // If state has switched to active, do not deactivate the keyboard.
+      if (this._isActive) {
+        console.warn('StateManager: Reactivated before DEACTIVATE_DELAY.');
+        reject();
       }
+
+      resolve();
+    }.bind(this), this.DEACTIVATE_DELAY);
   }.bind(this));
 
   return p;
 };
 
+StateManager.prototype._preloadLayout = function() {
+  this.app.console.log('StateManager._preloadLayout()');
+  var layoutLoader = this.app.layoutManager.loader;
+  var p = layoutLoader.getLayoutAsync(this._layoutName).then(function(layout) {
+    var imEngineName = layout.imEngine;
+    var imEngineLoader = this.app.inputMethodManager.loader;
+    // Ask the loader to start loading IMEngine
+    if (imEngineName) {
+      var p = imEngineLoader.getInputMethodAsync(imEngineName);
+      return p;
+    }
+  }.bind(this)).catch(function(e) {
+    if (e !== undefined) {
+      console.error(e);
+    }
+  });
+
+  return p;
+};
+
 StateManager.prototype._switchCurrentIMEngine = function() {
-  this.app.perfTimer.printTime('stateManager._switchCurrentIMEngine');
+  this.app.console.log('StateManager._switchCurrentIMEngine()');
 
   // Only start loading the IMEngine if we remain active.
   if (!this._isActive) {
     return Promise.reject();
   }
-
-  this.app.perfTimer.startTimer('_switchCurrentIMEngine');
 
   var layout = this.app.layoutManager.currentModifiedLayout;
   var imEngineName = layout.imEngine || 'default';
@@ -137,23 +188,14 @@ StateManager.prototype._switchCurrentIMEngine = function() {
   this.app.upperCaseStateManager.reset();
   var p = this.app.inputMethodManager.switchCurrentIMEngine(imEngineName);
 
-  this.app.perfTimer.printTime(
-    'BLOCKING stateManager._switchCurrentIMEngine', '_switchCurrentIMEngine');
-
   return p;
 };
 
 StateManager.prototype._updateLayoutRendering = function() {
-  this.app.perfTimer.printTime('stateManager._updateLayoutRendering');
+  this.app.console.log('StateManager._updateLayoutRendering()');
   if (!this._isActive) {
     return Promise.reject();
   }
-  this.app.perfTimer.startTimer('_updateLayoutRendering');
-
-  // Clean up anything pending in the previous active layout.
-  this.app.candidatePanelManager.hideFullPanel();
-  this.app.candidatePanelManager.updateCandidates([]);
-  this.app.targetHandlersManager.activeTargetsManager.clearAllTargets();
 
   // everything.me uses this setting to improve searches,
   // but they really shouldn't.
@@ -162,9 +204,6 @@ StateManager.prototype._updateLayoutRendering = function() {
   });
 
   var p = this.app.layoutRenderingManager.updateLayoutRendering();
-
-  this.app.perfTimer.printTime(
-    'BLOCKING stateManager._updateLayoutRendering', '_updateLayoutRendering');
 
   return p;
 };

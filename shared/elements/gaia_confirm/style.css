@@ -4,9 +4,7 @@
 
 /* Main dialog setup */
 gaia-confirm {
-  background:
-    url(images/pattern.png) repeat left top,
-    url(images/gradient.png) no-repeat left top / 100% 100%;
+  background: #2d2d2d;
   overflow: hidden;
   position: fixed;
   top: 0;
@@ -20,8 +18,9 @@ gaia-confirm {
   color: #fff;
   text-align: left;
   display: flex;
-  align-items: center;
-  flex-direction: row;
+  align-items: stretch;
+  flex-direction: column;
+  justify-content: center;
   /**
   magic number ideally to place confirm dialogs on top.
   */
@@ -54,6 +53,9 @@ h1 {
   color: #fff;
   margin: 0;
   padding: 1rem 1.5rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Specific component code */

@@ -1,9 +1,8 @@
 /* exported KeypadManager */
 
-/* globals CallHandler, CallLogDBManager, CallsHandler, CallScreen,
-           CustomDialog, FontSizeManager, LazyLoader, LazyL10n,
-           MultiSimActionButton, PhoneNumberActionMenu, SimPicker,
-           SettingsListener, TonePlayer */
+/* globals AddContactMenu, CallHandler, CallLogDBManager, CallsHandler,
+           CallScreen, CustomDialog, FontSizeManager, LazyLoader, LazyL10n,
+           MultiSimActionButton, SimPicker, SettingsListener, TonePlayer */
 
 'use strict';
 
@@ -66,6 +65,8 @@ DtmfTone.kShortToneLength = 120;
 
 var KeypadManager = {
 
+  kMaxDigits: 50,
+
   _phoneNumber: '',
   _onCall: false,
 
@@ -78,13 +79,6 @@ var KeypadManager = {
     delete this.phoneNumberView;
     this.phoneNumberView = document.getElementById('phone-number-view');
     return this.phoneNumberView;
-  },
-
-  get fakePhoneNumberView() {
-    delete this.fakePhoneNumberView;
-    this.fakePhoneNumberView =
-      document.getElementById('fake-phone-number-view');
-    return this.fakePhoneNumberView;
   },
 
   get phoneNumberViewContainer() {
@@ -165,9 +159,10 @@ var KeypadManager = {
 
     var keyHandler = this.keyHandler.bind(this);
     this.keypad.addEventListener('touchstart', keyHandler, true);
-    this.keypad.addEventListener('touchend', keyHandler, true);
-
     this.keypad.addEventListener('touchmove', keyHandler, true);
+    this.keypad.addEventListener('touchend', keyHandler, true);
+    this.keypad.addEventListener('touchcancel', keyHandler, true);
+
     this.deleteButton.addEventListener('touchstart', keyHandler);
     this.deleteButton.addEventListener('touchend', keyHandler);
     // The keypad add contact bar is only included in the normal version of
@@ -319,10 +314,8 @@ var KeypadManager = {
     if (!number) {
       return;
     }
-    LazyLoader.load(['/dialer/js/phone_action_menu.js'],
-      function hk_showPhoneNumberActionMenu() {
-        PhoneNumberActionMenu.show(null, number,
-          ['new-contact', 'add-to-existent']);
+    LazyLoader.load(['/dialer/js/add_contact_menu.js'], function() {
+      AddContactMenu.show(number);
     });
   },
 
@@ -515,7 +508,9 @@ var KeypadManager = {
     // If user input number more 50 digits, app shouldn't accept.
     // The limit only applies while not on a call - there is no
     // limit while on a call (bug 917630).
-    if (key != 'delete' && this._phoneNumber.length >= 50 && !this._onCall) {
+    if (key != 'delete' && this._phoneNumber.length >= this.kMaxDigits &&
+        !this._onCall) {
+      event.target.classList.remove('active');
       return;
     }
 
@@ -523,12 +518,15 @@ var KeypadManager = {
 
     switch (event.type) {
       case 'touchstart':
+        event.target.classList.add('active');
         this._touchStart(key, event.target.dataset.voicemail);
         break;
       case 'touchmove':
         this._touchMove(event.touches[0]);
         break;
       case 'touchend':
+      case 'touchcancel':
+        event.target.classList.remove('active');
         this._touchEnd(key);
         break;
     }
@@ -576,8 +574,8 @@ var KeypadManager = {
       this.moveCaretToEnd(this.phoneNumberView);
 
       FontSizeManager.adaptToSpace(
-        FontSizeManager.DIAL_PAD, this.phoneNumberView,
-        this.fakePhoneNumberView, forceMaxFontSize, ellipsisSide);
+        FontSizeManager.DIAL_PAD, this.phoneNumberView, forceMaxFontSize,
+        ellipsisSide);
     }
 
     if (this.onValueChanged) {
@@ -663,18 +661,17 @@ var KeypadManager = {
   },
 
   _showNoVoicemailDialog: function hk_showNoVoicemailDialog() {
-    var _ = window.navigator.mozL10n.get;
 
     var voicemailDialog = {
-      title: _('voicemailNoNumberTitle'),
-      text: _('voicemailNoNumberText'),
+      title: 'voicemailNoNumberTitle',
+      text: 'voicemailNoNumberText',
       confirm: {
-        title: _('voicemailNoNumberSettings'),
+        title: 'voicemailNoNumberSettings',
         recommend: true,
         callback: this.showVoicemailSettings
       },
       cancel: {
-        title: _('voicemailNoNumberCancel'),
+        title: 'voicemailNoNumberCancel',
         callback: this._hideNoVoicemailDialog
       }
     };

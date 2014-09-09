@@ -1,5 +1,4 @@
-/* global
-   MocksHelper,
+/* global MocksHelper,
    AppWindowFactory,
    MockApplications,
    MockAppWindowManager,
@@ -102,6 +101,19 @@ suite('system/AppWindowFactory', function() {
     'origin': 'app://system.gaiamobile.org',
     'manifest': {
       'name': 'System'
+    },
+    target: {}
+  };
+
+  var fakeLaunchConfig7 = {
+    'isActivity': false,
+    'url': 'app://search.gaiamobile.org/index.html',
+    'name': 'search',
+    'manifestURL': 'app://search.gaiamobile.org/manifest.webapp',
+    'origin': 'app://search.gaiamobile.org',
+    'manifest': {
+      'name': 'Search',
+      'role': 'search',
     },
     target: {}
   };
@@ -259,6 +271,18 @@ suite('system/AppWindowFactory', function() {
         fakeLaunchConfig2.url);
     });
 
+    test('redirect applaunch', function() {
+      var stubDispatchEvent = this.sinon.stub(window, 'dispatchEvent');
+      appWindowFactory.handleEvent({
+        type: 'appopenwindow',
+        detail: fakeLaunchConfig2
+      });
+      assert.isTrue(stubDispatchEvent.called);
+      assert.equal(stubDispatchEvent.getCall(0).args[0].type, 'launchapp');
+      assert.equal(stubDispatchEvent.getCall(0).args[0].detail.url,
+        fakeLaunchConfig2.url);
+    });
+
     test('opening from a system message', function() {
       var stubDispatchEvent = this.sinon.stub(window, 'dispatchEvent');
       appWindowFactory.handleEvent({
@@ -314,6 +338,16 @@ suite('system/AppWindowFactory', function() {
         detail: fakeLaunchConfig5
       });
       assert.isTrue(stubReviveBrowser.called);
+    });
+
+    test('open-app with search app', function() {
+      var stubDispatchEvent = this.sinon.stub(window, 'dispatchEvent');
+      appWindowFactory.launch(fakeLaunchConfig7);
+      assert.ok(stubDispatchEvent.notCalled);
+
+      fakeLaunchConfig7.url = 'app://search.gaiamobile.org/newtab.html';
+      appWindowFactory.launch(fakeLaunchConfig7);
+      assert.ok(stubDispatchEvent.calledOnce);
     });
   });
 });

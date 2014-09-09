@@ -1,9 +1,12 @@
-/* global
-  MocksHelper,
-  MockStatusBar,
-  NotificationScreen,
+/* global MockAudio,
   MockNavigatorMozChromeNotifications,
-  MockNavigatorSettings
+  MockNavigatorSettings,
+  MocksHelper,
+  NotificationScreen,
+  ScreenManager,
+  MockNavigatorMozTelephony,
+  MockCall,
+  MockVersionHelper
  */
 
 'use strict';
@@ -13,13 +16,18 @@ require('/test/unit/mock_screen_manager.js');
 require('/test/unit/mock_statusbar.js');
 require('/test/unit/mock_utility_tray.js');
 require('/test/unit/mock_navigator_moz_chromenotifications.js');
+require('/test/unit/mock_version_helper.js');
 require('/shared/test/unit/mocks/mock_gesture_detector.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
+require('/shared/test/unit/mocks/mock_navigator_moz_telephony.js');
+require('/shared/test/unit/mocks/dialer/mock_call.js');
 require('/shared/test/unit/mocks/mock_settings_url.js');
 require('/shared/test/unit/mocks/mock_settings_listener.js');
 require('/shared/test/unit/mocks/mock_system.js');
+require('/shared/test/unit/mocks/mock_audio.js');
 
 var mocksForNotificationScreen = new MocksHelper([
+  'Audio',
   'StatusBar',
   'GestureDetector',
   'NavigatorMozChromeNotifications',
@@ -28,13 +36,17 @@ var mocksForNotificationScreen = new MocksHelper([
   'SettingsListener',
   'SettingsURL',
   'UtilityTray',
-  'System'
+  'System',
+  'VersionHelper'
 ]).init();
 
 suite('system/NotificationScreen >', function() {
-  var fakeNotifContainer, fakeLockScreenContainer, fakeToaster,
+  var fakeDesktopNotifContainer, fakeLockScreenContainer, fakeToaster,
     fakeButton, fakeNoNotifications, fakeToasterIcon, fakeToasterTitle,
-    fakeToasterDetail, fakeSomeNotifications;
+    fakeToasterDetail, fakeSomeNotifications, fakeAmbientIndicator,
+    fakeNotifContainer;
+  var fakePriorityNotifContainer, fakeOtherNotifContainer;
+  var realVersionHelper;
 
   function sendChromeNotificationEvent(detail) {
     var event = new CustomEvent('mozChromeNotificationEvent', {
@@ -44,19 +56,42 @@ suite('system/NotificationScreen >', function() {
     window.dispatchEvent(event);
   }
 
+  function createFakeElement(tag, id) {
+    var obj = document.createElement(tag);
+    obj.id = id;
+    return obj;
+  }
+
+  function fakeNotification() {
+    var elt = document.createElement('div');
+    elt.className = 'notification';
+
+    return elt;
+  }
+
+  function incrementNotications(number) {
+    for (var i = 0; i <= number - 1; i++) {
+      NotificationScreen.incExternalNotifications();
+    }
+  }
+
+
   mocksForNotificationScreen.attachTestHelpers();
   setup(function() {
+    fakeDesktopNotifContainer = document.createElement('div');
+    fakeDesktopNotifContainer.id = 'desktop-notifications-container';
     fakeNotifContainer = document.createElement('div');
-    fakeNotifContainer.id = 'desktop-notifications-container';
-    // add some children, we don't care what they are
-    fakeNotifContainer.appendChild(document.createElement('div'));
-    fakeNotifContainer.appendChild(document.createElement('div'));
+    fakeNotifContainer.id = 'notifications-container';
+    fakePriorityNotifContainer = document.createElement('div');
+    fakePriorityNotifContainer.className = 'priority-notifications';
+    fakeOtherNotifContainer = document.createElement('div');
+    fakeOtherNotifContainer.className = 'other-notifications';
+    fakeDesktopNotifContainer.appendChild(fakePriorityNotifContainer);
+    fakeDesktopNotifContainer.appendChild(fakeOtherNotifContainer);
 
-    function createFakeElement(tag, id) {
-      var obj = document.createElement(tag);
-      obj.id = id;
-      return obj;
-    }
+    // add some children, we don't care what they are
+    fakeOtherNotifContainer.appendChild(fakeNotification());
+    fakeOtherNotifContainer.appendChild(fakeNotification());
 
     fakeLockScreenContainer = createFakeElement('div',
       'notifications-lockscreen-container');
@@ -64,10 +99,12 @@ suite('system/NotificationScreen >', function() {
     fakeSomeNotifications = createFakeElement('span', 'notification-some');
     fakeNoNotifications = createFakeElement('span', 'notification-none');
     fakeButton = createFakeElement('button', 'notification-clear');
+    fakeAmbientIndicator = createFakeElement('span', 'notifications-indicator');
     fakeToasterIcon = createFakeElement('img', 'toaster-icon');
     fakeToasterTitle = createFakeElement('div', 'toaster-title');
     fakeToasterDetail = createFakeElement('div', 'toaster-detail');
 
+    document.body.appendChild(fakeDesktopNotifContainer);
     document.body.appendChild(fakeNotifContainer);
 
     document.body.appendChild(fakeLockScreenContainer);
@@ -75,15 +112,20 @@ suite('system/NotificationScreen >', function() {
     document.body.appendChild(fakeSomeNotifications);
     document.body.appendChild(fakeNoNotifications);
     document.body.appendChild(fakeButton);
+    document.body.appendChild(fakeAmbientIndicator);
     document.body.appendChild(fakeToasterIcon);
     document.body.appendChild(fakeToasterTitle);
     document.body.appendChild(fakeToasterDetail);
 
+    realVersionHelper = window.VersionHelper;
+    window.VersionHelper = MockVersionHelper(false);
+
+    this.sinon.useFakeTimers();
     NotificationScreen.init();
   });
 
   teardown(function() {
-    fakeNotifContainer.parentNode.removeChild(fakeNotifContainer);
+    fakeDesktopNotifContainer.parentNode.removeChild(fakeDesktopNotifContainer);
     fakeLockScreenContainer.parentNode.removeChild(fakeLockScreenContainer);
     fakeToaster.parentNode.removeChild(fakeToaster);
     fakeButton.parentNode.removeChild(fakeButton);
@@ -123,47 +165,85 @@ suite('system/NotificationScreen >', function() {
     });
   });
 
-  suite('updateStatusBarIcon >', function() {
+  suite('playing notification ringtone', function() {
+    var realMozTelephony;
+
+    function sendNotification() {
+      var imgpath = 'http://example.com/test.png';
+      var detail = {icon: imgpath, title: 'title', detail: 'detail'};
+      NotificationScreen.addNotification(detail);
+    }
+
+    suiteSetup(function() {
+      realMozTelephony = navigator.mozTelephony;
+      navigator.mozTelephony = MockNavigatorMozTelephony;
+    });
+
+    suiteTeardown(function() {
+      MockNavigatorMozTelephony.mSuiteTeardown();
+      navigator.mozTelephony = realMozTelephony;
+    });
+
+    test('it should play it by default on notification channel', function() {
+      var playSpy = this.sinon.spy(MockAudio.prototype, 'play');
+      sendNotification();
+      var mockAudio = MockAudio.instances[0];
+      assert.equal(mockAudio.mozAudioChannelType, 'notification');
+      assert.ok(playSpy.calledOnce);
+    });
+
+    test('if active call it should use telephony channel', function() {
+      var playSpy = this.sinon.spy(MockAudio.prototype, 'play');
+      var mockCall = new MockCall('123456', 'connected');
+      MockNavigatorMozTelephony.calls.push(mockCall);
+      sendNotification();
+      var mockAudio = MockAudio.instances[0];
+      assert.equal(mockAudio.mozAudioChannelType, 'telephony');
+      assert.ok(playSpy.calledOnce);
+    });
+
+  });
+
+  suite('updateNotificationIndicator >', function() {
     setup(function() {
-      this.sinon.spy(MockStatusBar, 'updateNotification');
-      NotificationScreen.updateStatusBarIcon();
+      NotificationScreen.updateNotificationIndicator(true);
     });
 
-    test('should update the icon in the status bar', function() {
-      sinon.assert.called(MockStatusBar.updateNotification);
-      assert.equal(2, MockStatusBar.notificationsCount);
+    test('should clear unread notifications after open tray', function() {
+      incrementNotications(2);
+      assert.equal(NotificationScreen.unreadNotifications, 2);
+      var event = new CustomEvent('utilitytrayshow');
+      window.dispatchEvent(event);
+      assert.equal(document.body.getElementsByClassName('unread').length, 0);
+      assert.equal(NotificationScreen.unreadNotifications, 0);
     });
 
-    test('external notif should not be able to decrease the global count',
-      function() {
-
-      NotificationScreen.decExternalNotifications();
-      assert.equal(2, MockStatusBar.notificationsCount);
+    test('should show a small ambient indicator', function() {
+      incrementNotications(2);
+      assert.equal(document.body.getElementsByClassName('small').length, 1);
     });
 
-    test('external notif should increase the global count',
-      function() {
-
-      NotificationScreen.incExternalNotifications();
-      assert.isTrue(MockStatusBar.mNotificationUnread);
-      assert.equal(3, MockStatusBar.notificationsCount);
+    test('should show a medium ambient indicator', function() {
+      incrementNotications(4);
+      assert.equal(document.body.getElementsByClassName('medium').length, 1);
     });
 
-    test('external notif should decrease the global count',
-      function() {
+    test('should show a big ambient indicator', function() {
+      incrementNotications(6);
+      assert.equal(document.body.getElementsByClassName('big').length, 1);
+    });
 
-      NotificationScreen.incExternalNotifications();
-      MockStatusBar.mNotificationUnread = false;
-      NotificationScreen.decExternalNotifications();
-      assert.isFalse(MockStatusBar.mNotificationUnread);
-      assert.equal(2, MockStatusBar.notificationsCount);
+    test('should show a full ambient indicator', function() {
+      incrementNotications(7);
+      assert.equal(document.body.getElementsByClassName('full').length, 1);
     });
 
     test('should change the read status', function() {
-      NotificationScreen.updateStatusBarIcon(true);
-      assert.isTrue(MockStatusBar.mNotificationUnread);
+      assert.equal(document.body.getElementsByClassName('unread').length, 1);
     });
+  });
 
+  suite('addNotification >', function() {
     test('calling addNotification without icon', function() {
       var toasterIcon = NotificationScreen.toasterIcon;
       var imgpath = 'http://example.com/test.png';
@@ -250,52 +330,6 @@ suite('system/NotificationScreen >', function() {
       assert.isTrue(fromDate >= now);
     });
 
-    suite('prettyDate() behavior >', function() {
-      var realMozL10n;
-      setup(function() {
-        var mozL10nStub = {
-          DateTimeFormat: function() {
-            return {
-              fromNow: function(time, compact) {
-                var retval;
-                var delta = new Date().getTime() - time.getTime();
-                if (delta >= 0 && delta < 60*1000) {
-                  retval = 'now';
-                } else if (delta >= 60*1000) {
-                  retval = '1m ago';
-                }
-                return retval;
-              }
-            };
-          }
-        };
-        realMozL10n = navigator.mozL10n;
-        navigator.mozL10n = mozL10nStub;
-      });
-
-      teardown(function() {
-        navigator.mozL10n = realMozL10n;
-      });
-
-      test('converts timestamp to string', function() {
-        var timestamp = new Date();
-        var date = NotificationScreen.prettyDate(timestamp);
-        assert.isTrue(typeof date === 'string');
-      });
-
-      test('shows now', function() {
-        var timestamp = new Date();
-        var date = NotificationScreen.prettyDate(timestamp);
-        assert.equal(date, 'now');
-      });
-
-      test('shows 1m ago', function() {
-        var timestamp = new Date(new Date().getTime() - 61*1000);
-        var date = NotificationScreen.prettyDate(timestamp);
-        assert.equal(date, '1m ago');
-      });
-    });
-
     test('remove lockscreen notifications at the same time', function() {
       NotificationScreen.addNotification({
         id: 'id-10000', title: '', message: ''
@@ -305,6 +339,179 @@ suite('system/NotificationScreen >', function() {
         null,
         fakeLockScreenContainer.querySelector(
           '[data-notification-i-d="id-10000"]'));
+    });
+
+    test('does notify for generic applications', function() {
+      this.sinon.stub(navigator, 'vibrate');
+      this.sinon.stub(MockAudio.prototype, 'play');
+
+      NotificationScreen.addNotification({
+        id: 'id-10000',
+        title: '',
+        message: '',
+        manifestURL: 'app://sms.gaiamobile.org/manifest.webapp'
+      });
+
+      var ringtonePlayer = MockAudio.instances[0];
+      sinon.assert.called(ringtonePlayer.play);
+
+      sinon.assert.called(navigator.vibrate);
+
+      assert.ok(fakeToaster.classList.contains('displayed'));
+    });
+
+    test('notifications are added in the right place', function() {
+      var title = 'hello world';
+      var text = 'how are you';
+      NotificationScreen.addNotification({
+        id: 'id-10000',
+        title: title,
+        text: text,
+        manifestURL: 'app://sms.gaiamobile.org/manifest.webapp'
+      });
+
+      assert.equal(fakeOtherNotifContainer.childElementCount, 3);
+      var newContent = fakeOtherNotifContainer.firstElementChild.textContent;
+      assert.isTrue(
+        newContent.indexOf(title) !== -1,
+        'The title is in the notification'
+      );
+      assert.isTrue(
+        newContent.indexOf(text) !== -1,
+        'The message is in the notification'
+      );
+    });
+
+    test('does not notify for the network-alerts application', function() {
+      this.sinon.stub(navigator, 'vibrate');
+
+      NotificationScreen.addNotification({
+        id: 'id-10000',
+        title: '',
+        message: '',
+        // note: works only if the test agent is launched using
+        // app://test-agent.gaiamobile.org (instead of using http://)
+        manifestURL: 'app://network-alerts.gaiamobile.org/manifest.webapp'
+      });
+
+      assert.lengthOf(MockAudio.instances, 0);
+      sinon.assert.notCalled(navigator.vibrate);
+      assert.isFalse(fakeToaster.classList.contains('displayed'));
+    });
+
+    test('notifications for priority applications are added in right place',
+    function() {
+      var title = 'hello world';
+      var text = 'how are you';
+      NotificationScreen.addNotification({
+        id: 'id-10000',
+        title: title,
+        text: text,
+        // note: works only if the test agent is launched using
+        // app://test-agent.gaiamobile.org (instead of using http://)
+        manifestURL: 'app://network-alerts.gaiamobile.org/manifest.webapp'
+      });
+
+      assert.equal(fakePriorityNotifContainer.childElementCount, 1);
+      var content = fakePriorityNotifContainer.firstElementChild.textContent;
+      assert.isTrue(
+        content.indexOf(title) !== -1,
+        'The title is in the notification'
+      );
+      assert.isTrue(
+        content.indexOf(text) !== -1,
+        'The message is in the notification'
+      );
+    });
+  });
+
+  suite('prettyDate() behavior >', function() {
+    var realMozL10n;
+    setup(function() {
+      var mozL10nStub = {
+        DateTimeFormat: function() {
+          return {
+            fromNow: function(time, compact) {
+              var retval;
+              var delta = new Date().getTime() - time.getTime();
+              if (delta >= 0 && delta < 60 * 1000) {
+                retval = 'now';
+              } else if (delta >= 60 * 1000) {
+                retval = '1m ago';
+              }
+              return retval;
+            }
+          };
+        }
+      };
+      realMozL10n = navigator.mozL10n;
+      navigator.mozL10n = mozL10nStub;
+    });
+
+    teardown(function() {
+      navigator.mozL10n = realMozL10n;
+    });
+
+    test('converts timestamp to string', function() {
+      var timestamp = new Date();
+      var date = NotificationScreen.prettyDate(timestamp);
+      assert.isTrue(typeof date === 'string');
+    });
+
+    test('shows now', function() {
+      var timestamp = new Date();
+      var date = NotificationScreen.prettyDate(timestamp);
+      assert.equal(date, 'now');
+    });
+
+    test('shows 1m ago', function() {
+      var timestamp = new Date(new Date().getTime() - 61 * 1000);
+      var date = NotificationScreen.prettyDate(timestamp);
+      assert.equal(date, '1m ago');
+    });
+  });
+
+  suite('special notification handling for special apps', function() {
+    var CALENDAR_MANIFEST = 'app://calendar.gaiamobile.org/manifest.webapp';
+    var EMAIL_MANIFEST = 'app://email.gaiamobile.org/manifest.webapp';
+
+    var details = {
+      id: 'id-' + Date.now(),
+      title: 'title',
+      text: 'body'
+    };
+
+    var turnOnScreenSpy;
+
+    setup(function() {
+      ScreenManager.turnScreenOff();
+      turnOnScreenSpy = this.sinon.spy(ScreenManager, 'turnScreenOn');
+    });
+
+    test('calendar notifications should wake the screen', function() {
+      details.manifestURL = CALENDAR_MANIFEST;
+      NotificationScreen.addNotification(details);
+      sinon.assert.calledOnce(ScreenManager.turnScreenOn);
+    });
+
+    test('email notifications should not wake screen', function() {
+      details.manifestURL = EMAIL_MANIFEST;
+      NotificationScreen.addNotification(details);
+      sinon.assert.notCalled(ScreenManager.turnScreenOn);
+    });
+
+    test('download progress notifications should not wake screen', function() {
+      details.manifestURL = null;
+      details.type = 'download-notification-downloading';
+      NotificationScreen.addNotification(details);
+      sinon.assert.notCalled(ScreenManager.turnScreenOn);
+    });
+
+    test('download complete notifications should wake screen', function() {
+      details.manifestURL = null;
+      details.type = 'download-notification-complete';
+      NotificationScreen.addNotification(details);
+      sinon.assert.calledOnce(ScreenManager.turnScreenOn);
     });
   });
 
@@ -487,7 +694,6 @@ suite('system/NotificationScreen >', function() {
 
       setup(function() {
         vibrateSpy = this.sinon.spy(navigator, 'vibrate');
-        this.sinon.useFakeTimers();
       });
 
       test('isResending is false', function() {
@@ -499,7 +705,7 @@ suite('system/NotificationScreen >', function() {
           assert.isFalse(NotificationScreen.isResending);
           window.dispatchEvent(
             new CustomEvent('desktop-notification-resend',
-            { detail: { number: 1 } } ));
+            { detail: { number: 1 } }));
           this.sinon.clock.tick();
           assert.isTrue(NotificationScreen.isResending);
         }
@@ -510,7 +716,7 @@ suite('system/NotificationScreen >', function() {
           assert.isTrue(NotificationScreen.isResending);
           window.dispatchEvent(
             new CustomEvent('desktop-notification-resend',
-            { detail: { number: 1 } } ));
+            { detail: { number: 1 } }));
           this.sinon.clock.tick();
           sendChromeNotificationEvent({
             type: 'desktop-notification',
@@ -547,7 +753,6 @@ suite('system/NotificationScreen >', function() {
       setup(function() {
         resendSpy = this.sinon.spy(MockNavigatorMozChromeNotifications,
           'mozResendAllNotifications');
-        this.sinon.useFakeTimers();
         dispatchEventSpy = this.sinon.spy(window, 'dispatchEvent');
       });
 
@@ -566,7 +771,7 @@ suite('system/NotificationScreen >', function() {
           this.sinon.clock.tick();
           var expectedEvent =
             new CustomEvent('desktop-notification-resend',
-              { detail: { number: 1 } } );
+              { detail: { number: 1 } });
           assert.ok(dispatchEventSpy.called);
           assert.equal(
             dispatchEventSpy.lastCall.args[0].type, expectedEvent.type);
@@ -589,7 +794,7 @@ suite('system/NotificationScreen >', function() {
         test('desktop-notification-resend not sent', function() {
           var expectedEvent =
             new CustomEvent('desktop-notification-resend',
-              { detail: { number: 1 } } );
+              { detail: { number: 1 } });
           assert.ok(dispatchEventSpy.called);
           assert.notEqual(
             dispatchEventSpy.lastCall.args[0].type, expectedEvent.type);

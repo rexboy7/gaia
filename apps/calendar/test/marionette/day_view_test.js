@@ -6,6 +6,7 @@ var Calendar = require('./lib/calendar'),
 marionette('day view', function() {
   var app;
   var day;
+  var month;
   var client = marionette.client({
     prefs: {
       // we need to disable the keyboard to avoid intermittent failures on
@@ -22,7 +23,7 @@ marionette('day view', function() {
     app.launch({ hideSwipeHint: true });
     app.openDayView();
     day = app.day;
-    day.waitForDisplay();
+    month = app.month;
   });
 
   test('header copy should not overflow', function() {
@@ -40,6 +41,8 @@ marionette('day view', function() {
         duration: 3
       });
       day.waitForDisplay();
+      // Scroll to top to make sure we could click the event element.
+      day.scrollTop = 0;
     });
 
     test('click after first hour', function() {
@@ -225,4 +228,97 @@ marionette('day view', function() {
     }
   });
 
+  suite('animated scrolling', function() {
+    test('today', function() {
+      assert.equal(
+        day.scrollTop,
+        day.getDistinationScrollTop(new Date().getHours() - 1),
+        'scroll to the previous hour of current time'
+      );
+    });
+
+    test('select next or previous day in the month', function() {
+      var today = new Date();
+      var selectedDay;
+
+      app.openMonthView();
+      if (today.getDate() === 1 && today.getDay() === 0) {
+        selectedDay = month.days[1];
+      } else {
+        selectedDay = month.days[0];
+      }
+      selectedDay.click();
+
+      app.openDayView();
+      assert.equal(
+        day.scrollTop,
+        day.getDistinationScrollTop(8),
+        'scroll to the 8AM element'
+      );
+    });
+
+    test('swipe to the next day', function() {
+      var previousScrollTop = day.scrollTop;
+      app.swipeLeft();
+
+      assert.equal(
+        day.scrollTop,
+        previousScrollTop,
+        'same scrollTop'
+      );
+    });
+
+    test('swipe to the previous day', function() {
+      var previousScrollTop = day.scrollTop;
+      app.swipeRight();
+
+      assert.equal(
+        day.scrollTop,
+        previousScrollTop,
+        'same scrollTop'
+      );
+    });
+
+    test('swipe to the today', function() {
+      app.swipeRight();
+      app.swipeLeft();
+
+      assert.equal(
+        day.scrollTop,
+        day.getDistinationScrollTop(new Date().getHours() - 1),
+        'scroll to the 8AM element'
+      );
+    });
+  });
+
+  suite('12/24 hour format', function() {
+    // Refer to http://bugzil.la/1061135.
+    test.skip('default format: 12 hour', function() {
+      assert.equal(day.sideBarHours[0].text(), '12 AM');
+      assert.equal(day.sideBarHours[13].text(), '1 PM');
+      assert.equal(day.sideBarHours[23].text(), '11 PM');
+
+      var now = new Date();
+      var minutes = now.getMinutes();
+      minutes = minutes < 10 ? (0 + String(minutes)) : minutes;
+      var currentTime = (now.getHours() % 12) + ':' + minutes;
+      assert.equal(day.currentTime.text(), currentTime);
+    });
+
+    // Refer to http://bugzil.la/1061135.
+    test.skip('switch to 24 hour format', function() {
+      app.switch24HourTimeFormat();
+      assert.equal(day.sideBarHours[0].text(), '0');
+      assert.equal(day.sideBarHours[13].text(), '13');
+      assert.equal(day.sideBarHours[23].text(), '23');
+
+      var now = new Date();
+      var currentTime = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      assert.equal(day.currentTime.text(), currentTime);
+    });
+  });
+
+  function pad(n) {
+    return n < 10 ? '0' + n : String(n);
+  }
 });

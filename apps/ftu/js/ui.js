@@ -14,10 +14,9 @@ var UIManager = {
   // eg. instead of calling document.getElementById('splash-screen')
   // we can access this.splashScreen in our code.
   domSelectors: [
+    'container',
     'splash-screen',
     'activation-screen',
-    'progress-bar',
-    'progress-bar-state',
     'finish-screen',
     'update-screen',
     'nav-bar',
@@ -25,7 +24,7 @@ var UIManager = {
     // Unlock SIM Screen
     'unlock-sim-screen',
     'unlock-sim-header',
-    'unlock-sim-back',
+    'unlock-sim-action',
     // PIN Screen
     'pincode-screen',
     'pin-label',
@@ -111,6 +110,7 @@ var UIManager = {
   ],
 
   dataConnectionChangedByUsr: false,
+  timeZoneNeedsConfirmation: true,
 
   init: function ui_init() {
     _ = navigator.mozL10n.get;
@@ -133,7 +133,7 @@ var UIManager = {
     this.skipPinButton.addEventListener('click', this);
     this.backSimButton.addEventListener('click', this);
     this.unlockSimButton.addEventListener('click', this);
-    this.unlockSimBack.addEventListener('click', this);
+    this.unlockSimAction.addEventListener('action', this);
     this.simInfoBack.addEventListener('click', this);
     this.simInfoForward.addEventListener('click', this);
 
@@ -161,7 +161,6 @@ var UIManager = {
 
     this.timeConfiguration.addEventListener('input', this);
     this.dateConfiguration.addEventListener('input', this);
-    this.initTZ();
 
     this.geolocationSwitch.addEventListener('click', this);
 
@@ -265,10 +264,10 @@ var UIManager = {
           Basket.send(emailValue, function emailSent(err, data) {
             if (err) {
               if (err.code && err.code === Basket.errors.INVALID_EMAIL) {
-                ConfirmDialog.show(_('invalid-email-dialog-title'),
-                                   _('invalid-email-dialog-text'),
+                ConfirmDialog.show('invalid-email-dialog-title',
+                                   'invalid-email-dialog-text',
                                    {
-                                    title: _('cancel'),
+                                    title: 'cancel',
                                     callback: function ok() {
                                       ConfirmDialog.hide();
                                     }
@@ -290,10 +289,10 @@ var UIManager = {
         }
       } else {
         utils.overlay.hide();
-        ConfirmDialog.show(_('invalid-email-dialog-title'),
-                           _('invalid-email-dialog-text'),
+        ConfirmDialog.show('invalid-email-dialog-title',
+                           'invalid-email-dialog-text',
                            {
-                            title: _('cancel'),
+                            title: 'cancel',
                             callback: function ok() {
                               ConfirmDialog.hide();
                             }
@@ -305,9 +304,17 @@ var UIManager = {
 
   initTZ: function ui_initTZ() {
     // Initialize the timezone selector, see /shared/js/tz_select.js
+    var self = this;
     var tzRegion = document.getElementById('tz-region');
     var tzCity = document.getElementById('tz-city');
-    tzSelect(tzRegion, tzCity, this.setTimeZone, this.setTimeZone);
+    return new Promise(function(resolve) {
+      var onchange = self.setTimeZone.bind(self);
+      var onload = function() {
+        self.setTimeZone.apply(self, arguments);
+        resolve();
+      };
+      tzSelect(tzRegion, tzCity, onchange, onload);
+    });
   },
 
   handleEvent: function ui_handleEvent(event) {
@@ -323,7 +330,7 @@ var UIManager = {
       case 'unlock-sim-button':
         SimManager.unlock();
         break;
-      case 'unlock-sim-back':
+      case 'unlock-sim-action':
         SimManager.simUnlockBack();
         break;
       case 'sim-info-forward':
@@ -503,7 +510,9 @@ var UIManager = {
     timeLabel.innerHTML = f.localeFormat(timeToSet, format);
   },
 
-  setTimeZone: function ui_stz(timezone) {
+  setTimeZone: function ui_stz(timezone, needsConfirmation) {
+    this.timeZoneNeedsConfirmation = !!needsConfirmation;
+
     var utcOffset = timezone.utcOffset;
     document.getElementById('time_zone_overlay').className =
       'UTC' + utcOffset.replace(/[+:]/g, '');

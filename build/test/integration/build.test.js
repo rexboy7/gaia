@@ -273,7 +273,7 @@ suite('Build Integration tests', function() {
         filePath = path.join(process.cwd(), 'apps', appName, filePath)
       }
 
-      if (path.existsSync(filePath)) {
+      if (fs.existsSync(filePath)) {
         fileInApps = fs.readFileSync(filePath);
       } else {
         filePath = filePath.replace('@' + reso + 'x', '');
@@ -667,7 +667,8 @@ suite('Build Integration tests', function() {
           helper.checkSettings(settings, expectedSettings);
           helper.checkPrefs(sandbox.userPrefs, expectedUserPrefs);
           // only expect one zip file for marketplace.
-          assert.equal(zipCount, 1);
+          assert.equal(zipCount, 2, 'we should have two zip files in ' +
+            'profile-debug directory');
 
           fs.unlinkSync(extConfigPath);
           fs.renameSync(extConfigPath + '.bak', extConfigPath);
@@ -692,60 +693,6 @@ suite('Build Integration tests', function() {
       helper.checkFileInZip(zipPath, pathInZip, expectedBrandingPath);
       done();
     });
-  });
-
-  test('make with HAIDA=1', function(done) {
-    helper.exec('HAIDA=1 make', function(error, stdout, stderr) {
-        helper.checkError(error, stdout, stderr);
-
-        var hsBroZip = new AdmZip(path.join(process.cwd(), 'profile',
-          'webapps', 'browser.gaiamobile.org', 'application.zip'));
-        var hsSysZip = new AdmZip(path.join(process.cwd(), 'profile',
-          'webapps', 'system.gaiamobile.org', 'application.zip'));
-
-        var hsInit =
-          JSON.parse(hsBroZip.readAsText(hsBroZip.getEntry('js/init.json')));
-        var hsBroManifest =
-          JSON.parse(hsBroZip.readAsText(hsBroZip.getEntry('manifest.webapp')));
-        var defaultJSONPath =
-          path.join(process.cwd(), 'apps', 'browser', 'build', 'default.json');
-        var hsIcc =
-          JSON.parse(hsSysZip.readAsText(
-            hsSysZip.getEntry('resources/icc.json')));
-        var hsWapuaprof =
-          JSON.parse(hsSysZip.readAsText(hsSysZip.getEntry(
-            'resources/wapuaprof.json')));
-        var hsSysManifest =
-          JSON.parse(hsSysZip.readAsText(hsSysZip.getEntry('manifest.webapp')));
-
-        var expectedInitJson = JSON.parse(fs.readFileSync(defaultJSONPath));
-        var expectedIcc = {
-          'defaultURL': 'http://www.mozilla.org/en-US/firefoxos/'
-        };
-        var expectedWap = {};
-        var expectedManifest = {
-          activities: {
-            view: {
-              filters: {
-                type: 'url',
-                url: {
-                  required: true,
-                  pattern: '(https?:|data:).{1,16384}',
-                  patternFlags: 'i'
-                }
-              }
-            }
-          }
-        };
-        helper.checkSettings(hsInit, expectedInitJson);
-        assert.equal(hsBroManifest.role, 'system');
-        assert.equal(hsBroManifest.activities, null);
-        helper.checkSettings(hsIcc, expectedIcc);
-        helper.checkSettings(hsWapuaprof, expectedWap);
-        helper.checkSettings(hsSysManifest, expectedManifest);
-        done();
-      }
-    );
   });
 
   test('make with GAIA_OPTIMIZE=1 BUILD_DEBUG=1',
@@ -837,6 +784,24 @@ suite('Build Integration tests', function() {
         done();
       });
     });
+  });
+
+  test('make test-l10n-optimize build noFetch file', function(done) {
+    helper.exec('APP=test-l10n-optimize make',
+      function(error, stdout, stderr) {
+        helper.checkError(error, stdout, stderr);
+
+        var expectedScript = '<script type="application/l10n" lang="en-US">\n'+
+                             '  {"entity1":"My Entity"}\n' +
+                             '</script>';
+        var testZip = new AdmZip(path.join(process.cwd(), 'profile',
+          'webapps', 'test-l10n-optimize.gaiamobile.org', 'application.zip'));
+        var indexHtml =
+          testZip.readAsText(testZip.getEntry('index.html'));
+        assert.ok(indexHtml.indexOf(expectedScript) !== -1);
+        done();
+      }
+    );
   });
 
   teardown(function() {

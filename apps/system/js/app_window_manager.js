@@ -1,9 +1,8 @@
 /* global SettingsListener, homescreenLauncher, KeyboardManager,
-          layoutManager, System */
+          layoutManager, System, NfcHandler, rocketbar */
 'use strict';
 
 (function(exports) {
-  var DEBUG = false;
   var screenElement = document.getElementById('screen');
 
   /**
@@ -18,6 +17,8 @@
    * @module AppWindowManager
    */
   var AppWindowManager = {
+    DEBUG: false,
+    CLASS_NAME: 'AppWindowManager',
     continuousTransition: false,
 
     element: document.getElementById('windows'),
@@ -35,8 +36,14 @@
       }
     },
 
+    /**
+     * Get active app. If active app is null, we'll return homescreen as
+     * default.
+     * @return {AppWindow} The app is active.
+     */
     getActiveApp: function awm_getActiveApp() {
-      return this._activeApp;
+      return this._activeApp || (exports.homescreenLauncher ?
+        exports.homescreenLauncher.getHomescreen() : null);
     },
 
     /**
@@ -47,9 +54,11 @@
      */
     getApp: function awm_getApp(origin, manifestURL) {
       for (var id in this._apps) {
-        if (this._apps[id].origin === origin &&
-            (!manifestURL || this._apps[id].manifestURL === manifestURL)) {
-          return this._apps[id];
+        var app = this._apps[id];
+        if (app.origin === origin &&
+            (!manifestURL || app.manifestURL === manifestURL) &&
+            (!app.isBrowser() || app.config.url === origin)) {
+          return app;
         }
       }
       return null;
@@ -116,9 +125,11 @@
 
       this._updateActiveApp(appNext.instanceID);
 
+      var that = this;
       if (appCurrent && layoutManager.keyboardEnabled) {
+        this.sendStopRecordingRequest();
+
         // Ask keyboard to hide before we switch the app.
-        var that = this;
         window.addEventListener('keyboardhidden', function onhiddenkeyboard() {
           window.removeEventListener('keyboardhidden', onhiddenkeyboard);
           that.switchApp(appCurrent, appNext, switching);
@@ -131,9 +142,17 @@
           // Hide keyboard immediately.
           KeyboardManager.hideKeyboardImmediately();
         }
+      } else if (rocketbar.active) {
+        // Wait for the rocketbar to close
+        window.addEventListener('rocketbar-overlayclosed', function onClose() {
+          window.removeEventListener('rocketbar-overlayclosed', onClose);
+          that.switchApp(appCurrent, appNext, switching);
+        });
       } else {
-        this.switchApp(appCurrent, appNext, switching,
-          openAnimation, closeAnimation);
+        this.sendStopRecordingRequest(function() {
+          this.switchApp(appCurrent, appNext, switching,
+                         openAnimation, closeAnimation);
+        }.bind(this));
       }
     },
 
@@ -190,7 +209,7 @@
 
         appNext.open(immediateTranstion ? 'immediate' :
                       ((switching === true) ? 'invoked' : openAnimation));
-        if (appCurrent) {
+        if (appCurrent && appCurrent.instanceID !== appNext.instanceID) {
           appCurrent.close(immediateTranstion ? 'immediate' :
             ((switching === true) ? 'invoking' : closeAnimation));
         } else {
@@ -213,6 +232,9 @@
      * @memberOf module:AppWindowManager
      */
     init: function awm_init() {
+      var nfcHandler = new NfcHandler(this);
+      nfcHandler.start();
+
       if (System.slowTransition) {
         this.element.classList.add('slow-transition');
       } else {
@@ -244,7 +266,7 @@
       window.addEventListener('showwindow', this);
       window.addEventListener('hidewindowforscreenreader', this);
       window.addEventListener('showwindowforscreenreader', this);
-      window.addEventListener('overlaystart', this);
+      window.addEventListener('attentionopened', this);
       window.addEventListener('homegesture-enabled', this);
       window.addEventListener('homegesture-disabled', this);
       window.addEventListener('system-resize', this);
@@ -315,7 +337,7 @@
       window.removeEventListener('showwindow', this);
       window.removeEventListener('hidewindowforscreenreader', this);
       window.removeEventListener('showwindowforscreenreader', this);
-      window.removeEventListener('overlaystart', this);
+      window.removeEventListener('attentionopened', this);
       window.removeEventListener('homegesture-enabled', this);
       window.removeEventListener('homegesture-disabled', this);
       window.removeEventListener('system-resize', this);
@@ -435,23 +457,7 @@
           break;
 
         case 'hidewindow':
-          if (activeApp &&
-              activeApp.origin !== homescreenLauncher.origin) {
-            // This is coming from attention screen.
-            // If attention screen has the same origin as our active app,
-            // we cannot turn off its page visibility
-            // because they are sharing the same process and the same docShell,
-            // so turn off page visibility would overwrite the page visibility
-            // of the active attention screen.
-            if (detail && detail.origin &&
-                detail.origin === activeApp.origin) {
-              return;
-            }
-            activeApp.setVisible(false);
-          } else {
-            var home = homescreenLauncher.getHomescreen(); // jshint ignore:line
-            home && home.setVisible(false);
-          }
+          activeApp && activeApp.broadcast('hidewindow', evt.detail);
           break;
 
         case 'hidewindowforscreenreader':
@@ -463,38 +469,10 @@
           break;
 
         case 'showwindow':
-          var fireActivity = () => {
-            // Need to invoke activity
-            var a = new window.MozActivity(detail.activity);
-            a.onerror = function ls_activityError() {
-              console.log('MozActivity: activity error.');
-            };
-          };
-
-          if (activeApp && activeApp.origin !== homescreenLauncher.origin) {
-            activeApp.setVisible(true);
-            // If we need to invoke activity after we show the window.
-            if (detail && detail.activity) {
-              fireActivity();
-            }
-          } else {
-            // If we only have activity, we don't open the homescreen.
-            if (detail && detail.activity) {
-              fireActivity();
-            } else {
-              var home = homescreenLauncher.getHomescreen(true); // jshint ignore:line
-              if (home) {
-                if (home.isActive()) {
-                  home.setVisible(true);
-                } else {
-                  this.display();
-                }
-              }
-            }
-          }
+          this.onShowWindow(detail);
           break;
 
-        case 'overlaystart':
+        case 'attentionopened':
           // Instantly blur the frame in order to ensure hiding the keyboard
           if (activeApp) {
             if (!activeApp.isOOP()) {
@@ -506,7 +484,7 @@
               // repaint issue.
               // So since the only in-process frame is the browser app
               // let's switch it's visibility as soon as possible when
-              // there is an attention screen and delegate the
+              // there is an attention window and delegate the
               // responsibility to blur the possible focused elements
               // itself.
               activeApp.setVisible(false, true);
@@ -559,6 +537,7 @@
             this._activeApp.getTopMostWindow().blur();
           }
           break;
+
         case 'sheetstransitionstart':
           if (document.mozFullScreen) {
             document.mozCancelFullScreen();
@@ -591,7 +570,7 @@
     },
 
     _dumpAllWindows: function() {
-      if (!DEBUG) {
+      if (!this.DEBUG) {
         return;
       }
       console.log('=====DUMPING APP WINDOWS BEGINS=====');
@@ -667,13 +646,17 @@
       var caller;
       var callee = this.getApp(config.origin);
       caller = this._activeApp.getTopMostWindow();
-      callee.callerWindow = caller;
-      caller.calleeWindow = callee;
+      if (caller.getBottomMostWindow() === callee) {
+        callee.frontWindow.kill();
+      } else {
+        callee.callerWindow = caller;
+        caller.calleeWindow = callee;
+      }
     },
 
     debug: function awm_debug() {
-      if (DEBUG) {
-        console.log('[AppWindowManager]' +
+      if (this.DEBUG) {
+        console.log('[' + this.CLASS_NAME + ']' +
           '[' + System.currentTime() + ']' +
           Array.slice(arguments).concat());
       }
@@ -716,12 +699,14 @@
       this._activeApp = this._apps[instanceID];
       if (!this._activeApp) {
         this.debug('no active app alive: ' + instanceID);
+        return;
       }
-      if (this._activeApp && this._activeApp.isFullScreen()) {
-        screenElement.classList.add('fullscreen-app');
-      } else {
-        screenElement.classList.remove('fullscreen-app');
-      }
+      var fullscreen = this._activeApp.isFullScreen();
+      screenElement.classList.toggle('fullscreen-app', fullscreen);
+
+      var fullScreenLayout = this._activeApp.isFullScreenLayout();
+      screenElement.classList.toggle('fullscreen-layout-app', fullScreenLayout);
+
       // Resize when opened.
       // Note: we will not trigger reflow if the final size
       // is the same as its current value.
@@ -755,6 +740,152 @@
       for (var id in this._apps) {
         this._apps[id].broadcast(message, detail);
       }
+    },
+
+    /**
+     * The event 'showwindow' may come with details, which means there is
+     * some steps need to be done after we show or don't show the active app,
+     * or the homescreen window.
+     *
+     * @param {Object} [detail] The detail of the event.
+     * @memberOf module:AppWindowManager
+     */
+    onShowWindow: function awm_onShowWindow(detail) {
+      var activeApp = this._activeApp;
+
+      // Just move the code from the conditional branches below to
+      // a re-usable function. To avoid people get confused with other
+      // homescreen related methods, this should not be moved out to
+      // be a method of AWM.
+      var launchHomescreen = () => {
+        var home = homescreenLauncher.getHomescreen(true); // jshint ignore:line
+        if (home) {
+          if (home.isActive()) {
+            home.setVisible(true);
+          } else {
+            this.display();
+          }
+        }
+      };
+      detail = detail ? detail : {};  // Give an empty object if it's null.
+
+      // In this statement we can add more possible slots when it's required.
+      // The undefined variables would keep undefined, and the existing ones
+      // would hold the data from the detail, so we don't need to parse the
+      // detail object with switch cases.
+      var { activity, notificationId } = detail;
+      if (activity || notificationId) {
+        if (activeApp && activeApp.origin !== homescreenLauncher.origin) {
+          activeApp.setVisible(true);
+          if (activity) {
+            this.fireActivity(activity);
+          } else if (notificationId){
+            this.fireNotificationClicked(notificationId);
+          }
+        } else {
+          if (activity) {
+            this.fireActivity(activity);
+          } else if (notificationId){
+            launchHomescreen();
+            this.fireNotificationClicked(notificationId);
+          }
+        }
+      } else {  // it don't have the detail we can handle.
+        if (activeApp && activeApp.origin !== homescreenLauncher.origin) {
+          activeApp.setVisible(true);
+        } else {
+          launchHomescreen();
+        }
+      }
+    },
+
+    /**
+     * After show the window of activity or homescreen,
+     * fire the following activity.
+     *
+     * @param {Object} [activityContent]
+     * @memberOf module:AppWindowManager
+     */
+    fireActivity: function awm_fireActivity(activityContent) {
+      // Need to invoke activity
+      var a = new window.MozActivity(activityContent);
+      a.onerror = function ls_activityError() {
+        console.log('MozActivity: activity error.');
+      };
+    },
+
+    /**
+     * After show the window of activity or homescreen,
+     * fire the event of notification clicked.
+     *
+     * @param {String} [notificationId]
+     * @memberOf module:AppWindowManager
+     */
+    fireNotificationClicked:
+    function awm_fireNotificationClicked(notificationId) {
+      var event = document.createEvent('CustomEvent');
+      event.initCustomEvent('mozContentNotificationEvent', true, true, {
+        type: 'desktop-notification-click',
+        id: notificationId
+      });
+      window.dispatchEvent(event);
+
+      window.dispatchEvent(new CustomEvent('notification-clicked', {
+        detail: {
+          id: notificationId
+        }
+      }));
+    },
+
+    /**
+     * Abuse the settings database to notify interested certified apps
+     * that the current foreground window is about to close.  This is a
+     * hack implemented to fix bug 1051172 so that apps can be notified
+     * that they will be closing without having to wait for the
+     * visibilitychange event that does not arrive until after the app
+     * has been hidden.
+     *
+     * This function is called from display() above to handle switching
+     * from an app to the homescreen or to the task switcher. It is also
+     * called from stack_manager.js to handle edge gestures. I tried calling
+     * it from screen_manager.js to handle screen blanking and the sleep
+     * button, but the visibiltychange event arrived before the will hide
+     * notification did in that case, so it was not necessary.
+     *
+     * We ought to be able to remove this function and the code that
+     * calls it when bug 1034001 is fixed.
+     *
+     * See also bugs 995540 and 1006200 and the
+     * private.broadcast.attention_screen_opening setting hack in
+     * attention_screen.js
+     */
+    sendStopRecordingRequest: function sendStopRecordingRequest(callback) {
+      // If we are not currently recording anything, just call
+      // the callback synchronously
+      if (!window.mediaRecording.isRecording) {
+        if (callback) { callback(); }
+        return;
+      }
+
+      // Otherwise, if we are recording something, then send a
+      // "stop recording" signal via the settings db before
+      // calling the callback.
+      var setRequest = navigator.mozSettings.createLock().set({
+        'private.broadcast.stop_recording': true
+      });
+      setRequest.onerror = function() {
+        // If the set request failed for some reason, just call the callback
+        if (callback) { callback(); }
+      };
+      setRequest.onsuccess = function() {
+        // When the setting has been set, reset it as part of a separate
+        // transaction.
+        navigator.mozSettings.createLock().set({
+          'private.broadcast.stop_recording': false
+        });
+        // And meanwhile, call the callback
+        if (callback) { callback(); }
+      };
     }
   };
 

@@ -13,7 +13,8 @@
      * Now it stands for the foreground app is not loaded yet.
      */
     isBusyLoading: function() {
-      return !window.AppWindowManager.getActiveApp().loaded;
+      var app = window.AppWindowManager.getActiveApp();
+      return app && !app.loaded;
     },
     /**
      * Record the start time of the system for later debugging usage.
@@ -25,7 +26,7 @@
 
     /**
      * Get current time offset from the start.
-     * @return {Number} The time offset
+     * @return {Number} The time offset.
      * @memberOf module:System
      */
     currentTime: function() {
@@ -71,6 +72,14 @@
       window.dispatchEvent(evt);
     },
 
+    get runningFTU() {
+      if ('undefined' === typeof window.FtuLauncher) {
+        return false;
+      } else {
+        return window.FtuLauncher.isFtuRunning();
+      }
+    },
+
     get locked() {
       // Someone ask this state too early.
       if ('undefined' === typeof window.lockScreenWindowManager) {
@@ -78,6 +87,10 @@
       } else {
         return window.lockScreenWindowManager.states.active;
       }
+    },
+
+    get manifestURL() {
+      return window.location.href.replace('index.html', 'manifest.webapp');
     }
   };
 }(this));

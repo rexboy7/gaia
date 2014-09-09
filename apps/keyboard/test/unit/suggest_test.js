@@ -188,6 +188,36 @@ suite('Latin suggestions', function() {
     sinon.assert.callCount(imSettings.sendKey, 0);
   });
 
+  suite('Uppercase suggestions', function() {
+    test('All uppercase input yields uppercase suggestions', function() {
+      testPrediction('HOLO', 'HOLO', [
+          ['yolo', 10],
+          ['Yelp', 5],
+          ['whuuu', 4]
+        ]);
+
+      sinon.assert.callCount(imSettings.sendCandidates, 1);
+      // Verify that we show 3 suggestions that do not include the input
+      // and that we do not mark the first as an autocorrection.
+      sinon.assert.calledWith(imSettings.sendCandidates,
+                              ['*YOLO', 'YELP', 'WHUUU']);
+    });
+
+    test('One char uppercase not yields uppercase suggestions', function() {
+      testPrediction('F', 'F', [
+          ['yolo', 10],
+          ['Yelp', 5],
+          ['whuuu', 4]
+        ]);
+
+      sinon.assert.callCount(imSettings.sendCandidates, 1);
+      // Verify that we show 3 suggestions that do not include the input
+      // and that we do not mark the first as an autocorrection.
+      sinon.assert.calledWith(imSettings.sendCandidates,
+                              ['yolo', 'Yelp', 'whuuu']);
+    });
+  });
+
   suite('handleSuggestions', function() {
     test('input is not a word', function() {
       testPrediction('jan', 'jan', [
@@ -258,6 +288,44 @@ suite('Latin suggestions', function() {
       sinon.assert.callCount(imSettings.sendCandidates, 1);
       sinon.assert.calledWith(imSettings.sendCandidates,
                               ['his', 'HUD', 'hide']);
+    });
+
+    suite('Suggestion length mismatch', function() {
+      test('Length mismatch, low freq', function() {
+        testPrediction('zoolgy', 'zoolgy', [
+          ['zoology', 4.2],
+          ['Zoology\'s', 0.09504000000000001]
+        ]);
+
+        sinon.assert.callCount(imSettings.sendCandidates, 1);
+        sinon.assert.calledWith(imSettings.sendCandidates,
+                                ['zoology', 'Zoology\'s']);
+      });
+
+      test('Length mismatch, medium freq', function() {
+        testPrediction('Folow', 'Folow', [
+          ['Follow', 6.237],
+          ['Follows', 2.4948],
+          ['Followed', 1.0454400000000001],
+          ['Follower', 0.7603200000000001]
+        ]);
+
+        sinon.assert.callCount(imSettings.sendCandidates, 1);
+        sinon.assert.calledWith(imSettings.sendCandidates,
+                                ['*Follow', 'Follows', 'Followed']);
+      });
+
+      test('Length mismatch, high freq', function() {
+        testPrediction('awesomeo', 'awesomeo', [
+            ['awesome', 31],
+            ['trahlah', 8],
+            ['moarstu', 7]
+          ]);
+
+        sinon.assert.callCount(imSettings.sendCandidates, 1);
+        sinon.assert.calledWith(imSettings.sendCandidates,
+                                ['*awesome', 'trahlah', 'moarstu']);
+      });
     });
   });
 });

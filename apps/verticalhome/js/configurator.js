@@ -5,11 +5,6 @@
 
 (function(exports) {
 
-  const CAPABILITIES = {
-    LOW: 'low',
-    HIGH: 'high'
-  };
-
   // We're going to use the mcc_mnc as a semaphore as well as to store its
   // value during the singleVariant file's processing time.
   var mcc_mnc;
@@ -124,8 +119,12 @@
 
     function loadSVConfFileError(e) {
       singleVariantApps = {};
-      console.error('Failed parsing singleVariant configuration file [' +
-                    SINGLE_VARIANT_CONF_FILE + ']: ', e);
+      if (e.name === 'NS_ERROR_FILE_NOT_FOUND') {
+        console.log('No single variant configuration file found');
+      } else {
+        console.error('Failed parsing singleVariant configuration file [' +
+                      SINGLE_VARIANT_CONF_FILE + ']: ', e);
+      }
       dispatchSVReadyEvent();
     }
 
@@ -150,48 +149,17 @@
 
   function onLoadInitJSON(loadedData) {
     conf = loadedData;
-    setup();
+    setupColumns();
     window.dispatchEvent(new CustomEvent('configuration-ready'));
     loadSingleVariantConf();
   }
 
-  function setup() {
-    navigator.getFeature('hardware.memory').then(mem => {
-      // If capability is defined in the build or customization.
-      var capability = conf && conf.preferences && conf.preferences.capability;
-      var colsPrefEnabled = conf && conf.preferences &&
-        conf.preferences['cols.preference.enabled'];
-
-      if (!capability) {
-        capability = CAPABILITIES.HIGH;
-        // Devices below 512mb are served a lower quality version.
-        // Currently the following changes are made for low capability devices:
-        // - Icons default to 4 per row.
-        // - Icon resolution is reduced.
-        // - Icon rendering does not account for devicePixelRatio.
-        if (mem < 512) {
-          capability = CAPABILITIES.LOW;
-          colsPrefEnabled = false;
-        }
-      }
-      verticalPreferences.put('capability', capability);
-      verticalPreferences.put('cols.preference.enabled', colsPrefEnabled);
-      setupColumns(capability);
-    });
-  }
-
   /**
-   * Sets up the default columns. For low capability devices, default to four
-   * columns per row as this saves on memory.
+   * Sets up the default columns.
    */
-  function setupColumns(capability) {
+  function setupColumns() {
     var defaultCols = conf && conf.preferences &&
                           conf.preferences['grid.cols'] || undefined;
-
-    // Set default capability to 4 for low-end devices.
-    if (capability === CAPABILITIES.LOW) {
-      defaultCols = 4;
-    }
 
     if (defaultCols) {
       verticalPreferences.get('grid.cols').then(function(cols) {
@@ -251,6 +219,20 @@
 
     getGrid: function() {
       return conf.grid;
+    },
+
+    getItems: function(role) {
+      var items = {};
+
+      conf.grid.forEach(function forEachSection(section) {
+        section.forEach(function forEachItem(item) {
+          if (item.role === role) {
+            items[item.id] = item;
+          }
+        });
+      });
+
+      return items;
     },
 
     getSingleVariantApp: function(manifestURL) {

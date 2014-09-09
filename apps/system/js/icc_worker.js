@@ -181,11 +181,11 @@ var icc_worker = {
     tonePlayer.loop = true;
 
     var timeout = 0;
-    if (options.duration &&
-        options.duration.timeUnit != undefined &&
-        options.duration.timeInterval != undefined) {
-      timeout = icc.calculateDurationInMS(options.duration.timeUnit,
-        options.duration.timeInterval);
+    var duration = options.duration;
+    if (duration && duration.timeUnit != undefined &&
+        duration.timeInterval != undefined) {
+      timeout = icc.calculateDurationInMS(duration.timeUnit,
+        duration.timeInterval);
     } else if (options.timeUnit != undefined &&
         options.timeInterval != undefined) {
       timeout = icc.calculateDurationInMS(options.timUnit,
@@ -228,9 +228,11 @@ var icc_worker = {
     DUMP('STK_CMD_DISPLAY_TEXT:', message.command.options);
     var options = message.command.options;
 
-    // Check if device is idle
+    // Check if device is idle or settings
     var activeApp = AppWindowManager.getActiveApp();
-    if (!options.isHighPriority && !activeApp.isHomescreen) {
+    var settingsOrigin = window.location.origin.replace('system', 'settings');
+    if (!options.isHighPriority && activeApp && !activeApp.isHomescreen &&
+        activeApp.origin !== settingsOrigin) {
       DUMP('Do not display the text because normal priority.');
       icc.responseSTKCommand(message, {
         resultCode:
@@ -240,14 +242,22 @@ var icc_worker = {
       return;
     }
 
+    var timeout = icc._displayTextTimeout;
+    var duration = options.duration;
+    if (duration && duration.timeUnit != undefined &&
+        duration.timeInterval != undefined) {
+      timeout = icc.calculateDurationInMS(duration.timeUnit,
+        duration.timeInterval);
+    }
+
     if (options.responseNeeded) {
       icc.responseSTKCommand(message, {
         resultCode: icc._iccManager.STK_RESULT_OK
       });
-      icc.confirm(message, options.text, icc._displayTextTimeout,
+      icc.confirm(message, options.text, timeout,
         null);
     } else {
-      icc.confirm(message, options.text, icc._displayTextTimeout,
+      icc.confirm(message, options.text, timeout,
         function(userCleared) {
           if (userCleared == null) {
             return;   // ICC Back or ICC Terminate
@@ -293,9 +303,10 @@ var icc_worker = {
         icc.hideViews();
       }, true);
 
-    var timeout = (options.duration &&
-      icc.calculateDurationInMS(options.duration.timeUnit,
-          options.duration.timeInterval)) || icc._inputTimeout;
+    var duration = options.duration;
+    var timeout = (duration &&
+      icc.calculateDurationInMS(duration.timeUnit, duration.timeInterval)) ||
+      icc._inputTimeout;
     icc.input(message, options.text, timeout, options,
       function(response, value) {
         if (response == null) {
@@ -456,10 +467,12 @@ var icc_worker = {
     switch (options.timerAction) {
       case icc._iccManager.STK_TIMER_START:
         a_timer.start(options.timerId, options.timerValue * 1000,
-          function() {
-            DUMP('Timer expiration - ' + options.timerId);
+          function(realUsedTimeMs) {
+            DUMP('Timer expiration - ' + options.timerId +
+              ' - real used time ' + realUsedTimeMs);
             (icc.getIcc(message.iccId)).sendStkTimerExpiration({
-              'timerId': options.timerId
+              'timerId': options.timerId,
+              'timerValue': realUsedTimeMs / 1000
             });
           });
         icc.responseSTKCommand(message, {
@@ -505,7 +518,7 @@ var icc_worker = {
     this.idleTextNotifications[message.iccId] = new Notification(
       'SIM ' + icc.getSIMNumber(message.iccId) + ' STK', {
         body: options.text,
-        icon: 'style/icons/System.png',
+        icon: 'style/icons/system.png',
         tag: 'stkNotification_' + message.iccId
       });
     this.idleTextNotifications[message.iccId].onclick =

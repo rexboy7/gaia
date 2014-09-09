@@ -258,9 +258,14 @@
       if (!style.backgroundSize) {
         style.height = this.grid.layout.gridItemHeight + 'px';
         // icon size + padding for shadows implemented in the icon renderer
-        style.backgroundSize =
+        var backgroundHeight =
           ((this.grid.layout.gridIconSize * (1 / this.scale)) +
-          GridIconRenderer.prototype.unscaledCanvasPadding) + 'px';
+          GridIconRenderer.prototype.unscaledCanvasPadding);
+        if (this.grid.layout.gridItemHeight > backgroundHeight) {
+          style.backgroundSize = backgroundHeight + 'px';
+        } else {
+          style.backgroundSize = style.height;
+        }
       }
 
       if (isCachedIcon) {
@@ -566,12 +571,6 @@
       this.detail = record;
       if (nameChanged) {
         this.updateTitle();
-
-        // Bug 1007743 - Workaround for projected content nodes disappearing
-        document.body.clientTop;
-        this.element.style.display = 'none';
-        document.body.clientTop;
-        this.element.style.display = '';
       }
 
       if (iconChanged && record.icon) {

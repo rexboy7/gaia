@@ -3,6 +3,7 @@
   "description": "Gaia Web Browser",
   "launch_path": "/index.html",
   "type": "certified",
+  "role": "system",
   "developer": {
     "name": "The Gaia Team",
     "url": "https://github.com/mozilla-b2g/gaia"
@@ -51,14 +52,6 @@
      { "first-run-with-sim": "/index.html" }
    ],
   "activities": {
-    "view": {
-      "filters": {
-        "type": "url",
-        "url": {
-          "required":true, "pattern":"(https?:|data:).{1,16384}", "patternFlags":"i"
-        }
-      }
-    },
     "nfc-ndef-discovered": {
       "filters": {
         "type": "url",

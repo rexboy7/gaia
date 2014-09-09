@@ -84,7 +84,7 @@ HTMLOptimizer.prototype._optimize = function() {
   this._proceedLocales();
 
   if (this.config.GAIA_INLINE_LOCALES === '1') {
-    this.embed10nResources();
+    this.embedSubsetL10nResources();
   }
 
   if (this.config.GAIA_CONCAT_LOCALES === '1') {
@@ -245,22 +245,19 @@ HTMLOptimizer.prototype.embededGlobals = function() {
  * Creates a dictionary for all l10n entities that are required by the HTML
  * document, and include it as an inline JSON.
  */
-HTMLOptimizer.prototype.embed10nResources = function() {
+HTMLOptimizer.prototype.embedSubsetL10nResources = function() {
   var doc = this.win.document;
-  var dictionary = this.subDict;
-  // split the l10n dictionary on a per-locale basis,
-  // and embed it in the HTML document by enclosing it in <script> nodes.
-  for (var lang in dictionary) {
-    // skip to the next language if the dictionary is null
-    if (!dictionary[lang]) {
-      continue;
-    }
-    var script = doc.createElement('script');
-    script.type = 'application/l10n';
-    script.lang = lang;
-    script.innerHTML = '\n  ' + JSON.stringify(dictionary[lang]) + '\n';
-    doc.documentElement.appendChild(script);
+  var noFetchRes =
+    doc.querySelector('link[type="application/l10n"][data-no-fetch]');
+
+  // if the document has at least one data-no-fetch link, we will
+  // embed the whole l10n dictionary, no need to embed the partial one.
+  //
+  // hasAttribute is needed because tests always return value for querySelector
+  if (noFetchRes && noFetchRes.hasAttribute('data-no-fetch')) {
+    return;
   }
+  embedL10nResources(doc.documentElement, this.subDict);
 };
 
 
@@ -278,21 +275,33 @@ HTMLOptimizer.prototype.concatL10nResources = function() {
 
   var parentNode = resources[0].parentNode;
   var fetch = false;
+  var embed = false;
+
   for (var i = 0; i < resources.length; i++) {
     var link = resources[i];
     link.parentNode.removeChild(link);
-    // if any l10n link does no have the no-fetch
+    // if any l10n link does have a no-fetch
+    // attribute, we will embed the whole l10n dictionary
+    if (link.hasAttribute('data-no-fetch')) {
+      embed = true;
+    }
+
     // attribute we will embed the locales json link
     if (!link.hasAttribute('data-no-fetch')) {
       fetch = true;
     }
   }
+
   if (fetch) {
     var jsonLink = doc.createElement('link');
     jsonLink.href = '/locales-obj/{{locale}}.json';
     jsonLink.type = 'application/l10n';
     jsonLink.rel = 'prefetch';
     parentNode.appendChild(jsonLink);
+  }
+
+  if (embed) {
+    embedL10nResources(this.win.document.head, this.fullDict);
   }
 };
 
@@ -359,11 +368,21 @@ HTMLOptimizer.prototype.aggregateJsResources = function() {
     // fetch the whole file append it to the comment.
     var scriptFile = this.getFileByRelativePath(script.src);
     content += scriptFile.content;
+
+    // We store the unminified content for comparing.
+    var originalContent = content;
     try {
       content = jsmin(content).code;
       this.files.push(scriptFile.file);
     } catch (e) {
       utils.log('Failed to minify content: ' + e);
+    }
+
+    // When BUILD_DEBUG is true, we'll do AST comparing in build time.
+    if (this.config.BUILD_DEBUG &&
+        !utils.jsComparator(originalContent, content)) {
+      throw 'minified ' + script.src + ' has different AST with' +
+            ' unminified script.';
     }
 
     var scriptConfig = normal;
@@ -398,31 +417,20 @@ HTMLOptimizer.prototype.writeAggregatedContent = function(conf) {
     return;
   }
   var doc = this.win.document;
-  // root name like index or oncall, etc...
-  //var baseName = this.htmlFile.leafName.split('.')[0];
-  // used as basis for aggregated scripts...
   var rootDirectory = this.htmlFile.parent;
 
-  //var gaia = utils.gaia.getInstance(this.config);
-  //var scriptBaseName = gaia.aggregatePrefix + conf.prefix + baseName + '.js';
   var target = rootDirectory.clone();
   target.append(conf.name);
-  //target.append(scriptBaseName);
 
   // write the contents of the aggregated script
   utils.writeContent(target, conf.content);
-  //var script = doc.createElement('script');
+
   var file = doc.createElement(conf.fileType);
   var lastScript = conf.lastNode;
 
   for (var spe in conf.specs) {
     file[spe] = conf.specs[spe];
   }
-
-  //script.src = './' + scriptBaseName;
-  //script.defer = lastScript.defer;
-  // use the conf's type if given (for text/javascript;version=x)
-  //script.type = conf.type || lastScript.type;
 
   // insert after the last script node of this type...
   var parent = lastScript.parentNode;
@@ -549,6 +557,9 @@ HTMLOptimizer.prototype.getFileByRelativePath = function(relativePath) {
     if (utils.isSubjectToBranding(file.path)) {
       file.append((this.config.OFFICIAL === '1') ? 'official' : 'unofficial');
     }
+    if (utils.isSubjectToDeviceType(file.path)) {
+      file.append(this.config.GAIA_DEVICE_TYPE);
+    }
   }, this);
 
   try {
@@ -582,31 +593,25 @@ HTMLOptimizer.prototype.mockWinObj = function() {
   };
 
   this.win.XMLHttpRequest = function() {
-    function open(type, url, async) {
-      this.status = 200;
-      this.responseText = self.getFileByRelativePath(url).content;
-    }
-
-    function addEventListener(type, cb) {
-      if (type === 'load') {
-        this.onload = cb;
-      }
-    }
-
-    function send() {
-      this.onload({
-        'target': {
-          'status': this.status,
-          'responseText': this.responseText,
-        }
-      });
-    }
-
     return {
-      open: open,
-      send: send,
-      addEventListener: addEventListener,
-      onload: null,
+      open: function(type, url, async) {
+        this.status = 200;
+        this.responseText = self.getFileByRelativePath(url).content;
+      },
+      send: function() {
+        this.onload({
+          'target': {
+            'status': this.status,
+            'responseText': this.responseText,
+          }
+        });
+      },
+      addEventListener: function(type, cb) {
+        if (type === 'load') {
+          this.onload = cb;
+        }
+      },
+      onload: null
     };
   };
 
@@ -782,10 +787,10 @@ function loadOptimizeConfig(config) {
 // We throw a window mock for l10n.js, since they use a lot methods and objects
 // from window.navigator.
 function loadL10nScript(config, obj) {
-  utils.scriptLoader.load('file:///' + config.GAIA_DIR +
-    '/shared/js/l10n.js?reload=' + new Date().getTime(), obj);
-  utils.scriptLoader.load('file:///' + config.GAIA_DIR +
-    '/build/l10n.js?reload=' + new Date().getTime(), obj);
+  var sharedL10n = utils.joinPath(config.GAIA_DIR, 'shared', 'js', 'l10n.js');
+  var buildL10n =  utils.joinPath(config.GAIA_DIR, 'build', 'l10n.js');
+  utils.scriptLoader.load(sharedL10n, obj, true);
+  utils.scriptLoader.load(buildL10n, obj, true);
   return obj;
 }
 
@@ -802,6 +807,25 @@ function getLocales(config) {
   });
   result.push(config.GAIA_DEFAULT_LOCALE);
   return result;
+}
+
+/**
+ * Embeds a JSON dictionary of l10n resources in a document.
+ */
+function embedL10nResources(node, dictionary) {
+  // split the l10n dictionary on a per-locale basis,
+  // and embed it in the HTML document by enclosing it in <script> nodes.
+  for (var lang in dictionary) {
+    // skip to the next language if the dictionary is null
+    if (!dictionary[lang]) {
+      continue;
+    }
+    var script = node.ownerDocument.createElement('script');
+    script.type = 'application/l10n';
+    script.lang = lang;
+    script.innerHTML = '\n  ' + JSON.stringify(dictionary[lang]) + '\n';
+    node.appendChild(script);
+  }
 }
 
 exports.execute = execute;

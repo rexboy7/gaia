@@ -30,7 +30,7 @@ navigator.mozL10n.once(function deviceList() {
     var bluetoothSearch = document.getElementById('bluetooth-search');
     var searchAgainBtn = document.getElementById('search-device');
     var searchingItem = document.getElementById('bluetooth-searching');
-    var exitButton = document.getElementById('cancel-activity');
+    var header = document.getElementById('devices-list-header');
 
     var pairingAddress = null;
     var connectingAddress = null;
@@ -93,7 +93,7 @@ navigator.mozL10n.once(function deviceList() {
 
     // private DOM helper: create a device list item
     function newListItem(device, descL10nId) {
-      var deviceName = document.createElement('a');
+      var deviceName = document.createElement('span');
       var aName = (device.name === '') ? _('unnamed-device') : device.name;
       var aL10nId = (device.name === '') ? 'unnamed-device' : '';
       deviceName.textContent = aName;
@@ -107,11 +107,13 @@ navigator.mozL10n.once(function deviceList() {
       pairingProgress.classList.add('overlapping-icon');
       pairingProgress.classList.add('hidden');
 
+      var a = document.createElement('a');
+      a.appendChild(deviceName);
+      a.appendChild(deviceDesc);
       var li = document.createElement('li');
       li.classList.add('bluetooth-device');
       li.classList.add('bluetooth-type-' + device.icon);
-      li.appendChild(deviceDesc); // should append this first
-      li.appendChild(deviceName);
+      li.appendChild(a);
       li.appendChild(pairingProgress);
 
       return li;
@@ -140,7 +142,7 @@ navigator.mozL10n.once(function deviceList() {
     // when DefaultAdapter is ready.
     function initial(adapter, deviceSelectedCallback, exitBtnClickedCallback) {
       deviceList.hidden = false;
-      exitButton.addEventListener('click', cancelActivity);
+      header.addEventListener('action', cancelActivity);
       defaultAdapter = adapter;
       defaultAdapter.onpairedstatuschanged = function bt_getPairedMessage(evt) {
         showDevicePaired(evt.status, 'Authentication Failed');
@@ -158,7 +160,7 @@ navigator.mozL10n.once(function deviceList() {
     function uninit() {
       deviceList.hidden = true;
       defaultAdapter = null;
-      exitButton.removeEventListener('click', cancelActivity);
+      header.removeEventListener('action', cancelActivity);
     }
 
     function getPairedDevice() {
@@ -213,7 +215,7 @@ navigator.mozL10n.once(function deviceList() {
       if (existingDevice) {
         var existingItem = existingDevice[1];
         if (device.name && existingItem) {
-          var deviceName = existingItem.querySelector('a');
+          var deviceName = existingItem.querySelector('a > span');
           if (deviceName) {
             deviceName.dataset.l10nId = '';
             deviceName.textContent = device.name;

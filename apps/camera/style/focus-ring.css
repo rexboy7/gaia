@@ -6,7 +6,6 @@
   position: absolute;
   width: 8.2rem;
   height: 10rem;
-  font-size: 10rem;
   margin-top: -5rem;
   margin-left: -4.1rem;
   pointer-events: none;
@@ -14,7 +13,6 @@
   transform-origin: 50% 50%;
   transform: rotate(0deg) scale(1);
   transition: transform 0.2s ease-in;
-  will-change: transform;
 }
 
 /**
@@ -40,6 +38,7 @@
 
 /** Icon
  ---------------------------------------------------------*/
+
 .focus-ring {
   color: #ffffff;
   text-shadow: 0 0 1px rgba(0, 0, 0, 0.2);
@@ -48,6 +47,7 @@
 .focus-ring:before,
 .focus-ring:after {
   font-family: 'gaia-icons';
+  font-size: 10rem;
   display: block;
   position: absolute;
   top: 0;

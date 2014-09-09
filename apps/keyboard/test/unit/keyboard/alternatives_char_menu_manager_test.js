@@ -23,32 +23,50 @@ suite('AlternativesCharMenuManager', function() {
       };
     }.bind(this);
 
+    // Create fake menu container element
+    container = document.createElement('div');
+    container.style.position = 'absolute';
+    container.style.left = '5px';
+    container.style.top = '40px';
+    container.style.width = '60px';
+    container.style.height = '10px';
+    container.id = 'test-menu';
+
+    var child1 = document.createElement('div');
+    child1.style.width = '30px';
+    child1.style.height = '100%';
+    child1.id = 'key1';
+    container.appendChild(child1);
+
+    var child2 = document.createElement('div');
+    child2.style.width = '30px';
+    child2.style.height = '100%';
+    child2.id = 'key2';
+    container.appendChild(child2);
+
+    document.body.appendChild(container);
+
     // Create fake IMERender
     window.IMERender = {
       showAlternativesCharMenu: function(target, alternatives) {
-        // Use an Array to simulate a NodeList
-        container.children = alternatives.map(function(key) {
-          return {};
-        });
+        return {
+          getMenuContainer: function() {
+            return container;
+          },
+          getBoundingClientRect: function() {
+            return container.getBoundingClientRect();
+          },
+          getLineHeight: function() {
+            return 10;
+          }
+        };
       },
       hideAlternativesCharMenu: this.sinon.stub()
     };
     this.sinon.spy(window.IMERender, 'showAlternativesCharMenu');
 
-    // Create fake menu container element
-    container = getFakeElementWithGetBoundingClientRect();
-    container.getBoundingClientRect.returns({
-      top: 35,
-      bottom: 45,
-      left: 5,
-      right: 95
-    });
-
     // Create fake app
     app = {
-      getMenuContainer: function() {
-        return container;
-      },
       upperCaseStateManager: {
         isUpperCaseLocked: undefined,
         isUpperCase: undefined
@@ -67,7 +85,8 @@ suite('AlternativesCharMenuManager', function() {
       top: 50,
       bottom: 60,
       left: 10,
-      right: 40
+      right: 40,
+      width: 30
     });
 
     // Show an alternatives chars menu
@@ -93,7 +112,7 @@ suite('AlternativesCharMenuManager', function() {
     manager.show(target);
 
     assert.isTrue(window.IMERender.
-      showAlternativesCharMenu.calledWith(target, ['a', 'b', 'c', 'd']));
+      showAlternativesCharMenu.calledWith(target, ['x', 'a', 'b', 'c', 'd']));
     assert.isTrue(app.layoutManager.currentModifiedLayout.alt.x !==
       window.IMERender.showAlternativesCharMenu.getCall(0).args[1],
       'A copy of the array should be sent instead of the original one.');
@@ -112,7 +131,7 @@ suite('AlternativesCharMenuManager', function() {
     manager.show(target);
 
     assert.isTrue(window.IMERender.
-        showAlternativesCharMenu.calledWith(target, ['A', 'B', 'C', 'D']));
+        showAlternativesCharMenu.calledWith(target, ['X', 'A', 'B', 'C', 'D']));
     assert.isTrue(app.layoutManager.currentModifiedLayout.alt.x !==
       window.IMERender.showAlternativesCharMenu.getCall(0).args[1],
       'A copy of the array should be sent instead of the original one.');
@@ -131,7 +150,7 @@ suite('AlternativesCharMenuManager', function() {
     manager.show(target);
 
     assert.isTrue(window.IMERender.
-        showAlternativesCharMenu.calledWith(target, ['E', 'F', 'G', 'H']));
+        showAlternativesCharMenu.calledWith(target, ['X', 'E', 'F', 'G', 'H']));
     assert.isTrue(app.layoutManager.currentModifiedLayout.alt.x !==
       window.IMERender.showAlternativesCharMenu.getCall(0).args[1],
       'A copy of the array should be sent instead of the original one.');
@@ -187,8 +206,8 @@ suite('AlternativesCharMenuManager', function() {
     suite('isInMenuArea', function() {
       test('above menu', function() {
         var press = {
-          pageX: 45,
-          pageY: 35
+          clientX: 45,
+          clientY: 35
         };
 
         assert.equal(manager.isInMenuArea(press), false);
@@ -196,8 +215,8 @@ suite('AlternativesCharMenuManager', function() {
 
       test('below key', function() {
         var press = {
-          pageX: 45,
-          pageY: 70
+          clientX: 45,
+          clientY: 70
         };
 
         assert.equal(manager.isInMenuArea(press), false);
@@ -205,17 +224,26 @@ suite('AlternativesCharMenuManager', function() {
 
       test('left of menu', function() {
         var press = {
-          pageX: 2,
-          pageY: 55
+          clientX: 2,
+          clientY: 55
         };
 
-        assert.equal(manager.isInMenuArea(press), false);
+        assert.equal(manager.isInMenuArea(press), true);
       });
 
       test('right of menu', function() {
         var press = {
-          pageX: 105,
-          pageY: 55
+          clientX: 80,
+          clientY: 55
+        };
+
+        assert.equal(manager.isInMenuArea(press), true);
+      });
+
+      test('right of menu, exceeds the key width', function() {
+        var press = {
+          clientX: 150,
+          clientY: 55
         };
 
         assert.equal(manager.isInMenuArea(press), false);
@@ -223,17 +251,18 @@ suite('AlternativesCharMenuManager', function() {
 
       test('on top of the menu', function() {
         var press = {
-          pageX: 45,
-          pageY: 40
+          clientX: 45,
+          clientY: 40
         };
 
-        assert.equal(manager.isInMenuArea(press), false);
+        // We've extend the locked area to include the menu itself.
+        assert.equal(manager.isInMenuArea(press), true);
       });
 
       test('on top of the key', function() {
         var press = {
-          pageX: 15,
-          pageY: 55
+          clientX: 15,
+          clientY: 55
         };
 
         assert.equal(manager.isInMenuArea(press), true);
@@ -241,8 +270,8 @@ suite('AlternativesCharMenuManager', function() {
 
       test('below menu and beside key', function() {
         var press = {
-          pageX: 65,
-          pageY: 55
+          clientX: 65,
+          clientY: 55
         };
 
         assert.equal(manager.isInMenuArea(press), true);
@@ -250,8 +279,8 @@ suite('AlternativesCharMenuManager', function() {
 
       test('below menu and above key', function() {
         var press = {
-          pageX: 65,
-          pageY: 47
+          clientX: 65,
+          clientY: 47
         };
 
         assert.equal(manager.isInMenuArea(press), true);
@@ -262,8 +291,8 @@ suite('AlternativesCharMenuManager', function() {
       test('on top of the key', function() {
         var press = {
           target: target,
-          pageX: 15,
-          pageY: 55
+          clientX: 15,
+          clientY: 55
         };
 
         assert.equal(manager.getMenuTarget(press),
@@ -273,8 +302,8 @@ suite('AlternativesCharMenuManager', function() {
       test('under 2nd key', function() {
         var press = {
           target: {},
-          pageX: 35,
-          pageY: 55
+          clientX: 35,
+          clientY: 55
         };
 
         assert.equal(manager.getMenuTarget(press),
@@ -284,8 +313,8 @@ suite('AlternativesCharMenuManager', function() {
       test('under 2nd key but haven\'t moved away from target', function() {
         var press = {
           target: target,
-          pageX: 35,
-          pageY: 55
+          clientX: 35,
+          clientY: 55
         };
 
         assert.equal(manager.getMenuTarget(press),
@@ -295,8 +324,8 @@ suite('AlternativesCharMenuManager', function() {
       test('under 2nd key, had moved away from target', function() {
         var press = {
           target: {},
-          pageX: 45,
-          pageY: 55
+          clientX: 45,
+          clientY: 55
         };
 
         assert.equal(manager.getMenuTarget(press),
@@ -304,13 +333,43 @@ suite('AlternativesCharMenuManager', function() {
 
         var press2 = {
           target: target,
-          pageX: 35,
-          pageY: 55
+          clientX: 35,
+          clientY: 55
         };
 
         assert.equal(manager.getMenuTarget(press2),
           container.children[1]);
       });
+    });
+  });
+
+  suite('after hiding the menu', function() {
+    setup(function() {
+      app.upperCaseStateManager.isUpperCase = false;
+      app.upperCaseStateManager.isUpperCaseLocked = false;
+
+      app.layoutManager.currentModifiedLayout.alt.x =
+        ['a', 'b', 'c', 'd'];
+
+      manager.show(target);
+      manager.hide();
+    });
+
+    test('isMenuTarget should be false', function() {
+      var target = {
+        parentNode: container
+      };
+
+      assert.isFalse(manager.isMenuTarget(target));
+    });
+
+    test('isInMenuArea() should return false', function() {
+      var press = {
+        clientX: 65,
+        clientY: 47
+      };
+
+      assert.isFalse(manager.isInMenuArea(press));
     });
   });
 });

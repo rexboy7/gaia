@@ -16,15 +16,16 @@ class System(Base):
     _utility_tray_locator = (By.ID, 'utility-tray')
 
     _system_banner_locator = (By.CSS_SELECTOR, '.banner.generic-dialog')
-    _notification_toaster_locator = (By.ID, 'notification-toaster')
+    _notification_toaster_locator = (By.ID, 'notification-container')
     _update_manager_toaster_locator = (By.ID, 'update-manager-toaster')
+
+    _software_home_button_locator = (By.ID, 'software-home-button')
 
     def wait_for_status_bar_displayed(self):
         self.wait_for_element_displayed(*self._status_bar_locator)
 
     def wait_for_notification_toaster_displayed(self, timeout=10, message=None):
         self.wait_for_element_displayed(*self._notification_toaster_locator)
-        self.wait_for_condition(lambda m: m.find_element(*self._notification_toaster_locator).location['y'] == 0, timeout=timeout, message=message)
 
     def wait_for_notification_toaster_not_displayed(self, timeout=10):
         self.wait_for_element_not_displayed(*self._notification_toaster_locator)
@@ -34,6 +35,12 @@ class System(Base):
 
     def wait_for_system_banner_not_displayed(self):
         self.wait_for_element_not_displayed(*self._system_banner_locator)
+
+    def wait_for_software_home_button_displayed(self, timeout=10, message=None):
+        self.wait_for_element_displayed(*self._software_home_button_locator)
+
+    def wait_for_software_home_button_not_displayed(self, timeout=10):
+        self.wait_for_element_not_displayed(*self._software_home_button_locator)
 
     def open_utility_tray(self):
         # TODO Use actions for this

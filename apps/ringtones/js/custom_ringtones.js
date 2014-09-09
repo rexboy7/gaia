@@ -27,6 +27,8 @@
  * list():
  *   Lists all the custom ringtones.
  *
+ *   @param {String} toneType The type of tone to list ('ringtone' or
+ *     'alerttone').
  *   @return {Promise} A promise returning an array of CustomRingtones
  *     representing each tone.
  *
@@ -70,6 +72,15 @@ window.customRingtones = (function() {
      */
     get name() {
       return this._name;
+    },
+
+    /**
+     * @return {String} The filename of the ringtone.
+     */
+    get filename() {
+      // XXX: If we ever start supporting Blobs that aren't really files, we'll
+      // need to figure out a way to make a fallback filename!
+      return this._blob.name;
     },
 
     /**
@@ -126,10 +137,7 @@ window.customRingtones = (function() {
      * @return {Promise} A promise returning a Blob of the audio data.
      */
     getBlob: function() {
-      var blob = this._blob;
-      return new Promise(function(resolve, reject) {
-        resolve(blob);
-      });
+      return Promise.resolve(this._blob);
     }
   };
 
@@ -140,6 +148,9 @@ window.customRingtones = (function() {
    * @return {Number} The DB key.
    */
   function idToDBKey(id) {
+    if (id.indexOf(ID_PREFIX) !== 0) {
+      throw new Error('invalid id: ' + id);
+    }
     return parseInt(id.substr(ID_PREFIX.length));
   }
 
@@ -317,8 +328,14 @@ window.customRingtones = (function() {
     });
   }
 
-  function list() {
+  function list(toneType) {
     return new Promise(function(resolve, reject) {
+      // XXX: We should actually handle alert tones eventually!
+      if (toneType === 'alerttone') {
+        resolve([]);
+        return;
+      }
+
       withStore('readonly', function(err, store) {
         if (err) {
           reject(err);

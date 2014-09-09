@@ -1,10 +1,17 @@
 Calendar.ns('Views').DayBased = (function() {
   'use strict';
 
+  /**
+   * Module dependencies
+   */
   var Calc = Calendar.Calc;
-  var hoursOfOccurance = Calendar.Calc.hoursOfOccurance;
   var OrderedMap = Calendar.Utils.OrderedMap;
+  var hoursOfOccurence = Calendar.Calc.hoursOfOccurence;
+  /*var performance = Calendar.performance;*/
 
+  /**
+   * Constants
+   */
   const MINUTES_IN_HOUR = 60;
 
   /**
@@ -364,8 +371,7 @@ Calendar.ns('Views').DayBased = (function() {
 
     _renderHour: function(hour) {
       return this.template.hour.render({
-        displayHour: Calendar.Calc.formatHour(hour),
-        hour: hour.toString()
+        hour: hour
       });
     },
 
@@ -422,7 +428,7 @@ Calendar.ns('Views').DayBased = (function() {
      * @param {Object} event related event object.
      */
     add: function(busytime, event) {
-      var hours = hoursOfOccurance(
+      var hours = hoursOfOccurence(
         this.date,
         busytime.startDate,
         busytime.endDate
@@ -513,11 +519,11 @@ Calendar.ns('Views').DayBased = (function() {
       var records = this.controller.queryCache(this.timespan);
 
       if (records && records.length) {
-        this._loadRecords(records, () => Calendar.Performance.dayBasedReady());
+        this._loadRecords(records, () => Calendar.performance.dayBasedReady());
       } else {
         // if we don't load records (no events today) we still need to let the
         // Performance controller know that the DayBased view is ready
-        Calendar.Performance.dayBasedReady();
+        Calendar.performance.dayBasedReady();
       }
     },
 
@@ -650,8 +656,34 @@ Calendar.ns('Views').DayBased = (function() {
     setScrollTop: function(scrollTop) {
       var scroll = this.element.querySelectorAll('.day-events-wrapper')[0];
       scroll.scrollTop = scrollTop;
-    }
+    },
 
+    /**
+     * Animated scroll to the destination scrollTop for am element.
+     *
+     * @param {Number} destinationScrollTop the scrollTop of destination.
+     */
+    animatedScroll: function(scrollTop) {
+      var scroll = this.element.querySelectorAll('.day-events-wrapper')[0];
+      var content = scroll.querySelector('.day-events');
+      var SPEED = 500;
+      var scrollTo = scroll.scrollTop - scrollTop;
+      var seconds = Math.abs(scrollTo) / SPEED;
+
+      setTimeout(function() {
+        content.style.transform = 'translateY(' + scrollTo + 'px)';
+        // easeOutQuart borrowed from http://matthewlein.com/ceaser/
+        content.style.transition = 'transform ' + seconds + 's ' +
+          'cubic-bezier(0.165, 0.840, 0.440, 1.000)';
+      });
+
+      content.addEventListener('transitionend', function setScrollTop() {
+        content.removeEventListener('transitionend', setScrollTop);
+        content.style.transform = null;
+        content.style.transition = null;
+        scroll.scrollTop = scrollTop;
+      });
+    }
   };
 
   return DayBased;

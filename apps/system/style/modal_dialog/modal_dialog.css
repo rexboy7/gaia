@@ -7,7 +7,6 @@
   display: none;
 }
 
-.authentication-dialog input,
 #modal-dialog input {
   border-radius: 0.2rem;
   height: 4rem;
@@ -31,6 +30,16 @@
 .appWindow > .modal-dialog .modal-dialog-custom-prompt {
   height: auto;
   padding: 0 0 7rem;
+}
+
+#screen.fullscreen-layout-app.software-button-enabled .appWindow > .modal-dialog {
+  height: calc(100% - 5rem);
+}
+
+@media (orientation: landscape) {
+  #screen.fullscreen-layout-app.software-button-enabled .appWindow > .modal-dialog {
+    height: 100%;
+  }
 }
 
 .appWindow > .modal-dialog .modal-dialog-custom-prompt p {

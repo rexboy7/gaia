@@ -32,7 +32,7 @@ contacts.NFC = (function() {
   };
 
   var handlePeerReady = function(event) {
-    mozNfcPeer = mozNfc.getNFCPeer(event.detail);
+    mozNfcPeer = event.peer;
     LazyLoader.load([
       '/shared/js/contact2vcard.js',
       '/shared/js/setImmediate.js',
@@ -57,12 +57,12 @@ contacts.NFC = (function() {
   };
 
   var sendContact = function() {
-     var NDEFRecord = new MozNDEFRecord(
-       NDEF.TNF_MIME_MEDIA,
-       NfcUtils.fromUTF8('text/vcard'),
-       new Uint8Array(),
-       NfcUtils.fromUTF8(vCardContact)
-     );
+     var nfcUtils = new NfcUtils();
+     var NDEFRecord = new MozNDEFRecord({
+       tnf: NDEF.TNF_MIME_MEDIA,
+       type: nfcUtils.fromUTF8('text/vcard'),
+       payload: nfcUtils.fromUTF8(vCardContact)
+     });
 
      var res = mozNfcPeer.sendNDEF([NDEFRecord]);
      res.onsuccess = function() {

@@ -178,8 +178,8 @@
     });
 
     data.set(this, list);
+    events.set(this, { add: [], remove: [], modechange: [] });
     view.set(this, new Recipients.View(this, setup));
-    events.set(this, { add: [], remove: [] });
   }
 
   /**
@@ -390,7 +390,8 @@
         isTransitioning: false,
         visible: 'singleline'
       },
-      minHeight: parseInt(outerCss.getPropertyValue('min-height'), 10)
+      minHeight: parseInt(outerCss.getPropertyValue('min-height'), 10),
+      mode: 'singleline-mode'
     });
 
     clone = inner.cloneNode(true);
@@ -416,6 +417,8 @@
         }
       }
     });
+
+    this.updateMode = Utils.debounce(this.updateMode, 100);
 
     ['click', 'keypress', 'keyup', 'blur', 'pan'].forEach(function(type) {
       outer.addEventListener(type, this, false);
@@ -558,6 +561,8 @@
       inner.querySelector(':last-child').scrollIntoView(false);
     }
 
+    this.updateMode();
+
     return this;
   };
 
@@ -606,7 +611,35 @@
       // scroll to the bottom of the inner view
       view.inner.scrollTop = view.inner.scrollHeight;
     }
+
+    this.updateMode();
+
     return this;
+  };
+
+  /**
+   * Checks whether recipients view mode (single or multi line) has changed
+   * since previous check and notifies listeners with 'modechange' event in this
+   * case.
+   */
+  Recipients.View.prototype.updateMode = function() {
+    var view = priv.get(this);
+
+    var mode = view.inner.scrollHeight > view.minHeight ?
+        'multiline-mode' : 'singleline-mode';
+
+    if (view.mode !== mode) {
+      view.mode = mode;
+
+      // the list in "singleline-mode" should only have "singleline" view
+      if (mode === 'singleline-mode' && view.state.visible === 'multiline') {
+        this.visible('singleline', {
+          refocus: this
+        });
+      }
+
+      view.owner.emit('modechange', mode);
+    }
   };
 
   var rtype = /^(multi|single)line$/;
@@ -892,7 +925,7 @@
           isDeletingRecipient = true;
         }
 
-
+        this.updateMode();
         break;
 
       case 'keypress':
@@ -1039,8 +1072,6 @@
         type: recipient.type,
         carrier: recipient.carrier
       });
-
-      navigator.mozL10n.translate(dialogBody);
 
       // Dialog will have a closure reference to the response
       // object, therefore it's not necessary to pass it around

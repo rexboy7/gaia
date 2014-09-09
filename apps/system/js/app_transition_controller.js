@@ -144,6 +144,10 @@
       }.bind(this),
       System.slowTransition ? this.SLOW_TRANSITION_TIMEOUT :
                               this.CLOSING_TRANSITION_TIMEOUT);
+
+      if (!this.app || !this.app.element) {
+        return;
+      }
       this.app.element.classList.add('transition-closing');
       this.app.element.classList.add(this.getAnimationName('close'));
     };
@@ -204,7 +208,11 @@
       }
 
       this.resetTransition();
-      this.app.setVisible(false, true);
+      /* The AttentionToaster will take care of that for AttentionWindows */
+      if (this.app.CLASS_NAME !== 'AttentionWindow' &&
+          this.app.CLASS_NAME !== 'CallscreenWindow') {
+        this.app.setVisible(false, true);
+      }
       this.app.element.classList.remove('active');
     };
 
@@ -228,7 +236,7 @@
       this.app.reviveBrowser();
       this.app.launchTime = Date.now();
       this.app.fadeIn();
-      this.app.setVisible(true);
+      this.app.requestForeground();
 
       // TODO:
       // May have orientation manager to deal with lock orientation request.
@@ -245,8 +253,9 @@
 
       this.resetTransition();
       this.app.element.removeAttribute('aria-hidden');
+      this.app.show();
       this.app.element.classList.add('active');
-      this.app.setVisible(true);
+      this.app.requestForeground();
 
       // TODO:
       // May have orientation manager to deal with lock orientation request.
@@ -310,7 +319,7 @@
 
   AppTransitionController.prototype.clearTransitionClasses =
     function atc_removeTransitionClasses() {
-      if (!this.app) {
+      if (!this.app || !this.app.element) {
         return;
       }
 
@@ -318,7 +327,9 @@
         'invoking', 'invoked', 'zoom-in', 'zoom-out', 'fade-in', 'fade-out',
         'transition-opening', 'transition-closing', 'immediate', 'fadeout',
         'slideleft', 'slideright', 'in-from-left', 'out-to-right',
-        'slideup', 'slidedown', 'will-become-active', 'will-become-inactive'];
+        'will-become-active', 'will-become-inactive',
+        'slide-to-top', 'slide-from-top',
+        'slide-to-bottom', 'slide-from-bottom'];
 
       classes.forEach(function iterator(cls) {
         this.app.element.classList.remove(cls);

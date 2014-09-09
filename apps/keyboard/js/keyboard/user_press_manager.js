@@ -20,8 +20,8 @@ var UserPress = function(el, coords) {
 
 UserPress.prototype.updateCoords = function(coords, moved) {
   this.moved = moved;
-  this.pageX = coords.pageX;
-  this.pageY = coords.pageY;
+  this.clientX = coords.clientX;
+  this.clientY = coords.clientY;
 };
 
 /**
@@ -51,6 +51,7 @@ UserPressManager.prototype.onpressend = null;
 UserPressManager.prototype.MOVE_LIMIT = 5;
 
 UserPressManager.prototype.start = function() {
+  this.app.console.log('UserPressManager.start()');
   if (this._started) {
     throw new Error('UserPressManager: ' +
       'Instance should not be start()\'ed twice.');
@@ -66,6 +67,7 @@ UserPressManager.prototype.start = function() {
 };
 
 UserPressManager.prototype.stop = function() {
+  this.app.console.log('UserPressManager.stop()');
   if (!this._started) {
     throw new Error('UserPressManager: ' +
       'Instance was never start()\'ed but stop() is called.');
@@ -76,6 +78,7 @@ UserPressManager.prototype.stop = function() {
   this._container.removeEventListener('mousedown', this);
   this._container.removeEventListener('mousemove', this);
   this._container.removeEventListener('mouseup', this);
+  this._container.removeEventListener('mouseleave', this);
 
   this._container.removeEventListener('contextmenu', this);
 };
@@ -124,7 +127,7 @@ UserPressManager.prototype.handleEvent = function(evt) {
           continue;
         }
 
-        el = document.elementFromPoint(touch.pageX, touch.pageY);
+        el = document.elementFromPoint(touch.clientX, touch.clientY);
 
         this._handleChangedPress(el, touch, touchId);
       }
@@ -154,7 +157,7 @@ UserPressManager.prototype.handleEvent = function(evt) {
         touch = evt.changedTouches[i];
         touchId = touch.identifier;
 
-        el = document.elementFromPoint(touch.pageX, touch.pageY);
+        el = document.elementFromPoint(touch.clientX, touch.clientY);
         this._handleFinishPress(el, touch, touchId);
       }
       break;
@@ -175,6 +178,7 @@ UserPressManager.prototype.handleEvent = function(evt) {
       // on entire container.
       this._container.addEventListener('mousemove', this);
       this._container.addEventListener('mouseup', this);
+      this._container.addEventListener('mouseleave', this);
       this._handleNewPress(evt.target, evt, '_mouse');
       break;
 
@@ -186,13 +190,21 @@ UserPressManager.prototype.handleEvent = function(evt) {
       this._handleChangedPress(evt.target, evt, '_mouse');
       break;
 
-    case 'mouseup':
+    case 'mouseup': /* fall through */
+    case 'mouseleave':
+      // Stop monitoring so there won't be mouse event sequences involving
+      // cursor moving out of/into the keyboard frame.
+      this._container.removeEventListener('mousemove', this);
+      this._container.removeEventListener('mouseup', this);
+      this._container.removeEventListener('mouseleave', this);
+
       this._handleFinishPress(evt.target, evt, '_mouse');
       break;
   }
 };
 
 UserPressManager.prototype._handleNewPress = function(el, coords, id) {
+  this.app.console.info('UserPressManager._handleNewPress()');
   var press = new UserPress(el, coords);
   this.presses.set(id, press);
 
@@ -202,6 +214,7 @@ UserPressManager.prototype._handleNewPress = function(el, coords, id) {
 };
 
 UserPressManager.prototype._handleChangedPress = function(el, coords, id) {
+  this.app.console.info('UserPressManager._handleChangedPress()');
   var press = this.presses.get(id);
   press.target = el;
   press.updateCoords(coords, true);
@@ -212,6 +225,7 @@ UserPressManager.prototype._handleChangedPress = function(el, coords, id) {
 };
 
 UserPressManager.prototype._handleFinishPress = function(el, coords, id) {
+  this.app.console.info('UserPressManager._handleFinishPress()');
   var press = this.presses.get(id);
   press.target = el;
   press.updateCoords(coords,
@@ -227,8 +241,8 @@ UserPressManager.prototype._handleFinishPress = function(el, coords, id) {
 UserPressManager.prototype._distanceReachesLimit = function(id, newCoord) {
   var press = this.presses.get(id);
 
-  var dx = press.pageX - newCoord.pageX;
-  var dy = press.pageY - newCoord.pageY;
+  var dx = press.clientX - newCoord.clientX;
+  var dy = press.clientY - newCoord.clientY;
   var limit = this.MOVE_LIMIT;
 
   return (dx >= limit || dx <= -limit || dy >= limit || dy <= -limit);

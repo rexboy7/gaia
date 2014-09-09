@@ -12,8 +12,13 @@ var mocksForNfcUtils = new MocksHelper([
 ]).init();
 
 suite('NDEFUtils tests', function() {
+  var nfcUtils;
 
   mocksForNfcUtils.attachTestHelpers();
+
+  setup(function() {
+    nfcUtils = new NfcUtils();
+  });
 
   suite('Helper functions tests', function() {
     test('formatMAC()', function() {
@@ -93,7 +98,7 @@ suite('NDEFUtils tests', function() {
 
     test('Decodes AC record correctly', function() {
       var cps = 2;
-      var name = NfcUtils.fromUTF8('lorem ipsum');
+      var name = nfcUtils.fromUTF8('lorem ipsum');
       var hin = NDEFUtils.encodeHandoverSelect(mac, cps, name);
       var hout = NDEFUtils.parseHandoverNDEF(hin);
 
@@ -103,7 +108,7 @@ suite('NDEFUtils tests', function() {
       assert.equal(NDEFUtils.formatMAC(m), mac);
 
       var n = ac.subarray(10, 10 + name.length);
-      assert.equal(NfcUtils.toUTF8(n), 'lorem ipsum');
+      assert.equal(nfcUtils.toUTF8(n), 'lorem ipsum');
     });
 
     test('Parses multiple Alternative Carrier (AC) records', function() {
@@ -120,11 +125,11 @@ suite('NDEFUtils tests', function() {
       };
 
       var makeBTRecord = function(id, mac) {
-        return new MozNDEFRecord(
-          NDEF.TNF_MIME_MEDIA,
-          NDEF.MIME_BLUETOOTH_OOB,
-          new Uint8Array([id]),
-          new Uint8Array([8, 0].concat(mac)));
+        return new MozNDEFRecord({
+          tnf: NDEF.TNF_MIME_MEDIA,
+          type: NDEF.MIME_BLUETOOTH_OOB,
+          id: new Uint8Array([id]),
+          payload: new Uint8Array([8, 0].concat(mac))});
       };
 
       var macs = [
@@ -133,13 +138,12 @@ suite('NDEFUtils tests', function() {
         [0xFF, 0, 0, 0, 0, 0]
       ];
 
-      var hin = [new MozNDEFRecord(
-                    NDEF.TNF_WELL_KNOWN,
-                    NDEF.RTD_HANDOVER_SELECT,
-                    new Uint8Array([]),
-                    new Uint8Array([0x12].concat(
+      var hin = [new MozNDEFRecord({
+                    tnf: NDEF.TNF_WELL_KNOWN,
+                    type: NDEF.RTD_HANDOVER_SELECT,
+                    payload: new Uint8Array([0x12].concat(
                       makeAC(0, 0, 'first'), makeAC(1, 1, 2),
-                      makeAC(2, 2, 'last')))),
+                      makeAC(2, 2, 'last')))}),
                  makeBTRecord(0, macs[0]),
                  makeBTRecord(1, macs[1]),
                  makeBTRecord(2, macs[2])];
@@ -205,7 +209,7 @@ suite('NDEFUtils tests', function() {
 
     test('Do not attempt to parse records other that Hs/Hr', function() {
       var hin = NDEFUtils.encodeHandoverRequest(mac, 1);
-      hin[0].type = NfcUtils.fromUTF8('Xx');
+      hin[0].type = nfcUtils.fromUTF8('Xx');
       var hout = NDEFUtils.parseHandoverNDEF(hin);
 
       assert.isNull(hout);
@@ -271,7 +275,7 @@ suite('NDEFUtils tests', function() {
     });
 
     test('No BT AC present - incorrect type', function() {
-      h.ac[0].cdr.type = NfcUtils.fromUTF8('application/invalid');
+      h.ac[0].cdr.type = nfcUtils.fromUTF8('application/invalid');
       var btAC = NDEFUtils.searchForBluetoothAC(h);
       assert.isNull(btAC);
     });
@@ -315,7 +319,7 @@ suite('NDEFUtils tests', function() {
       var name = 'Lorem ipsum';
 
       var record = NDEFUtils.encodeHandoverSelect(mac, 1,
-        NfcUtils.fromUTF8(name));
+        nfcUtils.fromUTF8(name));
       var dec = NDEFUtils.parseBluetoothSSP(record[1]);
 
       assert.equal(dec.localName, name);
@@ -341,7 +345,7 @@ suite('NDEFUtils tests', function() {
 
       // Bluetooth local name (supported field).
       var name = 'Lorem ipsum';
-      var nameArr = Array.apply([], NfcUtils.fromUTF8(name));
+      var nameArr = Array.apply([], nfcUtils.fromUTF8(name));
       var nEIRType = 0x09;
       var nEIRLength = 1 + nameArr.length;
 
@@ -381,7 +385,7 @@ suite('NDEFUtils tests', function() {
       function() {
 
       var record = NDEFUtils.encodeHandoverSelect(mac, 1,
-        NfcUtils.fromUTF8('Lorem ipsum'));
+        nfcUtils.fromUTF8('Lorem ipsum'));
 
       // Make local name invalid: delete one character from it.
       // Set OOB length as if this character was missing.
@@ -469,7 +473,6 @@ suite('NDEFUtils tests', function() {
   });
 
   suite('encodeHandoverSelect() tests', function() {
-
     var cps;
     var btMac;
     var btName;
@@ -478,7 +481,7 @@ suite('NDEFUtils tests', function() {
     setup(function() {
       cps = NDEF.CPS_ACTIVE;
       btMac = '00:0D:44:E7:95:AB';
-      btName = NfcUtils.fromUTF8('UE MINI BOOM');
+      btName = nfcUtils.fromUTF8('UE MINI BOOM');
 
       /*
        * The following NDEF message contains a static handover request
@@ -488,7 +491,6 @@ suite('NDEFUtils tests', function() {
       recordsDefault = [{
         tnf: NDEF.TNF_WELL_KNOWN,
         type: new Uint8Array([72, 115]),
-        id: new Uint8Array(),
         payload: new Uint8Array([18, 209, 2, 4, 97, 99, 1, 1, 48, 0])
       }, {
         tnf: NDEF.TNF_MIME_MEDIA,
@@ -505,14 +507,36 @@ suite('NDEFUtils tests', function() {
 
     test('With MAC, CPS and device name', function() {
       var records = NDEFUtils.encodeHandoverSelect(btMac, cps, btName);
-      assert.deepEqual(records, recordsDefault);
+      for (var i = 0; i < records.length; i++) {
+        assert.deepEqual(records[i].tnf, recordsDefault[i].tnf);
+        if (records[i].type) {
+          assert.deepEqual(records[i].type, recordsDefault[i].type);
+        }
+        if (records[i].id) {
+          assert.deepEqual(records[i].id, recordsDefault[i].id);
+        }
+        if (records[i].payload) {
+          assert.deepEqual(records[i].payload, recordsDefault[i].payload);
+        }
+      }
     });
 
     test('With MAC and CPS only', function() {
       recordsDefault[1].payload =
         new Uint8Array([8, 0, 171, 149, 231, 68, 13, 0]);
       var records = NDEFUtils.encodeHandoverSelect(btMac, cps);
-      assert.deepEqual(records, recordsDefault);
+      for (var i = 0; i < records.length; i++) {
+        assert.deepEqual(records[i].tnf, recordsDefault[i].tnf);
+        if (records[i].type) {
+          assert.deepEqual(records[i].type, recordsDefault[i].type);
+        }
+        if (records[i].id) {
+          assert.deepEqual(records[i].id, recordsDefault[i].id);
+        }
+        if (records[i].payload) {
+          assert.deepEqual(records[i].payload, recordsDefault[i].payload);
+        }
+      }
     });
 
     test('Encodes CPS', function() {

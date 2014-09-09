@@ -17,7 +17,6 @@ var AlarmEdit = function() {
   Panel.apply(this, arguments);
   this.element.innerHTML = html;
 
-  mozL10n.translate(this.element);
   var handleDomEvent = this.handleDomEvent.bind(this);
 
   this.element.addEventListener('panel-visibilitychange',
@@ -35,9 +34,13 @@ var AlarmEdit = function() {
     volume: this.element.querySelector('#alarm-volume-input')
   };
 
+  this.headers = {
+    header: this.element.querySelector('#alarm-header')
+  };
+  
   this.buttons = {};
   [
-    'delete', 'close', 'done'
+    'delete', 'done'
   ].forEach(function(id) {
     this.buttons[id] = this.element.querySelector('#alarm-' + id);
   }, this);
@@ -85,13 +88,11 @@ var AlarmEdit = function() {
     this.element.scrollTop = 0;
   }.bind(this));
 
-  mozL10n.translate(this.element);
   // When the language changes, the value of 'weekStartsOnMonday'
-  // might change. Since that's more than a simple text string, we
-  // can't just use mozL10n.translate().
+  // might change.
   mozL10n.ready(this.updateL10n.bind(this));
 
-  this.buttons.close.addEventListener('click', handleDomEvent);
+  this.headers.header.addEventListener('action', handleDomEvent);
   this.buttons.done.addEventListener('click', handleDomEvent);
   this.selects.sound.addEventListener('change', handleDomEvent);
   this.selects.sound.addEventListener('blur', handleDomEvent);
@@ -151,7 +152,7 @@ Utils.extend(AlarmEdit.prototype, {
     }
 
     switch (input) {
-      case this.buttons.close:
+      case this.headers.header:
         ClockView.show();
         break;
       case this.buttons.done:
@@ -205,7 +206,10 @@ Utils.extend(AlarmEdit.prototype, {
     // to be "undefined" rather than "".
     this.element.dataset.id = this.alarm.id || '';
     this.inputs.name.value = this.alarm.label;
-    this.inputs.volume.value = AudioManager.getAlarmVolume();
+
+    AudioManager.requestAlarmVolume().then(function(volume) {
+      this.inputs.volume.value = AudioManager.getAlarmVolume();
+    }.bind(this));
 
     // Init time, repeat, sound, snooze selection menu.
     this.initTimeSelect();
@@ -225,13 +229,6 @@ Utils.extend(AlarmEdit.prototype, {
     }
 
     location.hash = '#alarm-edit-panel';
-
-    // We're appending new elements to DOM so to make sure headers are
-    // properly resized and centered, we emmit a lazyload event.
-    // This will be removed when the gaia-header web component lands.
-    window.dispatchEvent(new CustomEvent('lazyload', {
-      detail: this.element
-    }));
   },
 
   initTimeSelect: function aev_initTimeSelect() {

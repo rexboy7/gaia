@@ -35,7 +35,6 @@ suite('system/Card', function() {
 
   mocksForCard.attachTestHelpers();
   var mockManager = {
-    attentionScreenApps: [],
     useAppScreenshotPreviews: true
   };
   var cardsList;
@@ -66,16 +65,19 @@ suite('system/Card', function() {
       assert.ok(card.element, 'element node');
       assert.equal(card.element.tagName, 'LI');
       assert.ok(card.screenshotView, 'screenshotView node');
+      assert.ok(card.titleNode, 'title node');
+      assert.ok(card.titleId, 'title id');
     });
 
     test('has expected classes/elements', function(){
       var card = this.card;
+      var header = card.element.querySelector('h1');
       assert.ok(card.element.classList.contains, '.card');
       assert.ok(card.element.querySelector('.close-card'), '.close-card');
       assert.ok(card.element.querySelector('.screenshotView'),
                 '.screenshotView');
-      assert.ok(card.element.querySelector('h1'),
-                'h1');
+      assert.ok(header, 'h1');
+      assert.ok(header.id, 'h1.id');
     });
 
     test('onviewport listener', function(){
@@ -92,13 +94,70 @@ suite('system/Card', function() {
       assert.isTrue(stub.calledOnce, 'onOutViewport was called');
     });
 
+    test('browser app title', function() {
+      var browserCard = new Card({
+        app: makeApp({ name: 'browserwindow' }),
+        manager: mockManager
+      });
+      browserCard.app.title = 'Page title';
+      this.sinon.stub(browserCard.app, 'isBrowser', function() {
+        return true;
+      });
+      browserCard.render();
+      assert.equal(browserCard.titleNode.textContent, 'Page title');
+    });
+
+    test('app name', function() {
+      var appCard = new Card({
+        app: makeApp({ name: 'otherapp' }),
+        manager: mockManager
+      });
+      appCard.app.title = 'Some title';
+      this.sinon.stub(appCard.app, 'isBrowser', function() {
+        return false;
+      });
+      appCard.render();
+      assert.equal(appCard.titleNode.textContent, 'otherapp');
+    });
+
   });
 
   suite('destroy', function() {
     setup(function(){
-      this.cardNode = document.createElement('li');
       this.card = new Card({
         app: makeApp({ name: 'dummyapp' }),
+        manager: mockManager,
+        containerElement: mockManager.cardsList
+      });
+      this.card.render();
+    });
+    teardown(function() {
+      mockManager.cardsList.innerHTML = '';
+    });
+
+    test('removes element from parentNode', function() {
+      var cardNode = this.card.element;
+      assert.ok(cardNode.parentNode, 'cardNode has parentNode when rendered');
+      this.card.destroy();
+      assert.ok(!cardNode.parentNode, 'cardNode has no parentNode');
+      assert.equal(cardsList.childNodes.length, 0, 'cardsList has no children');
+    });
+
+    test('cleans up references', function() {
+      this.card.destroy();
+      assert.ok(!this.card.manager, 'card.manager reference is falsey');
+      assert.ok(!this.card.app, 'card.app reference is falsey');
+      assert.ok(!this.card.element, 'card.element reference is falsey');
+    });
+  });
+
+  suite('Unkillable card', function() {
+    setup(function(){
+      this.cardNode = document.createElement('li');
+      var app = makeApp({ name: 'dummyapp' });
+      app.attentionWindow = true;
+      this.card = new Card({
+        app: app,
         manager: mockManager,
         containerElement: mockManager.cardsList,
         element: this.cardNode
@@ -109,17 +168,8 @@ suite('system/Card', function() {
       mockManager.cardsList.innerHTML = '';
     });
 
-    test('removes element from parentNode', function() {
-      this.card.destroy();
-      assert.ok(!this.cardNode.parentNode, 'cardNode has no parentNode');
-      assert.equal(cardsList.childNodes.length, 0, 'cardsList has no children');
-    });
-
-    test('cleans up references', function() {
-      this.card.destroy();
-      assert.ok(!this.card.manager, 'card.manager reference is falsey');
-      assert.ok(!this.card.app, 'card.app reference is falsey');
-      assert.ok(!this.card.element, 'card.element reference is falsey');
+    test('card whose app has attentionWindow should not be closed', function() {
+      assert.equal(this.card.closeButtonVisibility, 'hidden');
     });
   });
 

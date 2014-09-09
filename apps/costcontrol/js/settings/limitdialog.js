@@ -31,15 +31,17 @@ function dataLimitConfigurer(guiWidget, settings, viewManager) {
     });
   }
 
-  var cancelButton = dialog.querySelector('a.cancel');
-  if (cancelButton) {
-    cancelButton.addEventListener('click',
+  var dialogHeader = dialog.querySelector('#limit-dialog-header');
+  if (dialogHeader) {
+    dialogHeader.addEventListener('action',
       function ccld_onDialogCancel() {
         var oldValue = settings.option('dataLimitValue');
         var oldUnit = settings.option('dataLimitUnit');
         currentUnit = oldUnit;
         settings.option('dataLimitValue', oldValue);
         settings.option('dataLimitUnit', oldUnit);
+        dataLimitInput.classList.remove('error');
+        okButton.disabled = false;
         viewManager.closeCurrentView();
       }
     );

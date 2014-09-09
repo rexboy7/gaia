@@ -59,8 +59,14 @@ Calendar.prototype = {
     return this.client.findElement('#current-month-year');
   },
 
-  get settingsButton() {
-    return this.client.findElement('#time-header button.settings');
+  get timeHeader() {
+    return this.client.findElement('#time-header');
+  },
+
+  openModifyEventView: function() {
+    this.addEventButton.click();
+    this.editEvent.waitForDisplay();
+    return this;
   },
 
   openSettingsView: function() {
@@ -76,8 +82,8 @@ Calendar.prototype = {
   _toggleSettingsView: function(isOpen) {
     var client = this.client;
     client.helper
-      .waitForElement(this.settingsButton)
-      .click();
+      .waitForElement(this.timeHeader)
+      .tap(25, 25);
 
     // Wait for the animation to be complete before trying to click on
     // items in the drawer.
@@ -221,9 +227,8 @@ Calendar.prototype = {
       endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000);
     }
 
-    this.addEventButton.click();
+    this.openModifyEventView();
     var editEvent = this.editEvent;
-    editEvent.waitForDisplay();
     editEvent.title = opts.title;
     editEvent.location = opts.location || '';
     editEvent.description = opts.description || '';
@@ -328,5 +333,22 @@ Calendar.prototype = {
       .flick(body, x1, y1, x2, y2)
       .perform();
     return this;
+  },
+
+  switch12HourTimeFormat: function() {
+    this._switchTimeFormat(true);
+  },
+
+  switch24HourTimeFormat: function() {
+    this._switchTimeFormat(false);
+  },
+
+  _switchTimeFormat: function(is12Hour) {
+    var client = this.client;
+    // Switch to System frame to get the permission
+    // of writing settings values.
+    client.switchToFrame();
+    client.settings.set('locale.hour12', is12Hour);
+    client.apps.switchToApp(Calendar.ORIGIN);
   }
 };

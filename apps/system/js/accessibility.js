@@ -38,6 +38,12 @@
     TOGGLE_SCREEN_READER_COUNT: 6,
 
     /**
+     * Cap the full range of contrast. Actual -1 is completely gray, and 1
+     * makes things hard to see. This value is the max/min contrast.
+     */
+    CONTRAST_CAP: 0.6,
+
+    /**
      * Current counter for button presses in short succession.
      * @type {Number}
      * @memberof Accessibility.prototype
@@ -68,14 +74,19 @@
      */
     settings: {
       'accessibility.screenreader': false,
-      'audio.volume.content': 15,
-      'accessibility.screenreader-rate': 0
+      'accessibility.screenreader-volume': 1,
+      'accessibility.screenreader-rate': 0,
+      'accessibility.colors.enable': false,
+      'accessibility.colors.invert': false,
+      'accessibility.colors.grayscale': false,
+      'accessibility.colors.contrast': '0.0'
     },
 
     /**
      * Audio used by the screen reader.
      * Note: Lazy-loaded when first needed
      * @type {Object}
+     * @memberof Accessibility.prototype
      */
     sounds: {
       clickedAudio: null,
@@ -86,6 +97,7 @@
     /**
      * URLs for screen reader audio files.
      * @type {Object}
+     * @memberof Accessibility.prototype
      */
     soundURLs: {
       clickedAudio: './resources/sounds/screen_reader_clicked.ogg',
@@ -98,13 +110,55 @@
      * @memberof Accessibility.prototype
      */
     start: function ar_init() {
+
+      this.screen = document.getElementById('screen');
+
       window.addEventListener('mozChromeEvent', this);
+      window.addEventListener('logohidden', this);
 
       // Attach all observers.
       Object.keys(this.settings).forEach(function attach(settingKey) {
         SettingsListener.observe(settingKey, this.settings[settingKey],
           function observe(aValue) {
             this.settings[settingKey] = aValue;
+            switch (settingKey) {
+              case 'accessibility.screenreader':
+                // Show Accessibility panel if it is not already visible
+                if (aValue) {
+                  SettingsListener.getSettingsLock().set({
+                    'accessibility.screenreader-show-settings': true
+                  });
+                }
+                this.screen.classList.toggle('screenreader', aValue);
+                break;
+
+              case 'accessibility.colors.enable':
+                SettingsListener.getSettingsLock().set({
+                  'layers.effect.invert': aValue ?
+                    this.settings['accessibility.colors.invert'] : false,
+                  'layers.effect.grayscale': aValue ?
+                    this.settings['accessibility.colors.grayscale'] : false,
+                  'layers.effect.contrast': aValue ?
+                    this.settings['accessibility.colors.contrast'] : '0.0'
+                });
+                break;
+
+              case 'accessibility.colors.invert':
+              case 'accessibility.colors.grayscale':
+              case 'accessibility.colors.contrast':
+                if (this.settings['accessibility.colors.enable']) {
+                  var effect = settingKey.split('.').pop();
+                  var gfxSetting = {};
+                  if (effect === 'contrast') {
+                    gfxSetting['layers.effect.contrast'] =
+                      aValue * this.CONTRAST_CAP;
+                  } else {
+                    gfxSetting['layers.effect.' + effect] = aValue;
+                  }
+                  SettingsListener.getSettingsLock().set(gfxSetting);
+                }
+                break;
+            }
           }.bind(this));
       }, this);
     },
@@ -177,15 +231,42 @@
     },
 
     /**
-     * Get audio for a screen reader notification.
+     * Play audio for a screen reader notification.
      * @param  {String} aSoundKey a key for the screen reader audio.
-     * @return {Object} Audio object to be played.
+     * XXX: When Bug 848954 lands we should be able to use Web Audio API.
+     * @memberof Accessibility.prototype
      */
-    _getSound: function ar__getSound(aSoundKey) {
+    _playSound: function ar__playSound(aSoundKey) {
+      // If volume is at 0, do not play sound.
+      if (!this.volume) {
+        return;
+      }
       if (!this.sounds[aSoundKey]) {
         this.sounds[aSoundKey] = new Audio(this.soundURLs[aSoundKey]);
+        this.sounds[aSoundKey].load();
       }
-      return this.sounds[aSoundKey];
+      var audio = this.sounds[aSoundKey].cloneNode(false);
+      audio.volume = this.volume;
+      audio.play();
+    },
+
+    /**
+     * Get current screen reader volume defined by the setting.
+     * @return {Number} Screen reader volume wihtin the [0, 1] interval.
+     * @memberof Accessibility.prototype
+     */
+    get volume() {
+      return this.settings['accessibility.screenreader-volume'];
+    },
+
+    /**
+     * Get current screen reader speech rate defined by the setting.
+     * @return {Number} Screen reader rate within the [0.2, 10] interval.
+     * @memberof Accessibility.prototype
+     */
+    get rate() {
+      var rate = this.settings['accessibility.screenreader-rate'];
+      return rate >= 0 ? rate + 1 : 1 / (Math.abs(rate) + 1);
     },
 
     /**
@@ -195,16 +276,17 @@
      */
     handleAccessFuOutput: function ar_handleAccessFuOutput(aDetails) {
       var options = aDetails.options || {};
+      window.dispatchEvent(new CustomEvent('accessibility-action'));
       switch (aDetails.eventType) {
         case 'vc-change':
           // Vibrate when the virtual cursor changes.
           navigator.vibrate(options.pattern);
-          this._getSound(options.isKey ? 'vcKeyAudio' : 'vcMoveAudio').play();
+          this._playSound(options.isKey ? 'vcKeyAudio' : 'vcMoveAudio');
           break;
         case 'action':
           if (aDetails.data[0].string === 'clickAction') {
             // If element is clicked, play 'click' sound instead of speech.
-            this._getSound('clickedAudio').play();
+            this._playSound('clickedAudio');
             return;
           }
           break;
@@ -216,18 +298,37 @@
     },
 
     /**
+     * Remove aria-hidden from the screen element to make content accessible to
+     * the screen reader.
+     * @memberof Accessibility.prototype
+     */
+    activateScreen: function ar_activateScreen() {
+      // Screen reader will not say anything until the splash animation is
+      // hidden and the aria-hidden attribute is removed from #screen.
+      this.screen.removeAttribute('aria-hidden');
+      window.removeEventListener('logohidden', this);
+    },
+
+    /**
      * Handle a mozChromeEvent event.
      * @param  {Object} aEvent mozChromeEvent.
      * @memberof Accessibility.prototype
      */
     handleEvent: function ar_handleEvent(aEvent) {
-      switch (aEvent.detail.type) {
-        case 'accessfu-output':
-          this.handleAccessFuOutput(JSON.parse(aEvent.detail.details));
+      switch (aEvent.type) {
+        case 'logohidden':
+          this.activateScreen();
           break;
-        case 'volume-up-button-press':
-        case 'volume-down-button-press':
-          this.handleVolumeButtonPress(aEvent);
+        case 'mozChromeEvent':
+          switch (aEvent.detail.type) {
+            case 'accessibility-output':
+              this.handleAccessFuOutput(JSON.parse(aEvent.detail.details));
+              break;
+            case 'volume-up-button-press':
+            case 'volume-down-button-press':
+              this.handleVolumeButtonPress(aEvent);
+              break;
+          }
           break;
       }
     },
@@ -256,9 +357,12 @@
      * @memberof Accessibility.prototype
      */
     speak: function ar_speak(aData, aCallback, aOptions = {}) {
-      speechSynthesizer.speak(aData, aOptions,
-        this.settings['accessibility.screenreader-rate'],
-        this.settings['audio.volume.content'] / 15, aCallback);
+      // If volume is at 0, do not speak.
+      if (!this.volume) {
+        return;
+      }
+      speechSynthesizer.speak(aData, aOptions, this.rate, this.volume,
+        aCallback);
     }
   };
 
@@ -274,6 +378,11 @@
      * @memberof speechSynthesizer
      */
     get speech() {
+      // If there are no voices bundled, consider speech synthesis unavailable.
+      if (!window.speechSynthesis ||
+        window.speechSynthesis.getVoices().length === 0) {
+        return null;
+      }
       return window.speechSynthesis;
     },
 
@@ -353,8 +462,7 @@
     /**
      * Utter a message with a speechSynthesizer.
      * @param {?Array} aData A messages array to be localized.
-     * @param {JSON} aOptions Options to be used when speaking. For
-     * example: {
+     * @param {JSON} aOptions Options to be used when speaking. For example: {
      *   enqueue: false
      * }
      * @param {Number} aRate Speech rate.
@@ -377,7 +485,7 @@
 
       var utterance = new this.utterance(this.buildUtterance(aData));
       utterance.volume = aVolume;
-      utterance.rate = aRate >= 0 ? aRate + 1 : 1 / (Math.abs(aRate) + 1);
+      utterance.rate = aRate;
       utterance.addEventListener('end', aCallback);
       this.speech.speak(utterance);
     }

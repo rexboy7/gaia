@@ -2,17 +2,18 @@
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 /*global Compose, Recipients, Utils, AttachmentMenu, Template, Settings,
-         SMIL, ErrorDialog, MessageManager, MozSmsFilter, LinkHelper,
+         SMIL, ErrorDialog, MessageManager, LinkHelper,
          ActivityPicker, ThreadListUI, OptionMenu, Threads, Contacts,
          Attachment, WaitingScreen, MozActivity, LinkActionHandler,
          ActivityHandler, TimeHeaders, ContactRenderer, Draft, Drafts,
          Thread, MultiSimActionButton, LazyLoader, Navigation, Promise,
          Dialog, SharedComponents,
-         Errors
+         Errors,
+         EventDispatcher
 */
 /*exported ThreadUI */
 
-(function(global) {
+(function(exports) {
 'use strict';
 
 var attachmentMap = new WeakMap();
@@ -53,14 +54,12 @@ function thui_generateSmilSlides(slides, content) {
   return slides;
 }
 
-var ThreadUI = global.ThreadUI = {
+var ThreadUI = {
   CHUNK_SIZE: 10,
   // duration of the notification that message type was converted
   CONVERTED_MESSAGE_DURATION: 3000,
   IMAGE_RESIZE_DURATION: 3000,
   BANNER_DURATION: 2000,
-  // delay between 2 counter updates while composing a message
-  UPDATE_DELAY: 500,
 
   // Min available chars count that triggers available chars counter
   MIN_AVAILABLE_CHARS_COUNT: 20,
@@ -81,24 +80,26 @@ var ThreadUI = global.ThreadUI = {
     update: null,
     subjectLengthNotice: null
   },
+
   multiSimActionButton: null,
   init: function thui_init() {
     var templateIds = [
       'message',
+      'message-sim-information',
+      'message-status',
       'not-downloaded',
       'recipient',
       'date-group'
     ];
 
-    Compose.init('messages-compose-form');
     AttachmentMenu.init('attachment-options-menu');
 
     // Fields with 'messages' label
     [
       'container', 'subheader', 'to-field', 'recipients-list', 'recipient',
-      'input', 'compose-form', 'check-all-button', 'uncheck-all-button',
-      'contact-pick-button', 'back-button', 'close-button', 'send-button',
-      'attach-button', 'delete-button', 'cancel-button', 'subject-input',
+      'input', 'compose-form', 'check-uncheck-all-button',
+      'contact-pick-button', 'send-button', 'header', 'edit-header',
+      'attach-button', 'delete-button', 'subject-input',
       'new-message-notice', 'options-icon', 'edit-mode', 'edit-form',
       'tel-form', 'header-text', 'max-length-notice', 'convert-notice',
       'resize-notice', 'dual-sim-information', 'new-message-notice',
@@ -122,11 +123,6 @@ var ThreadUI = global.ThreadUI = {
     this.onVisibilityChange = this.onVisibilityChange.bind(this);
     document.addEventListener('visibilitychange',
                               this.onVisibilityChange);
-
-    // In case of input, we have to resize the input following UX Specs.
-    Compose.on('input', this.messageComposerInputHandler.bind(this));
-
-    Compose.on('type', this.onMessageTypeChange.bind(this));
 
     // Changes on subject input can change the type of the message
     // and size of fields
@@ -157,6 +153,7 @@ var ThreadUI = global.ThreadUI = {
     this.sendButton.addEventListener(
       'click', this.onSendClick.bind(this)
     );
+
     this.sendButton.addEventListener(
       'contextmenu', this.onSendClick.bind(this)
     );
@@ -165,24 +162,16 @@ var ThreadUI = global.ThreadUI = {
       'scroll', this.manageScroll.bind(this)
     );
 
-    this.backButton.addEventListener(
-      'click', this.back.bind(this)
+    this.checkUncheckAllButton.addEventListener(
+      'click', this.toggleCheckedAll.bind(this)
     );
 
-    this.closeButton.addEventListener(
-      'click', this.close.bind(this)
+    this.editHeader.addEventListener(
+      'action', this.cancelEdit.bind(this)
     );
 
-    this.checkAllButton.addEventListener(
-      'click', this.toggleCheckedAll.bind(this, true)
-    );
-
-    this.uncheckAllButton.addEventListener(
-      'click', this.toggleCheckedAll.bind(this, false)
-    );
-
-    this.cancelButton.addEventListener(
-      'click', this.cancelEdit.bind(this)
+    this.header.addEventListener(
+      'action', this.onHeaderAction.bind(this)
     );
 
     this.optionsIcon.addEventListener(
@@ -281,6 +270,16 @@ var ThreadUI = global.ThreadUI = {
       this.onRecipientSuggestionClick.bind(this)
     );
 
+    MessageManager.on('message-sending', this.onMessageSending.bind(this));
+    MessageManager.on('message-sent', this.onMessageSent.bind(this));
+    MessageManager.on('message-received', this.onMessageReceived.bind(this));
+    MessageManager.on(
+      'message-failed-to-send',
+      this.onMessageFailed.bind(this)
+    );
+    MessageManager.on('message-delivered', this.onDeliverySuccess.bind(this));
+    MessageManager.on('message-read', this.onReadSuccess.bind(this));
+
     this.tmpl = templateIds.reduce(function(tmpls, name) {
       tmpls[Utils.camelCase(name)] =
         Template('messages-' + name + '-tmpl');
@@ -288,6 +287,13 @@ var ThreadUI = global.ThreadUI = {
     }, {});
 
     this.initRecipients();
+
+    Compose.init('messages-compose-form');
+
+    // In case of input, we have to resize the input following UX Specs.
+    Compose.on('input', this.messageComposerInputHandler.bind(this));
+    Compose.on('type', this.onMessageTypeChange.bind(this));
+    Compose.on('segmentinfochange', this.onSegmentInfoChange.bind(this));
 
     this.multiSimActionButton = null;
 
@@ -319,6 +325,22 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
+  /**
+   * When the header 'action' button is tapped
+   * we always go back to the previous pane,
+   * unless we're in an activity, then in
+   * select cases we exit the activity.
+   *
+   * @private
+   */
+  onHeaderAction: function thui_onHeaderAction() {
+    var inActivity = ActivityHandler.isInActivity();
+    var isComposer = Navigation.isCurrentPanel('composer');
+    var isThread = Navigation.isCurrentPanel('thread');
+    var action = inActivity && (isComposer || isThread) ? 'close' : 'back';
+    this[action]();
+  },
+
   // Initialize Recipients list and Recipients.View (DOM)
   initRecipients: function thui_initRecipients() {
     var recipientsChanged = (function recipientsChanged(length, record) {
@@ -340,6 +362,9 @@ var ThreadUI = global.ThreadUI = {
         );
       }
 
+      // Clean search result after recipient count change.
+      this.toggleRecipientSuggestions();
+
       // The isOk flag will prevent "questionable" recipient entries from
       //
       //    - Updating the header
@@ -352,12 +377,9 @@ var ThreadUI = global.ThreadUI = {
       if (isOk) {
         // update composer header whenever recipients change
         this.updateComposerHeader();
-        // check for enable send whenever recipients change
-        this.enableSend();
-      }
 
-      // Clean search result after recipient count change.
-      this.toggleRecipientSuggestions();
+        this.emit('recipientschange');
+      }
     }).bind(this);
 
     if (this.recipients) {
@@ -373,6 +395,12 @@ var ThreadUI = global.ThreadUI = {
 
       this.recipients.on('add', recipientsChanged);
       this.recipients.on('remove', recipientsChanged);
+      this.recipients.on('modechange', function(mode) {
+        this.threadMessages.classList.toggle(
+          'multiline-recipients-mode',
+           mode === 'multiline-mode'
+        );
+      }.bind(this));
     }
     this.toggleRecipientSuggestions();
   },
@@ -384,7 +412,7 @@ var ThreadUI = global.ThreadUI = {
 
     this.sentAudio = new Audio();
     this.sentAudio.preload = 'none';
-    this.sentAudio.src = '/sounds/sent.opus';
+    this.sentAudio.src = '/sounds/firefox_msg_sent.opus';
     this.sentAudio.mozAudioChannelType = 'notification';
 
     // TODO move sentAudioEnabled management to Settings
@@ -428,10 +456,13 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
-  messageComposerInputHandler: function thui_messageInputHandler(event) {
-    this.enableSend();
+  setHeaderAction: function thui_setHeaderAction(icon) {
+    this.header.setAttribute('action', icon);
+  },
 
+  messageComposerInputHandler: function thui_messageInputHandler(event) {
     if (Compose.type === 'sms') {
+      this.hideMaxLengthNotice();
       return;
     }
 
@@ -443,8 +474,7 @@ var ThreadUI = global.ThreadUI = {
         this._resizeNoticeTimeout = null;
       }
     } else {
-      // Update counter after image resize complete
-      this.updateCounterForMms();
+      this.checkMessageSize();
       if (this.resizeNotice.classList.contains('hide') ||
           this._resizeNoticeTimeout) {
         return;
@@ -456,6 +486,7 @@ var ThreadUI = global.ThreadUI = {
       }.bind(this), this.IMAGE_RESIZE_DURATION);
     }
   },
+
   onSubjectKeydown: function thui_onSubjectKeydown(event) {
     if (event.keyCode === event.DOM_VK_BACK_SPACE) {
       if (!isHoldingBackspace) {
@@ -500,12 +531,16 @@ var ThreadUI = global.ThreadUI = {
   },
 
   showMaxLengthNotice: function thui_showMaxLengthNotice(l10nKey) {
-    navigator.mozL10n.localize(
-      this.maxLengthNotice.querySelector('p'), l10nKey);
+    Compose.lock = true;
+    this.maxLengthNotice.querySelector('p').setAttribute(
+      'data-l10n-id',
+      l10nKey
+    );
     this.maxLengthNotice.classList.remove('hide');
   },
 
   hideMaxLengthNotice: function thui_hideMaxLengthNotice() {
+    Compose.lock = false;
     this.maxLengthNotice.classList.add('hide');
   },
 
@@ -533,6 +568,8 @@ var ThreadUI = global.ThreadUI = {
    * visible.
    */
   beforeEnter: function thui_beforeEnter(args) {
+    this.setHeaderAction(ActivityHandler.isInActivity() ? 'close' : 'back');
+
     Recipients.View.isFocusable = true;
     if (!this.multiSimActionButton) {
       // handles the various actions on the send button and encapsulates the
@@ -545,9 +582,7 @@ var ThreadUI = global.ThreadUI = {
       );
 
       var simPickerElt = document.getElementById('sim-picker');
-      LazyLoader.load([simPickerElt], function() {
-        navigator.mozL10n.translate(simPickerElt);
-      });
+      LazyLoader.load([simPickerElt]);
       this.initSentAudio();
     }
 
@@ -826,23 +861,6 @@ var ThreadUI = global.ThreadUI = {
     } while ((node = node.previousSibling));
   },
 
-  onMessageTypeChange: function thui_onMessageType(event) {
-    // if we are changing to sms type, we might want to cancel
-    if (Compose.type === 'sms') {
-      this.updateSmsSegmentLimit(function segmentLimitCallback(overLimit) {
-        if (overLimit) {
-          // we can't change to sms after all
-          Compose.type = 'mms';
-          return;
-        }
-
-        this.messageComposerTypeHandler();
-      }.bind(this));
-    } else {
-      this.messageComposerTypeHandler();
-    }
-  },
-
   // Function for handling when a new message (sent/received)
   // is detected
   onMessage: function onMessage(message) {
@@ -853,7 +871,16 @@ var ThreadUI = global.ThreadUI = {
     TimeHeaders.updateAll('header[data-time-update]');
   },
 
-  onMessageReceived: function thui_onMessageReceived(message) {
+  onMessageReceived: function thui_onMessageReceived(e) {
+    var message = e.message;
+
+    // If user currently in other thread then there is nothing to do here
+    if (!Navigation.isCurrentPanel('thread', { id: message.threadId })) {
+      return;
+    }
+
+    MessageManager.markMessagesRead([message.id]);
+
     this.onMessage(message);
     this.scrollViewToBottom();
     if (this.isScrolledManually) {
@@ -861,7 +888,8 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
-  onMessageSending: function thui_onMessageReceived(message) {
+  onMessageSending: function thui_onMessageReceived(e) {
+    var message = e.message;
     if (Navigation.isCurrentPanel('thread', { id: message.threadId })) {
       this.onMessage(message);
       this.forceScrollViewToBottom();
@@ -894,19 +922,10 @@ var ThreadUI = global.ThreadUI = {
   },
 
   // Message composer type changed:
-  messageComposerTypeHandler: function thui_messageComposerTypeHandler() {
-    this.updateCounter();
-
-    var oldType = this.composeForm.dataset.messageType;
-    var type = Compose.type;
-    if (oldType === type) {
-      return;
-    }
-    this.composeForm.dataset.messageType = type;
-
-    var message = 'converted-to-' + type;
+  onMessageTypeChange: function thui_onMessageTypeChange() {
+    var message = 'converted-to-' + Compose.type;
     var messageContainer = this.convertNotice.querySelector('p');
-    navigator.mozL10n.localize(messageContainer, message);
+    messageContainer.setAttribute('data-l10n-id', message);
     this.convertNotice.classList.remove('hide');
 
     if (this._convertNoticeTimeout) {
@@ -983,14 +1002,12 @@ var ThreadUI = global.ThreadUI = {
   updateComposerHeader: function thui_updateComposerHeader() {
     var recipientCount = this.recipients.numbers.length;
     if (recipientCount > 0) {
-      navigator.mozL10n.localize(this.headerText, 'recipient', {
+      navigator.mozL10n.setAttributes(this.headerText, 'recipient', {
           n: recipientCount
       });
     } else {
-      navigator.mozL10n.localize(this.headerText, 'newMessage');
+      navigator.mozL10n.setAttributes(this.headerText, 'newMessage');
     }
-    // Check if we need to enable send button.
-    this.enableSend();
   },
 
   // scroll position is considered as "manual" if the view is not completely
@@ -1192,114 +1209,22 @@ var ThreadUI = global.ThreadUI = {
     }.bind(this));
   },
 
-  enableSend: function thui_enableSend() {
-    // should disable if we have no message input
-    var disableSendMessage = Compose.isEmpty() || Compose.isResizing;
-    var messageNotLong = this.updateCounter();
-    var recipientsValue = this.recipients.inputValue;
-    var hasRecipients = false;
+  onSegmentInfoChange: function thui_onSegmentInfoChange() {
+    var smsInfo = Compose.segmentInfo;
+    var segments = smsInfo.segments;
+    var availableChars = smsInfo.charsAvailableInLastSegment;
 
-    // Set hasRecipients to true based on the following conditions:
-    //
-    //  1. There is a valid recipients object
-    //  2. One of the following is true:
-    //      - The recipients object contains at least 1 valid recipient
-    //        - OR -
-    //      - There is >=1 character typed and the value is a finite number
-    //
-    if (this.recipients &&
-        (this.recipients.numbers.length ||
-          (recipientsValue && isFinite(recipientsValue)))) {
+    // in MMS mode, the counter value isn't used anyway, so we can update this
+    this.counterLabel.dataset.counter = availableChars + '/' + segments;
 
-      hasRecipients = true;
-    }
-
-    // should disable if the message is too long
-    disableSendMessage = disableSendMessage || !messageNotLong;
-
-    // should disable if we have no recipients in the "new thread" view
-    disableSendMessage = disableSendMessage ||
-      (Navigation.isCurrentPanel('composer') && !hasRecipients);
-
-    this.sendButton.disabled = disableSendMessage;
+    // if we are going to force MMS, this is true anyway, so adding
+    // has-counter again doesn't hurt us.
+    var showCounter = (segments && (segments > 1 ||
+      availableChars <= this.MIN_AVAILABLE_CHARS_COUNT));
+    this.counterLabel.classList.toggle('has-counter', showCounter);
   },
 
-  // asynchronously updates the counter for sms segments when in text only mode
-  // pass 'true' to the callback when the limit is over the segment limit
-  updateSmsSegmentLimit: function thui_updateSmsSegmentLimit(callback) {
-    if (!(this._mozMobileMessage &&
-          this._mozMobileMessage.getSegmentInfoForText)) {
-      return false;
-    }
-
-    var value = Compose.getText();
-    var kMaxConcatenatedMessages = Settings.maxConcatenatedMessages;
-
-    // Use backend api for precise sms segmentation information.
-    var smsInfoRequest = this._mozMobileMessage.getSegmentInfoForText(value);
-    smsInfoRequest.onsuccess = (function onSmsInfo(event) {
-      if (Compose.type !== 'sms') {
-        // Remove 'has-counter'(as it's supposed to be used for sms only) and
-        // bailout if the type changed since the request started
-        this.counterLabel.classList.remove('has-counter');
-        return;
-      }
-
-      var smsInfo = event.target.result;
-      var segments = smsInfo.segments;
-      var availableChars = smsInfo.charsAvailableInLastSegment;
-
-      // in MMS mode, the counter value isn't used anyway, so we can update this
-      this.counterLabel.dataset.counter = availableChars + '/' + segments;
-
-      // if we are going to force MMS, this is true anyway, so adding
-      // has-counter again doesn't hurt us.
-      var showCounter = (segments && (segments > 1 ||
-        availableChars <= this.MIN_AVAILABLE_CHARS_COUNT));
-      this.counterLabel.classList.toggle('has-counter', showCounter);
-
-      var overLimit = segments > kMaxConcatenatedMessages;
-      callback(overLimit);
-    }).bind(this);
-    smsInfoRequest.onerror = (function onSmsInfoError(e) {
-      this.counterLabel.classList.remove('has-counter');
-    }).bind(this);
-  },
-
-  // will return true if we can send the message, false if we can't send the
-  // message
-  updateCounter: function thui_updateCount() {
-    if (Compose.type === 'mms') {
-      return this.updateCounterForMms();
-    } else {
-      Compose.lock = false;
-      if (this.timeouts.update === null) {
-        this.timeouts.update = setTimeout(this.updateCounterForSms.bind(this),
-            this.UPDATE_DELAY);
-      }
-      return true;
-    }
-  },
-
-  updateCounterForSms: function thui_updateCounterForSms() {
-    // We nullify this timeout here rather than in the updateSmsSegmentLimit
-    // callback because otherwise we could display an information that is not
-    // current.
-    // With the timeout, the risk of having 2 requests in the same time,
-    // returning in a different order, which would actually display old
-    // information, is very tiny, so we should be good without adding another
-    // lock.
-    this.timeouts.update = null;
-    this.hideMaxLengthNotice();
-    this.updateSmsSegmentLimit((function segmentLimitCallback(overLimit) {
-      if (overLimit) {
-        Compose.type = 'mms';
-      }
-    }).bind(this));
-    return true;
-  },
-
-  updateCounterForMms: function thui_updateCounterForMms() {
+  checkMessageSize: function thui_checkMessageSize() {
     // Counter should be updated when image resizing complete
     if (Compose.isResizing) {
       return false;
@@ -1307,17 +1232,14 @@ var ThreadUI = global.ThreadUI = {
 
     if (Settings.mmsSizeLimitation) {
       if (Compose.size > Settings.mmsSizeLimitation) {
-        Compose.lock = true;
         this.showMaxLengthNotice('message-exceeded-max-length');
         return false;
       } else if (Compose.size === Settings.mmsSizeLimitation) {
-        Compose.lock = true;
         this.showMaxLengthNotice('messages-max-length-text');
         return true;
       }
     }
 
-    Compose.lock = false;
     this.hideMaxLengthNotice();
     return true;
   },
@@ -1385,8 +1307,6 @@ var ThreadUI = global.ThreadUI = {
       if (phoneDetails) {
         carrierTag.innerHTML = SharedComponents.phoneDetails(phoneDetails);
 
-        navigator.mozL10n.translate(carrierTag);
-
         threadMessages.classList.add('has-carrier');
       } else {
         threadMessages.classList.remove('has-carrier');
@@ -1415,10 +1335,14 @@ var ThreadUI = global.ThreadUI = {
     // the callback directly in order to make it work!
     // https://bugzilla.mozilla.org/show_bug.cgi?id=836733
     if (!this._mozMobileMessage) {
-      navigator.mozL10n.localize(this.headerText, 'thread-header-text', {
-        name: number,
-        n: others
-      });
+      navigator.mozL10n.setAttributes(
+        this.headerText,
+        'thread-header-text',
+        {
+          name: number,
+          n: others
+        }
+      );
       return Promise.resolve();
     }
 
@@ -1438,10 +1362,14 @@ var ThreadUI = global.ThreadUI = {
         var contactName = details.title || number;
         this.headerText.dataset.isContact = !!details.isContact;
         this.headerText.dataset.title = contactName;
-        navigator.mozL10n.localize(this.headerText, 'thread-header-text', {
+        navigator.mozL10n.setAttributes(
+          this.headerText,
+          'thread-header-text',
+          {
             name: contactName,
             n: others
-        });
+          }
+        );
 
         this.updateCarrier(thread, contacts);
         resolve();
@@ -1535,8 +1463,7 @@ var ThreadUI = global.ThreadUI = {
       return;
     }
 
-    var filter = new MozSmsFilter();
-    filter.threadId = threadId;
+    var filter = { threadId: threadId };
 
     // We call getMessages with callbacks
     var renderingOptions = {
@@ -1586,8 +1513,8 @@ var ThreadUI = global.ThreadUI = {
     return this.tmpl.notDownloaded.interpolate({
       messageL10nId: messageL10nId,
       messageL10nArgs: JSON.stringify({ date: expireFormatted }),
-      messageL10nDate: +message.expiryDate,
-      messageL10nDateFormat: 'dateTimeFormat_%x',
+      messageL10nDate: message.expiryDate.toString(),
+      messageL10nDateFormat: 'expiry-date-format',
       downloadL10nId: downloadL10nId
     });
   },
@@ -1625,18 +1552,12 @@ var ThreadUI = global.ThreadUI = {
   },
 
   buildMessageDOM: function thui_buildMessageDOM(message, hidden) {
-    var bodyHTML = '';
-    var delivery = message.delivery;
+    var messageDOM = document.createElement('li'),
+        bodyHTML = '';
 
-    var isDelivered = this.shouldShowDeliveryStatus(message);
-    var isRead = this.shouldShowReadStatus(message);
-    var isNotDownloaded = delivery === 'not-downloaded';
-    var isIncoming = delivery === 'received' || isNotDownloaded;
-
-    var messageDOM = document.createElement('li');
-
-    var classNames = ['message', message.type, delivery];
-    var attachments = message.attachments;
+    var messageStatus = message.delivery,
+        isNotDownloaded = messageStatus === 'not-downloaded',
+        isIncoming = messageStatus === 'received' || isNotDownloaded;
 
     // If the MMS has invalid empty content(message without attachment and
     // subject) or contains only subject, we will display corresponding message
@@ -1645,16 +1566,19 @@ var ThreadUI = global.ThreadUI = {
     // Returning attachments would be different based on gecko version:
     // null in b2g18 / empty array in master.
     var noAttachment = (message.type === 'mms' && !isNotDownloaded &&
-      (attachments === null || attachments.length === 0));
+      (message.attachments === null || message.attachments.length === 0));
     var invalidEmptyContent = (noAttachment && !message.subject);
 
-    classNames.push(isIncoming ? 'incoming' : 'outgoing');
-
-    if (isRead) {
-      classNames.push('read');
-    } else if (isDelivered) {
-      classNames.push('delivered');
+    if (this.shouldShowReadStatus(message)) {
+      messageStatus = 'read';
+    } else if (this.shouldShowDeliveryStatus(message)) {
+      messageStatus = 'delivered';
     }
+
+    var classNames = [
+      'message', message.type, messageStatus,
+      isIncoming ? 'incoming' : 'outgoing'
+    ];
 
     if (hidden) {
       classNames.push('hidden');
@@ -1679,29 +1603,41 @@ var ThreadUI = global.ThreadUI = {
       classNames.push('no-attachment');
     }
 
+    if (classNames.indexOf('error') >= 0) {
+      messageStatus = 'error';
+    } else if (classNames.indexOf('pending') >= 0) {
+      messageStatus = 'pending';
+    }
+
     messageDOM.className = classNames.join(' ');
     messageDOM.id = 'message-' + message.id;
     messageDOM.dataset.messageId = message.id;
     messageDOM.dataset.iccId = message.iccId;
+    var simServiceId = Settings.getServiceIdByIccId(message.iccId);
+    var showSimInformation = Settings.hasSeveralSim() && simServiceId !== null;
+    var simInformationHTML = '';
+    if (showSimInformation) {
+      simInformationHTML = this.tmpl.messageSimInformation.interpolate({
+        simNumberL10nArgs: JSON.stringify({ id: simServiceId + 1 })
+      });
+    }
 
     messageDOM.innerHTML = this.tmpl.message.interpolate({
       id: String(message.id),
       bodyHTML: bodyHTML,
       timestamp: String(message.timestamp),
       subject: String(message.subject),
-      // Incoming and outgoing messages are displayed using different
-      // backgrounds, therefore progress indicator should be styled differently.
-      progressIndicatorClassName: isIncoming ? 'light' : ''
+      simInformationHTML: simInformationHTML,
+      messageStatusHTML: this.getMessageStatusMarkup(messageStatus)
     }, {
-      safe: ['bodyHTML']
+      safe: ['bodyHTML', 'simInformationHTML', 'messageStatusHTML']
     });
 
-    navigator.mozL10n.translate(messageDOM);
     TimeHeaders.update(messageDOM.querySelector('time'));
 
     var pElement = messageDOM.querySelector('p');
     if (invalidEmptyContent) {
-      navigator.mozL10n.localize(pElement, 'no-attachment-text');
+      pElement.setAttribute('data-l10n-id', 'no-attachment-text');
     }
 
     if (message.type === 'mms' && !isNotDownloaded && !noAttachment) { // MMS
@@ -1711,6 +1647,13 @@ var ThreadUI = global.ThreadUI = {
     }
 
     return messageDOM;
+  },
+
+  getMessageStatusMarkup: function(status) {
+    return ['read', 'delivered', 'sending', 'error'].indexOf(status) >= 0 ?
+      this.tmpl.messageStatus.interpolate({
+        statusL10nId: 'message-delivery-status-' + status
+      }) : '';
   },
 
   appendMessage: function thui_appendMessage(message, hidden) {
@@ -1794,17 +1737,19 @@ var ThreadUI = global.ThreadUI = {
     this.checkInputs();
   },
 
-  toggleCheckedAll: function thui_select(value) {
+  // if no message or few are checked : select all the messages
+  // and if all messages are checked : deselect them all.
+  toggleCheckedAll: function thui_select() {
+    var selected = this.selectedInputs;
+    var allInputs = this.allInputs;
+    var allSelected = (selected.length === allInputs.length);
     var inputs = this.container.querySelectorAll(
       'input[type="checkbox"]' +
-      // value ?
-      //   true : query for currently unselected threads
-      //   false: query for currently selected threads
-      (value ? ':not(:checked)' : ':checked')
+      (!allSelected ? ':not(:checked)' : ':checked')
     );
     var length = inputs.length;
     for (var i = 0; i < length; i++) {
-      inputs[i].checked = value;
+      inputs[i].checked = !allSelected;
       this.chooseMessage(inputs[i]);
     }
     this.checkInputs();
@@ -1817,7 +1762,7 @@ var ThreadUI = global.ThreadUI = {
       * - 'Delete messages' for existing conversations
       */
     var params = {
-      header: navigator.mozL10n.get('message'),
+      header: { l10nId: 'message' },
       items: []
     };
 
@@ -1829,10 +1774,10 @@ var ThreadUI = global.ThreadUI = {
       }
     });
 
-    // If we are on a thread, we can call to DeleteMessages
+    // If we are on a thread, we can call to SelectMessages
     if (Navigation.isCurrentPanel('thread')) {
       params.items.push({
-        l10nId: 'deleteMessages-label',
+        l10nId: 'selectMessages-label',
         method: this.startEdit.bind(this)
       });
     }
@@ -1913,7 +1858,7 @@ var ThreadUI = global.ThreadUI = {
         delNumList.push(+inputs[i].value);
       }
       // Complete deletion in DB and in UI
-      MessageManager.deleteMessage(delNumList,
+      MessageManager.deleteMessages(delNumList,
         function onDeletionDone() {
           ThreadUI.deleteUIMessages(delNumList, function uiDeletionDone() {
             ThreadUI.cancelEdit();
@@ -1970,15 +1915,19 @@ var ThreadUI = global.ThreadUI = {
     var isAnySelected = selected.length > 0;
 
     // Manage buttons enabled\disabled state
-    this.checkAllButton.disabled = selected.length === allInputs.length;
-    this.uncheckAllButton.disabled = !isAnySelected;
-    this.deleteButton.disabled = !isAnySelected;
+    if (selected.length === allInputs.length) {
+      this.checkUncheckAllButton.setAttribute('data-l10n-id', 'deselect-all');
+    } else {
+      this.checkUncheckAllButton.setAttribute('data-l10n-id', 'select-all');
+    }
 
     if (isAnySelected) {
-      navigator.mozL10n.localize(this.editMode, 'selected',
+      this.deleteButton.disabled = false;
+      navigator.mozL10n.setAttributes(this.editMode, 'selected',
         {n: selected.length});
     } else {
-      navigator.mozL10n.localize(this.editMode, 'deleteMessages-title');
+      this.deleteButton.disabled = true;
+      navigator.mozL10n.setAttributes(this.editMode, 'deleteMessages-title');
     }
   },
 
@@ -2076,12 +2025,6 @@ var ThreadUI = global.ThreadUI = {
           return;
         }
 
-        // If we're in composer, let's focus on message editor on click.
-        if (Navigation.isCurrentPanel('composer')) {
-          Compose.focus();
-          return;
-        }
-
         // if the click wasn't on an attachment check for other clicks
         if (!thui_mmsAttachmentClick(evt.target)) {
           this.handleMessageClick(evt);
@@ -2102,7 +2045,7 @@ var ThreadUI = global.ThreadUI = {
         var messageId = messageBubble.id;
         var params = {
           type: 'action',
-          header: navigator.mozL10n.get('message-options'),
+          header: { l10nId: 'message-options' },
           items:[]
         };
 
@@ -2134,12 +2077,15 @@ var ThreadUI = global.ThreadUI = {
           {
             l10nId: 'delete',
             method: function deleteMessage(messageId) {
-              // Complete deletion in DB and UI
-              MessageManager.deleteMessage(messageId,
-                function onDeletionDone() {
-                  ThreadUI.deleteUIMessages(messageId);
-                }
-              );
+              if (window.confirm(navigator.mozL10n
+                .get('deleteMessage-confirmation'))) {
+                // Complete deletion in DB and UI
+                MessageManager.deleteMessages(messageId,
+                  function onDeletionDone() {
+                    ThreadUI.deleteUIMessages(messageId);
+                  }
+                );
+              }
             },
             params: [messageId]
           }
@@ -2169,20 +2115,11 @@ var ThreadUI = global.ThreadUI = {
   },
 
   cleanFields: function thui_cleanFields() {
-    // Compose.clear might cause a conversion from mms -> sms
-    // Therefore we're reseting the message type here because
-    // in messageComposerTypeHandler we're using this value to know
-    // if the message type changed, and to display the convertNotice
-    // accordingly
-    this.composeForm.dataset.messageType = 'sms';
-
     Compose.clear();
 
     // reset the counter
     this.counterLabel.dataset.counter = '';
     this.counterLabel.classList.remove('has-counter');
-
-    this.enableSend();
   },
 
   onSendClick: function thui_onSendClick() {
@@ -2311,16 +2248,8 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
-  onMessageSent: function thui_onMessageSent(message) {
-    var messageDOM = document.getElementById('message-' + message.id);
-
-    if (!messageDOM) {
-      return;
-    }
-
-    // Update class names to reflect message state
-    messageDOM.classList.remove('sending');
-    messageDOM.classList.add('sent');
+  onMessageSent: function thui_onMessageSent(e) {
+    this.setMessageStatus(e.message.id, 'sent');
   },
 
   /**
@@ -2334,23 +2263,14 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
-  onMessageFailed: function thui_onMessageFailed(message) {
-    var messageDOM = document.getElementById('message-' + message.id);
+  onMessageFailed: function thui_onMessageFailed(e) {
+    var message = e.message;
     var serviceId = Settings.getServiceIdByIccId(message.iccId);
+
     // When this is the first message in a thread, we haven't displayed
     // the new thread yet. The error flag will be shown when the thread
     // will be rendered. See Bug 874043
-    if (messageDOM) {
-
-      // Check if it was painted as 'error' before
-      if (messageDOM.classList.contains('error')) {
-        return;
-      }
-
-      // Update class names to reflect message state
-      messageDOM.classList.remove('sending');
-      messageDOM.classList.add('error');
-    }
+    this.setMessageStatus(message.id, 'error');
 
     if (this.showErrorInFailedEvent === 'NonActiveSimCardError') {
       this.showErrorInFailedEvent = '';
@@ -2359,8 +2279,7 @@ var ThreadUI = global.ThreadUI = {
         {
           confirmHandler: function() {
             // Update messageDOM state to 'sending' while sim switching
-            messageDOM.classList.remove('error');
-            messageDOM.classList.add('sending');
+            this.setMessageStatus(message.id, 'sending');
 
             Settings.switchMmsSimHandler(serviceId).then(
               this.resendMessage.bind(this, message.id))
@@ -2374,35 +2293,24 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
-  onDeliverySuccess: function thui_onDeliverySuccess(message) {
+  onDeliverySuccess: function thui_onDeliverySuccess(e) {
+    var message = e.message;
     // We need to make sure all the recipients status got success event.
     if (!this.shouldShowDeliveryStatus(message)) {
       return;
     }
 
-    var messageDOM = document.getElementById('message-' + message.id);
-
-    if (!messageDOM) {
-      return;
-    }
-    // Update class names to reflect message state
-    messageDOM.classList.add('delivered');
+    this.setMessageStatus(message.id, 'delivered');
   },
 
-  onReadSuccess: function thui_onReadSuccess(message) {
+  onReadSuccess: function thui_onReadSuccess(e) {
+    var message = e.message;
     // We need to make sure all the recipients status got success event.
     if (!this.shouldShowReadStatus(message)) {
       return;
     }
 
-    var messageDOM = document.getElementById('message-' + message.id);
-
-    if (!messageDOM) {
-      return;
-    }
-    // Update class names to reflect message state
-    messageDOM.classList.remove('delivered');
-    messageDOM.classList.add('read');
+    this.setMessageStatus(message.id, 'read');
   },
 
   // Some error return from sending error need some specific action instead of
@@ -2439,6 +2347,32 @@ var ThreadUI = global.ThreadUI = {
     }
   },
 
+  setMessageStatus: function(id, status) {
+    var messageDOM = document.getElementById('message-' + id);
+
+    if (!messageDOM || messageDOM.classList.contains(status)) {
+      return;
+    }
+
+    var newStatusMarkup = this.getMessageStatusMarkup(status),
+        oldStatusNode = messageDOM.querySelector('.message-status');
+
+    messageDOM.classList.remove(
+      'sending', 'pending', 'sent', 'received', 'delivered', 'read', 'error'
+    );
+    messageDOM.classList.add(status);
+
+    if (oldStatusNode) {
+      oldStatusNode.remove();
+    }
+
+    if (newStatusMarkup) {
+      messageDOM.querySelector('.message-details').appendChild(
+        this._htmlStringToDomNode(newStatusMarkup)
+      );
+    }
+  },
+
   retrieveMMS: function thui_retrieveMMS(messageDOM) {
     // force a number
     var id = +messageDOM.dataset.messageId;
@@ -2448,18 +2382,16 @@ var ThreadUI = global.ThreadUI = {
 
     var button = messageDOM.querySelector('button');
 
-    messageDOM.classList.add('pending');
-    messageDOM.classList.remove('error');
-    navigator.mozL10n.localize(button, 'downloading-attachment');
+    this.setMessageStatus(id, 'pending');
+    button.setAttribute('data-l10n-id', 'downloading-attachment');
 
     request.onsuccess = (function retrieveMMSSuccess() {
       this.removeMessageDOM(messageDOM);
     }).bind(this);
 
     request.onerror = (function retrieveMMSError() {
-      messageDOM.classList.remove('pending');
-      messageDOM.classList.add('error');
-      navigator.mozL10n.localize(button, 'download-attachment');
+      this.setMessageStatus(id, 'error');
+      button.setAttribute('data-l10n-id', 'download-attachment');
 
       // Show NonActiveSimCard/Other error dialog while retrieving MMS
       var errorCode = (request.error && request.error.name) ?
@@ -2470,9 +2402,13 @@ var ThreadUI = global.ThreadUI = {
         return;
       }
 
+      // Replacing error code to show more specific error message for this case
+      if (errorCode === 'RadioDisabledError') {
+        errorCode = 'RadioDisabledToDownloadError';
+      }
+
       if (errorCode) {
         this.showMessageError(errorCode, {
-          messageId: id,
           confirmHandler: function stateResetAndRetry() {
             var serviceId = Settings.getServiceIdByIccId(iccId);
             if (serviceId === null) {
@@ -2484,9 +2420,8 @@ var ThreadUI = global.ThreadUI = {
             // TODO move this before trying to call retrieveMMS in Bug 981077
             // Avoid user to click the download button while sim state is not
             // ready yet.
-            messageDOM.classList.add('pending');
-            messageDOM.classList.remove('error');
-            navigator.mozL10n.localize(button, 'downloading-attachment');
+            this.setMessageStatus(id, 'pending');
+            button.setAttribute('data-l10n-id', 'downloading-attachment');
             Settings.switchMmsSimHandler(serviceId).then(
               this.retrieveMMS.bind(this, messageDOM))
             .catch(function(err) {
@@ -2542,7 +2477,7 @@ var ThreadUI = global.ThreadUI = {
       this.searchContact(typed, this.listContacts.bind(this));
     }
 
-    this.enableSend();
+    this.emit('recipientschange');
   },
 
   exactContact: function thui_searchContact(fValue, handler) {
@@ -3021,6 +2956,7 @@ var ThreadUI = global.ThreadUI = {
       contactList.textContent = '';
     } else {
       contactList.appendChild(suggestions);
+      this.recipientSuggestions.scrollTop = 0;
     }
   }
 };
@@ -3037,6 +2973,14 @@ Object.defineProperty(ThreadUI, 'selectedInputs', {
   }
 });
 
-window.confirm = window.confirm; // allow override in unit tests
+Object.defineProperty(exports, 'ThreadUI', {
+  get: function () {
+    delete exports.ThreadUI;
 
+    var allowedEvents = ['recipientschange'];
+    return (exports.ThreadUI = EventDispatcher.mixin(ThreadUI, allowedEvents));
+  },
+  configurable: true,
+  enumerable: true
+});
 }(this));

@@ -13,6 +13,8 @@ var System = require('./lib/system');
 var assert = require('assert');
 var AppInstall =
   require('../../../../apps/system/test/marionette/lib/app_install');
+var SystemApp =
+  require('../../../../apps/settings/test/marionette/app/system_app');
 
 marionette('Show Keyboard App after uninstallation', function() {
   var keyboardTestApp = null;
@@ -20,6 +22,7 @@ marionette('Show Keyboard App after uninstallation', function() {
   var system = null;
   var imeTestApp = null;
   var appInstall = null;
+  var systemApp = null;
   var client = null;
   var apps = {};
 
@@ -46,11 +49,14 @@ marionette('Show Keyboard App after uninstallation', function() {
       'focusmanager.testmode': true
     },
     settings: {
-      'keyboard.enabled-layouts': keyboardSettings
+     'keyboard.enabled-layouts': keyboardSettings,
+      'lockscreen.enabled': false,
+      'ftu.manifestURL': null
     }
   });
 
   appInstall = new AppInstall(client);
+  systemApp = new SystemApp(client);
 
   /*
    * To check the 3rd-party IME is shown.
@@ -82,9 +88,10 @@ marionette('Show Keyboard App after uninstallation', function() {
 
     // Uninstall the current active IME
     appInstall.uninstall(ImeTestApp.MANIFEST_URL);
+    client.switchToFrame();
+    systemApp.confirmDialog('remove');
 
     // Click the input field again to check the built-in keyboard
-    client.switchToFrame();
     client.apps.switchToApp(KeyboardTestApp.ORIGIN);
     // XXX: do something to remove the focus
     keyboardTestApp.nonInputArea.click();

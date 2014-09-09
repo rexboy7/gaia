@@ -38,7 +38,10 @@
     getFormattedHour: function ut_getFormattedHour(time) {
       this.date.shared.setTime(+time);
       return this.date.format.localeFormat(
-        this.date.shared, navigator.mozL10n.get('shortTimeFormat')
+        this.date.shared,
+        navigator.mozL10n.get(
+          navigator.mozHour12 ? 'shortTimeFormat12' : 'shortTimeFormat24'
+        )
       );
     },
     getDayDate: function re_getDayDate(time) {
@@ -685,6 +688,34 @@
         cleanup();
         return Promise.reject(e);
       });
+    },
+
+    /**
+     * Returns a function that will call specified "func" function only after it
+     * stops being called for a specified wait time.
+     * @param {function} func Function to call.
+     * @param {number} waitTime Number of milliseconds to wait before calling
+     * actual "func" function once debounced function stops being called.
+     * @returns {function}
+     */
+    debounce: function(func, waitTime) {
+      var timeout, args, context;
+
+      var executeLater = function() {
+        func.apply(context, args);
+        timeout = context = args = null;
+      };
+
+      return function() {
+        context = this;
+        args = arguments;
+
+        if (timeout) {
+          clearTimeout(timeout);
+        }
+
+        timeout = setTimeout(executeLater, waitTime);
+      };
     },
 
     /**

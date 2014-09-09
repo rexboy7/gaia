@@ -49,11 +49,10 @@ suite('wifi > ', function() {
 
   function createDOM() {
     var markup =
-    '<ol id="progress-bar" class="step-state"></ol>' +
     '<section id="activation-screen">' +
-    ' <header>' +
+    ' <gaia-header>' +
     '  <h1 id="main-title"></h1>' +
-    ' </header>' +
+    ' </gaia-header>' +
     ' <section id="wifi">' +
     '  <div id="wifi-wrapper">' +
     '    <article id="networks">' +
@@ -70,7 +69,7 @@ suite('wifi > ', function() {
     '      <label id="label_wifi_user">User</label>' +
     '      <input type="text" id="wifi_user"></input>' +
     '      <label>Password</label>' +
-    '      <input type="password" id="wifi_password"></input>' +
+    '      <input type="password" id="wifi_password" maxlength="63"></input>' +
     '      <label id="label_show_password">' +
     '        <input type="checkbox" data-ignore name="show_password" />' +
     '        <span></span>' +
@@ -104,7 +103,7 @@ suite('wifi > ', function() {
     '      <label id="label_hidden_wifi_password">' +
     '        Password' +
     '      </label>' +
-    '      <input type="password" id="hidden-wifi-password" />' +
+    '      <input type="password" id="hidden-wifi-password" maxlength="63" />' +
     '      <label id="label_show_password">' +
     '        <input type="checkbox" id="hidden-wifi-show-password" />' +
     '        <span></span>' +
@@ -122,7 +121,7 @@ suite('wifi > ', function() {
     ' </menu>' +
     '</section>';
 
-    container = document.createElement('div');
+    var container = document.createElement('div');
     container.insertAdjacentHTML('beforeend', markup);
     document.body.appendChild(container);
   }
@@ -212,5 +211,4 @@ suite('wifi > ', function() {
       clock.tick(10000);
     });
   });
-
 });

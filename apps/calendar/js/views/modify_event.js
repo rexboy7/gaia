@@ -1,5 +1,8 @@
+/* global InputParser */
 Calendar.ns('Views').ModifyEvent = (function() {
   'use strict';
+
+  var getTimeL10nLabel = Calendar.Calc.getTimeL10nLabel;
 
   function ModifyEvent(options) {
     this.deleteRecord = this.deleteRecord.bind(this);
@@ -21,14 +24,18 @@ Calendar.ns('Views').ModifyEvent = (function() {
       element: '#modify-event-view',
       alarmList: '#modify-event-view .alarms',
       form: '#modify-event-view form',
+      endDateLocale: '#end-date-locale',
+      endTimeLocale: '#end-time-locale',
       status: '#modify-event-view section[role="status"]',
       errors: '#modify-event-view .errors',
       primaryButton: '#modify-event-view .save',
       deleteButton: '#modify-event-view .delete-record',
-      cancelButton: '#modify-event-view .cancel'
+      header: '#modify-event-header'
     },
 
     uiSelector: '[name="%"]',
+
+    _duration: 0, // The duration between start and end dates.
 
     _initEvents: function() {
       Calendar.Views.EventBase.prototype._initEvents.apply(this, arguments);
@@ -586,6 +593,7 @@ Calendar.ns('Views').ModifyEvent = (function() {
 
       var startDate = dateSrc.startDate;
       var endDate = dateSrc.endDate;
+      this._duration = endDate.getTime() - startDate.getTime();
 
       // update the allday status of the view
       var allday = this.getEl('allday');
@@ -643,13 +651,57 @@ Calendar.ns('Views').ModifyEvent = (function() {
         this._updateDateLocaleOnInput : this._updateTimeLocaleOnInput;
 
       this.getEl(src)
-        .addEventListener('input', callback.bind(this, targetElement));
+        .addEventListener('input', function(e) {
+          callback.call(this, targetElement, e);
+
+          // We only auto change the end date and end time
+          // when user changes start date or start time,
+          // or end datetime is NOT after start datetime
+          // after changing end date or end time.
+          // Otherwise, we don't auto change end date and end time.
+          if (targetElement.id === 'start-date-locale' ||
+              targetElement.id === 'start-time-locale') {
+            this._setEndDateTimeWithCurrentDuration();
+          } else if (this._getEndDateTime() <= this._getStartDateTime()) {
+            this._setEndDateTimeWithCurrentDuration();
+            this.showErrors({
+              name: type === 'date' ?
+                'start-after-end' :
+                'start-after-end-on-same-date'
+            });
+          }
+
+          this._duration = this._getEndDateTime() - this._getStartDateTime();
+        }.bind(this));
+    },
+
+    _setEndDateTimeWithCurrentDuration: function() {
+      var date = new Date(this._getStartDateTime() + this._duration);
+      var endDateLocale = this._findElement('endDateLocale');
+      var endTimeLocale = this._findElement('endTimeLocale');
+      this.getEl('endDate').value = date.toLocaleFormat('%Y-%m-%d');
+      this.getEl('endTime').value = date.toLocaleFormat('%H:%M:%S');
+      this._renderDateTimeLocale('date', endDateLocale, date);
+      this._renderDateTimeLocale('time', endTimeLocale, date);
+    },
+
+    _getStartDateTime: function() {
+      return new Date(this.getEl('startDate').value + 'T' +
+        this.getEl('startTime').value).getTime();
+    },
+
+    _getEndDateTime: function() {
+      return new Date(this.getEl('endDate').value + 'T' +
+        this.getEl('endTime').value).getTime();
     },
 
     _renderDateTimeLocale: function(type, targetElement, value) {
       // we inject the targetElement to make it easier to test
       var localeFormat = Calendar.App.dateFormat.localeFormat;
       var formatKey = this.formats[type];
+      if (type === 'time') {
+        formatKey = getTimeL10nLabel(formatKey);
+      }
       var format = navigator.mozL10n.get(formatKey);
       targetElement.textContent = localeFormat(value, format);
       // we need to store the format and date for l10n

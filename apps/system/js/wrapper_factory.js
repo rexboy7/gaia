@@ -1,5 +1,5 @@
 'use strict';
-/*global applications, AppWindowManager, AppWindow, rocketbar */
+/*global applications, AppWindowManager, AppWindow */
 
 (function(window) {
   /**
@@ -34,12 +34,6 @@
           acc[decodeURIComponent(feature[0])] = decodeURIComponent(feature[1]);
           return acc;
         }, {});
-
-      if (features.features === 'rocketbarstartpage') {
-        evt.stopImmediatePropagation();
-        rocketbar.showNewTabPage();
-        return;
-      }
 
       // Handles only call to window.open with `remote=true` feature.
       if (!('remote' in features) || features.remote !== 'true') {
@@ -76,6 +70,15 @@
       // otherwise always open a new window for '_blank'.
       var origin = null;
       if (name == '_blank') {
+
+        // If we already have a browser and we receive an open request,
+        // display it in the current browser frame.
+        var activeApp = AppWindowManager.getActiveApp();
+        if (activeApp && activeApp.isBrowser()) {
+          activeApp.navigate(url);
+          return;
+        }
+
         origin = url;
         app = AppWindowManager.getApp(origin);
         // Just bring on top if a wrapper window is
@@ -116,8 +119,6 @@
       var app = AppWindowManager.getApp(config.origin);
       if (!app) {
         config.chrome = {
-          navigation: true,
-          bar: true,
           scrollable: true
         };
         app = new AppWindow(config);

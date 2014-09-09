@@ -3,6 +3,8 @@
 
   exports.MockL10n = {
 
+    readyState: 'complete',
+
     get: stringify,
 
     // XXX Remove in https://bugzil.la/1020136
@@ -52,6 +54,14 @@
     language: {
       code: 'en-US',
       direction: 'ltr'
+    },
+
+    qps: {
+      'qps-ploc': {
+        id: 'qps-ploc',
+        name: 'Pseudo English',
+        translate: stringify
+      }
     },
 
     DateTimeFormat: function() {

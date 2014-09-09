@@ -20,8 +20,6 @@ var CallsHandler = (function callsHandler() {
   telephony.oncallschanged = onCallsChanged;
 
   var displayed = false;
-  var closing = false;
-
   // Setting up the SimplePhoneMatcher
   // XXX: check bug-926169
   // this is used to keep all tests passing while introducing multi-sim APIs
@@ -126,10 +124,9 @@ var CallsHandler = (function callsHandler() {
         CallScreen.showPlaceNewCallButton();
       }
     }
-
     if (handledCalls.length === 0) {
       exitCallScreen(false);
-    } else if (!displayed && !closing) {
+    } else if (!displayed) {
       toggleScreen();
     }
   }
@@ -181,6 +178,7 @@ var CallsHandler = (function callsHandler() {
 
       // User performed another outgoing call. show its status.
       } else {
+        updatePlaceNewCall();
         hc.show();
       }
     } else {
@@ -254,11 +252,8 @@ var CallsHandler = (function callsHandler() {
 
       if (!number) {
         CallScreen.incomingNumber.textContent = _('withheld-number');
-        var scenario = (call.state === 'incoming') ?
-          FontSizeManager.SECOND_INCOMING_CALL : FontSizeManager.CALL_WAITING;
-        FontSizeManager.adaptToSpace(scenario, CallScreen.incomingNumber,
-                                     CallScreen.fakeIncomingNumber, false,
-                                     'end');
+        FontSizeManager.adaptToSpace(FontSizeManager.SECOND_INCOMING_CALL,
+          CallScreen.incomingNumber, false, 'end');
         return;
       }
 
@@ -275,16 +270,19 @@ var CallsHandler = (function callsHandler() {
           CallScreen.incomingInfo.classList.add('additionalInfo');
           CallScreen.incomingNumber.textContent = contact.name;
           CallScreen.incomingNumberAdditionalInfo.textContent =
-            Utils.getPhoneNumberAdditionalInfo(matchingTel);
+            Utils.getPhoneNumberAndType(matchingTel);
         } else {
           CallScreen.incomingNumber.textContent = number;
           CallScreen.incomingNumberAdditionalInfo.textContent = '';
         }
-        var scenario = (call.state === 'incoming') ?
-          FontSizeManager.SECOND_INCOMING_CALL : FontSizeManager.CALL_WAITING;
-        FontSizeManager.adaptToSpace(scenario, CallScreen.incomingNumber,
-                                     CallScreen.fakeIncomingNumber, false,
-                                     'end');
+
+        FontSizeManager.adaptToSpace(
+          FontSizeManager.SECOND_INCOMING_CALL, CallScreen.incomingNumber,
+          false, 'end');
+        if (contact && contact.name) {
+          FontSizeManager.ensureFixedBaseline(
+            FontSizeManager.SECOND_INCOMING_CALL, CallScreen.incomingNumber);
+        }
       });
     });
 
@@ -309,21 +307,7 @@ var CallsHandler = (function callsHandler() {
     });
   }
 
-  function updateKeypadEnabled() {
-    if (telephony.active) {
-      CallScreen.enableKeypad();
-    } else {
-      CallScreen.disableKeypad();
-    }
-  }
-
   function exitCallScreen(animate) {
-    if (closing) {
-      return;
-    }
-
-    closing = true;
-
     // If the screen is not displayed yet we close the window directly
     if (animate && displayed) {
       toggleScreen();
@@ -333,7 +317,6 @@ var CallsHandler = (function callsHandler() {
   }
 
   function closeWindow() {
-    closing = false;
     window.close();
   }
 
@@ -815,6 +798,17 @@ var CallsHandler = (function callsHandler() {
     holdOrResumeSingleCall();
   }
 
+  function updatePlaceNewCall() {
+    var isEstablishing = telephony.calls.some(function (call) {
+      return call.state == 'dialing' || call.state == 'alerting';
+    });
+    if (telephony.calls && isEstablishing) {
+      CallScreen.disablePlaceNewCall();
+    } else {
+      CallScreen.enablePlaceNewCall();
+    }
+  }
+
   return {
     setup: setup,
 
@@ -824,7 +818,6 @@ var CallsHandler = (function callsHandler() {
     toggleCalls: toggleCalls,
     ignore: ignore,
     end: end,
-    updateKeypadEnabled: updateKeypadEnabled,
     toggleMute: toggleMute,
     toggleSpeaker: toggleSpeaker,
     unmute: unmute,
@@ -836,6 +829,7 @@ var CallsHandler = (function callsHandler() {
     mergeActiveCallWith: mergeActiveCallWith,
     mergeConferenceGroupWithActiveCall: mergeConferenceGroupWithActiveCall,
     updateAllPhoneNumberDisplays: updateAllPhoneNumberDisplays,
+    updatePlaceNewCall: updatePlaceNewCall,
 
     get activeCall() {
       return activeCall();

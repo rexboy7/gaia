@@ -1,6 +1,7 @@
 'use strict';
 
-/* global Curtain, FacebookConnector, ImageLoader, Normalizer, utils, oauth2 */
+/* global Curtain, FacebookConnector, ImageLoader, Normalizer, utils,
+   ImportStatusData, oauth2 */
 
 var fb = window.fb || {};
 
@@ -134,11 +135,13 @@ if (!fb.link) {
           doGetRemoteProposal(acc_tk, cdata, query);
         }
         else {
-          throw ('FB: Contact to be linked not found: ', cid);
+          throw new Error(
+                  'FB: Contact to be linked not found in mozContacts: ' + cid);
         }
       };
-      req.onerror = function() {
-        throw ('FB: Error while retrieving contact data: ', cid);
+      req.onerror = function(e) {
+        window.console.error('FB: Error while retrieving contact data: ', cid);
+        throw e;
       };
     };
 
@@ -570,7 +573,7 @@ if (!fb.link) {
         allFriends = null;
         link.start(contactid);
       };
-      window.asyncStorage.removeItem(fb.utils.TOKEN_DATA_KEY, cb);
+      ImportStatusData.remove(fb.utils.TOKEN_DATA_KEY).then(cb);
     }
 
     UI.selected = function(event) {

@@ -358,7 +358,7 @@ define(function(require) {
     /**
      * The API passes through background send notifications with the
      * following data (see the "sendOutboxMessages" job and/or
-     * `mailapi/jobs/outbox.js`):
+     * `GELAM/js/jobs/outbox.js`):
      *
      * @param {int} accountId
      * @param {string} suid
@@ -453,7 +453,7 @@ define(function(require) {
           //   AUDIO_COMPETING bugs: https://bugzil.la/911238
           if (account.playSoundOnSend) {
             if (!sentAudio) {
-              sentAudio = new Audio('/sounds/sent.ogg');
+              sentAudio = new Audio('/sounds/firefox_sent.opus');
               sentAudio.mozAudioChannelType = 'notification';
             }
             sentAudio.play();

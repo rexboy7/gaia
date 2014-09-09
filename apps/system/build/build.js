@@ -33,9 +33,13 @@ SystemAppBuilder.prototype.initConfigJsons = function() {
   };
   var wapuaprofDefault = {
   };
+  var euRoamingDefault = {
+  };
   var iccFile = utils.getFile(this.stageDir.path, 'resources', 'icc.json');
   var wapFile = utils.getFile(this.stageDir.path, 'resources',
     'wapuaprof.json');
+  var euRoamingFile = utils.getFile(this.stageDir.path, 'resources',
+    'eu-roaming.json');
 
   utils.writeContent(iccFile,
     utils.getDistributionFileContent('icc', iccDefault, this.distDirPath));
@@ -44,34 +48,16 @@ SystemAppBuilder.prototype.initConfigJsons = function() {
     utils.getDistributionFileContent('wapuaprof',
       wapuaprofDefault, this.distDirPath));
 
-};
+  utils.writeContent(euRoamingFile,
+    utils.getDistributionFileContent('eu-roaming',
+      euRoamingDefault, this.distDirPath));
 
-SystemAppBuilder.prototype.generateManifest = function() {
-  var manifest =
-    utils.getJSON(utils.getFile(this.appDir.path, 'manifest.webapp'));
-  manifest.activities = manifest.activities || {};
-
-  manifest.activities.view = {
-    filters: {
-      type: 'url',
-      url: {
-        required: true,
-        pattern: '(https?:|data:).{1,16384}',
-        patternFlags: 'i'
-      }
-    }
-  };
-  // Write content to build_stage
-  utils.writeContent(utils.getFile(this.stageDir.path, 'manifest.webapp'),
-                     JSON.stringify(manifest));
 };
 
 SystemAppBuilder.prototype.execute = function(options) {
+  utils.copyToStage(options);
   this.setOptions(options);
   this.initConfigJsons();
-  if (options.HAIDA) {
-    this.generateManifest();
-  }
   if (this.distDirPath) {
     this.addCustomizeFiles();
   }

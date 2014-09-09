@@ -25,7 +25,7 @@ var contacts = window.contacts || {};
 contacts.Settings = (function() {
 
   var navigationHandler,
-    importSettingsBack,
+    importSettingsHeader,
     orderCheckBox,
     orderByLastName,
     setICEButton,
@@ -72,6 +72,8 @@ contacts.Settings = (function() {
     utils.sdcard.subscribeToChanges('check_sdcard', function(value) {
       updateStorageOptions(utils.sdcard.checkStorageCard());
     });
+
+    window.addEventListener('timeformatchange', updateTimestamps);
   };
 
   var hideSettings = function hideSettings() {
@@ -134,8 +136,8 @@ contacts.Settings = (function() {
     });
 
     // Navigation back
-    importSettingsBack = document.getElementById('import-settings-back');
-    importSettingsBack.addEventListener('click', importSettingsBackHandler);
+    importSettingsHeader = document.getElementById('import-settings-header');
+    importSettingsHeader.addEventListener('action', importSettingsBackHandler);
 
     // Handlers for the navigation through the panels
     importContacts = document.getElementById('importContacts');
@@ -228,7 +230,9 @@ contacts.Settings = (function() {
   }
 
   function showICEScreen(cb) {
-    LazyLoader.load(['/contacts/js/ice.js'], function(){
+    LazyLoader.load([
+      '/contacts/js/views/ice_settings.js',
+      '/shared/js/contacts/utilities/ice_store.js'], function(){
       contacts.ICE.init();
       navigationHandler.go('ice-settings', 'right-left');
       if (typeof cb === 'function') {
@@ -465,6 +469,7 @@ contacts.Settings = (function() {
     fbGetTotals(false);
 
     fbImportCheck.checked = true;
+    document.dispatchEvent(new CustomEvent('facebookEnabled'));
   }
 
   function fbSetDisabledState() {
@@ -585,9 +590,9 @@ contacts.Settings = (function() {
       window.addEventListener('transitionend', function fb_remove_all(e) {
         if (e.target.id === 'span-check-fb') {
           window.removeEventListener('transitionend', fb_remove_all);
-          var msg = _('cleanFbConfirmMsg');
+          var msg = 'cleanFbConfirmMsg';
           var yesObject = {
-            title: _('remove'),
+            title: 'remove',
             isDanger: true,
             callback: function() {
               ConfirmDialog.hide();
@@ -596,7 +601,7 @@ contacts.Settings = (function() {
           };
 
           var noObject = {
-            title: _('cancel'),
+            title: 'cancel',
             callback: function onCancel() {
               fbImportCheck.checked = true;
               ConfirmDialog.hide();
@@ -642,7 +647,7 @@ contacts.Settings = (function() {
           });
 
           window.asyncStorage.removeItem(fb.utils.LAST_UPDATED_KEY);
-          window.asyncStorage.removeItem(fb.utils.CACHE_FRIENDS_KEY);
+          fb.utils.removeCachedNumFriends();
 
           resetWait(wakeLock);
         };
@@ -757,13 +762,13 @@ contacts.Settings = (function() {
 
     importer.onerror = function import_error() {
       var cancel = {
-        title: _('cancel'),
+        title: 'cancel',
         callback: function() {
           ConfirmDialog.hide();
         }
       };
       var retry = {
-        title: _('retry'),
+        title: 'retry',
         isRecommend: true,
         callback: function() {
           ConfirmDialog.hide();
@@ -772,7 +777,7 @@ contacts.Settings = (function() {
             onSimImport.bind(this, iccId)), 0);
         }
       };
-      Contacts.confirmDialog(null, _('simContacts-error'), cancel, retry);
+      Contacts.confirmDialog(null, 'simContacts-error', cancel, retry);
       resetWait(wakeLock);
     };
 
@@ -873,14 +878,14 @@ contacts.Settings = (function() {
 
     function import_error(e, cb) {
       var cancel = {
-        title: _('cancel'),
+        title: 'cancel',
         callback: function() {
           ConfirmDialog.hide();
         }
       };
 
       var retry = {
-        title: _('retry'),
+        title: 'retry',
         isRecommend: true,
         callback: function() {
           ConfirmDialog.hide();
@@ -888,7 +893,7 @@ contacts.Settings = (function() {
           window.setTimeout(requireOverlay.bind(this, onSdImport), 0);
         }
       };
-      Contacts.confirmDialog(null, _('memoryCardContacts-error'), cancel,
+      Contacts.confirmDialog(null, 'memoryCardContacts-error', cancel,
         retry);
       resetWait(wakeLock);
       if (typeof cb === 'function') {

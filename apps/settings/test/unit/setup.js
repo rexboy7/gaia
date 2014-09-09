@@ -24,6 +24,9 @@ requireApp('settings/js/vendor/alameda.js', (function() {
       'shared/screen_layout': {
         exports: 'ScreenLayout'
       },
+      'shared/tz_select': {
+        exports: 'tzSelect'
+      },
       'unit/mock_l10n': {
         exports: 'MockL10n'
       },
@@ -50,6 +53,9 @@ requireApp('settings/js/vendor/alameda.js', (function() {
       },
       'shared_mocks/mock_navigator_moz_settings': {
         exports: 'MockNavigatorSettings'
+      },
+      'shared_mocks/mock_language_list': {
+        exports: 'MockLanguageList'
       },
       'shared_mocks/mock_keyboard_helper': {
         exports: 'MockKeyboardHelper'
@@ -78,6 +84,15 @@ requireApp('settings/js/vendor/alameda.js', (function() {
       },
       'shared_mocks/mock_enumerate_all': {
         exports: 'MockEnumerateAll'
+      },
+      'shared_mocks/mock_lazy_loader': {
+        exports: 'MockLazyLoader'
+      },
+      'shared_mocks/mock_simslot_manager': {
+        exports: 'MockSIMSlotManager'
+      },
+      'shared_mocks/mock_mobile_operator': {
+        exports: 'MockMobileOperator'
       }
     },
     modules: [

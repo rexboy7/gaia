@@ -146,17 +146,23 @@ function init() {
 
   // Clicking on the cancel button goes from thumbnail select mode
   // back to thumbnail list mode
-  $('thumbnails-cancel-button').onclick =
-    setView.bind(null, LAYOUT_MODE.list);
+  $('selected-header').addEventListener('action',
+    setView.bind(null, LAYOUT_MODE.list));
 
   // Clicking on the pick back button cancels the pick activity.
-  $('pick-back-button').onclick = cancelPick;
+  $('pick-header').addEventListener('action', cancelPick);
 
   // In crop view, the back button goes back to pick view
-  $('crop-back-button').onclick = function() {
+  $('crop-top').addEventListener('action', function() {
     setView(LAYOUT_MODE.pick);
     cleanupCrop();
-  };
+  });
+
+  if (!isPhone) {
+    $('fullscreen-toolbar-header').addEventListener('action', function() {
+      setView(LAYOUT_MODE.list);
+    });
+  }
 
   // The camera buttons should launch the camera app
   fullscreenButtons.camera.onclick = launchCameraApp;
@@ -347,6 +353,9 @@ function initDB() {
   photodb.ondeleted = function(event) {
     event.detail.forEach(fileDeleted);
   };
+
+  // XXX: remove this hack as part of fixing bug 1046995
+  doNotScanInBackgroundHack(photodb);
 }
 
 // Pass the filename of the poster image and get the video file back
@@ -738,12 +747,12 @@ function setNFCSharing(enable) {
       if (fileInfo.metadata.video) {
         // share video
         getVideoFile(fileInfo.metadata.video, function(file) {
-          navigator.mozNfc.getNFCPeer(event.detail).sendFile(file);
+          event.peer.sendFile(file);
         });
       } else {
         // share photo
         photodb.getFile(fileInfo.name, function(file) {
-          navigator.mozNfc.getNFCPeer(event.detail).sendFile(file);
+          event.peer.sendFile(file);
         });
       }
     };
@@ -1162,7 +1171,9 @@ function updateSelection(thumbnail) {
   // Now update the UI based on the number of selected thumbnails
   var numSelected = selectedFileNames.length;
   var msg = navigator.mozL10n.get('number-selected2', { n: numSelected });
-  $('thumbnails-number-selected').textContent = msg;
+  var headerTitle = $('thumbnails-number-selected');
+
+  headerTitle.textContent = msg;
 
   if (numSelected === 0) {
     $('thumbnails-delete-button').classList.add('disabled');
@@ -1357,4 +1368,63 @@ function showSpinner() {
 
 function hideSpinner() {
   $('spinner').classList.add('hidden');
+}
+
+/*
+ * This is a temporary workaround to bug 1039943: when the user launches
+ * the gallery and then switches to another app gallery's scanning and
+ * thumbnail generation process can slow down foreground apps.
+ *
+ * For now, we address this by simply making the app exit if it goes to the
+ * background while scanning and if the device has 256mb or less of memory.
+ *
+ * Bug 1046995 should fix this issue in a better way and when it does,
+ * we should remove this function and the code that invokes it.
+ */
+function doNotScanInBackgroundHack(photodb) {
+  const enoughMB = 512; // How much memory is enough to not do this hack?
+  var memoryMB = 0;     // How much memory do we have?
+
+  // Listen for visibilitychange events that happen when we go to the background
+  window.addEventListener('visibilitychange', backgroundScanKiller);
+
+  // Stop listening for those events when the scan is complete
+  photodb.addEventListener('scanend', function() {
+    window.removeEventListener('visibilitychange', backgroundScanKiller);
+  });
+
+
+  // This is what we do when we go to the background
+  function backgroundScanKiller() {
+    // If we're coming back to the foreground or if we already know that
+    // we have enough memory, then do nothing here.
+    if (!document.hidden || memoryMB >= enoughMB) {
+      return;
+    }
+
+    // If we can't query our memory (i.e. this is the 1.4 Dolphin release)
+    // then assume that we have low memory and exit
+    if (!navigator.getFeature) {
+      exit();
+    }
+    else {
+      // Otherwise we're in release 2.0 or later and can actually query
+      // how much memory we have.
+      navigator.getFeature('hardware.memory').then(function(mem) {
+        memoryMB = mem;
+        if (memoryMB < enoughMB) {
+          exit();
+        }
+      });
+    }
+
+    function exit() {
+      // If we are still hidden and still scanning, then log a message
+      // wait a bit for the log to be flushed, and then close the application
+      if (document.hidden && photodb.scanning) {
+        console.warn('[Gallery] exiting to avoid background scan.');
+        setTimeout(function() { window.close(); }, 500);
+      }
+    }
+  }
 }

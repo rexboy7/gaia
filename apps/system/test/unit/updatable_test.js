@@ -668,26 +668,44 @@ suite('system/Updatable', function() {
       test('apply prompt shown', function() {
         assert.isTrue(MockCustomDialog.mShown);
         assert.equal('systemUpdateReady', MockCustomDialog.mShowedTitle);
-        assert.equal('wantToInstall', MockCustomDialog.mShowedMsg);
+        assert.equal('wantToInstallNow', MockCustomDialog.mShowedMsg);
 
-        assert.equal('later', MockCustomDialog.mShowedCancel.title);
-        assert.equal('installNow', MockCustomDialog.mShowedConfirm.title);
+        assert.equal(
+          'later',
+          MockCustomDialog.mShowedCancel.title
+        );
+        assert.equal(
+          'installNow',
+          MockCustomDialog.mShowedConfirm.title);
       });
     }
 
     function testSystemApplyPromptBatteryNok(expectedThreshold) {
       test('battery prompt shown', function() {
-        var getSpy =
-          navigator.mozL10n.get.withArgs(SYSTEM_LOW_BATTERY_L10N_KEY);
 
         assert.isTrue(MockCustomDialog.mShown);
-        assert.deepEqual(
-          getSpy.getCall(0).args[1],
-          { threshold: expectedThreshold }
-        );
         assert.equal('systemUpdateReady', MockCustomDialog.mShowedTitle);
-        assert.equal(SYSTEM_LOW_BATTERY_L10N_KEY, MockCustomDialog.mShowedMsg);
+
+        assert.deepEqual(
+          MockCustomDialog.mShowedMsg,
+          {
+            id: SYSTEM_LOW_BATTERY_L10N_KEY,
+            args: { threshold: expectedThreshold }
+          }
+        );
+
         assert.equal('ok', MockCustomDialog.mShowedCancel.title);
+      });
+
+      test('battery prompt callback', function() {
+        assert.equal(subject.declineInstallBattery.name,
+                     MockCustomDialog.mShowedCancel.callback.name);
+
+        subject.declineInstallBattery();
+        assert.isFalse(MockCustomDialog.mShown);
+
+        assert.equal('update-prompt-apply-result', lastDispatchedEvent.type);
+        assert.equal('low-battery', lastDispatchedEvent.value);
       });
     }
 
@@ -701,7 +719,7 @@ suite('system/Updatable', function() {
       assert.equal(subject.declineInstall.name,
                    MockCustomDialog.mShowedCancel.callback.name);
 
-      subject.declineInstall();
+      subject.declineInstallWait();
       assert.isFalse(MockCustomDialog.mShown);
 
       assert.equal('update-prompt-apply-result', lastDispatchedEvent.type);
@@ -709,7 +727,7 @@ suite('system/Updatable', function() {
     });
 
     test('canceling should remove from downloads queue', function() {
-      subject.declineInstall();
+      subject.declineInstallWait();
 
       assert.isNotNull(MockUpdateManager.mLastDownloadsRemoval);
       assert.equal(subject, MockUpdateManager.mLastDownloadsRemoval);
@@ -803,6 +821,46 @@ suite('system/Updatable', function() {
             }
           );
         });
+
+        test('threshold has a default value if over the range. ',
+          function(done) {
+            MockNavigatorSettings.mSettings[BATTERY_THRESHOLD_PLUGGED] = 105;
+            MockNavigatorSettings.mSettings[BATTERY_THRESHOLD_UNPLUGGED] = 105;
+            subject.getBatteryPercentageThreshold().then(
+              function(threshold) {
+                assert.equal(
+                  threshold,
+                  subject.BATTERY_FALLBACK_THRESHOLD
+                );
+                done();
+              },
+              function() {
+                assert.ok(false);
+                done();
+              }
+            );
+          }
+        );
+
+        test('threshold has a default value if under the range. ',
+          function(done) {
+            MockNavigatorSettings.mSettings[BATTERY_THRESHOLD_PLUGGED] = -10;
+            MockNavigatorSettings.mSettings[BATTERY_THRESHOLD_UNPLUGGED] = -10;
+            subject.getBatteryPercentageThreshold().then(
+              function(threshold) {
+                assert.equal(
+                  threshold,
+                  subject.BATTERY_FALLBACK_THRESHOLD
+                );
+                done();
+              },
+              function() {
+                assert.ok(false);
+                done();
+              }
+            );
+          }
+        );
 
         test('threshold has a default even if Settings fails', function(done) {
           // Current MockSettings can not be forced to fail, so preparing our

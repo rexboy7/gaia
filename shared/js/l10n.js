@@ -875,7 +875,9 @@
 
     var rv = {};
     for (var key in node) {
-      if (key !== '_index' && (key in node)) {
+      if (key === '_index') {
+        rv[key] = node[key];
+      } else {
         rv[key] = walkContent(node[key], fn);
       }
     }
@@ -980,13 +982,19 @@
     return modified.join('');
   }
 
+  function Pseudo(id, name, charMap, modFn) {
+    this.id = id;
+    this.translate = mapContent.bind(null, function(val) {
+      return makeAccented(charMap, modFn(val));
+    });
+    this.name = this.translate(name);
+  }
+
   var PSEUDO_STRATEGIES = {
-    'qps-ploc': mapContent.bind(null, function(val) {
-      return makeAccented(ACCENTED_MAP, makeLonger(val));
-    }),
-    'qps-plocm': mapContent.bind(null, function(val) {
-      return makeAccented(FLIPPED_MAP, makeRTL(val));
-    })
+    'qps-ploc': new Pseudo('qps-ploc', 'Accented English',
+                           ACCENTED_MAP, makeLonger),
+    'qps-plocm': new Pseudo('qps-plocm', 'Mirrored English',
+                            FLIPPED_MAP, makeRTL)
   };
 
 
@@ -1084,7 +1092,8 @@
 
     if (this.isPseudo) {
       for (; key = keys[i]; i++) {
-        this.entries[key] = walkContent(ast[key], PSEUDO_STRATEGIES[this.id]);
+        this.entries[key] = walkContent(ast[key],
+                                        PSEUDO_STRATEGIES[this.id].translate);
       }
     } else {
       for (; key = keys[i]; i++) {
@@ -1323,6 +1332,7 @@
         return getDirection(navigator.mozL10n.ctx.supportedLocales[0]);
       }
     },
+    qps: PSEUDO_STRATEGIES,
     _getInternalAPI: function() {
       return {
         Error: L10nError,
@@ -1337,8 +1347,7 @@
         fireLocalizedEvent: fireLocalizedEvent,
         PropertiesParser: PropertiesParser,
         compile: compile,
-        walkContent: walkContent,
-        PSEUDO_STRATEGIES: PSEUDO_STRATEGIES
+        walkContent: walkContent
       };
     }
   };
@@ -1387,14 +1396,23 @@
     waitFor('interactive', init.bind(navigator.mozL10n, pretranslate));
   }
 
-  function init(pretranslate) {
+  function initObserver() {
     nodeObserver = new MutationObserver(onMutations.bind(navigator.mozL10n));
     nodeObserver.observe(document, moConfig);
+  }
 
+  function init(pretranslate) {
     if (pretranslate) {
       inlineLocalization.call(navigator.mozL10n);
+      initResources.call(navigator.mozL10n);
+    } else {
+      // if pretranslate is false, we want to initialize MO
+      // early, to collect nodes injected between now and when resources
+      // are loaded because we're not going to translate the whole
+      // document once l10n resources are ready.
+      initObserver();
+      window.setTimeout(initResources.bind(navigator.mozL10n));
     }
-    window.setTimeout(initResources.bind(navigator.mozL10n));
   }
 
   function inlineLocalization() {
@@ -1426,18 +1444,30 @@
   }
 
   function initResources() {
-    var resLinks = document.head
-                           .querySelectorAll('link[type="application/l10n"]');
+    var nodes =
+      document.head.querySelectorAll('link[type="application/l10n"],' +
+                                     'script[type="application/l10n"]');
     var iniLinks = [];
 
-    for (var i = 0; i < resLinks.length; i++) {
-      var link = resLinks[i];
-      var url = link.getAttribute('href');
-      var type = url.substr(url.lastIndexOf('.') + 1);
-      if (type === 'ini') {
-        iniLinks.push(url);
+    for (var i = 0; i < nodes.length; i++) {
+      var node = nodes[i];
+      var nodeName = node.nodeName.toLowerCase();
+
+      switch (nodeName) {
+        case 'link':
+          var url = node.getAttribute('href');
+          var type = url.substr(url.lastIndexOf('.') + 1);
+          if (type === 'ini') {
+            iniLinks.push(url);
+          }
+          this.ctx.resLinks.push(url);
+          break;
+        case 'script':
+          var lang = node.getAttribute('lang');
+          var locale = this.ctx.getLocale(lang);
+          locale.addAST(JSON.parse(node.textContent));
+          break;
       }
-      this.ctx.resLinks.push(url);
     }
 
     var iniLoads = iniLinks.length;
@@ -1516,6 +1546,9 @@
       pendingElements = null;
     }
 
+    if (!nodeObserver) {
+      initObserver();
+    }
     fireLocalizedEvent.call(this);
   }
 
@@ -1661,7 +1694,7 @@
   }
 
   function translateElement(element) {
-    if (isPretranslated && !this.ctx.isReady) {
+    if (!this.ctx.isReady) {
       if (!pendingElements) {
         pendingElements = [];
       }

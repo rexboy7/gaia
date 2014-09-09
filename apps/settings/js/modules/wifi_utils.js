@@ -20,7 +20,7 @@ define(function(require) {
     newExplanationItem: function(message) {
       var li = document.createElement('li');
       li.className = 'explanation';
-      li.textContent = navigator.mozL10n.get(message);
+      li.setAttribute('data-l10n-id', message);
       return li;
     },
 
@@ -33,13 +33,14 @@ define(function(require) {
      * @returns {HTMLLIElement}
      */
     newListItem: function(network, callback) {
-      var localize = navigator.mozL10n.localize;
       /**
        * A Wi-Fi list item has the following HTML structure:
        *   <li>
        *     <aside class="pack-end wifi-icon level-[?] [secured]"></aside>
-       *     <small> Network Security </small>
-       *     <a> Network SSID </a>
+       *     <a>
+       *       <span> Network SSID </span>
+       *       <small> Network Security </small>
+       *     </a>
        *   </li>
        */
 
@@ -51,29 +52,34 @@ define(function(require) {
       icon.classList.add('level-' + level);
 
       // ssid
-      var ssid = document.createElement('a');
+      var ssid = document.createElement('span');
       ssid.textContent = network.ssid;
 
       // supported authentication methods
       var small = document.createElement('small');
       var keys = WifiHelper.getSecurity(network);
       if (keys && keys.length) {
-        localize(small, 'securedBy', { capabilities: keys.join(', ') });
+        navigator.mozL10n.setAttributes(small,
+                                        'securedBy',
+                                        { capabilities: keys.join(', ') });
         icon.classList.add('secured');
       } else {
-        localize(small, 'securityOpen');
+        small.setAttribute('data-l10n-id', 'securityOpen');
       }
+
+      var a = document.createElement('a');
+      a.appendChild(ssid);
+      a.appendChild(small);
 
       // create list item
       var li = document.createElement('li');
       li.appendChild(icon);
-      li.appendChild(small);
-      li.appendChild(ssid);
+      li.appendChild(a);
 
       // Show connection status
       icon.classList.add('wifi-signal');
       if (WifiHelper.isConnected(network)) {
-        localize(small, 'shortStatus-connected');
+        small.setAttribute('data-l10n-id', 'shortStatus-connected');
         icon.classList.add('connected');
         li.classList.add('active');
       }

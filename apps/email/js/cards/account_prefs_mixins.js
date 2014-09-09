@@ -1,9 +1,11 @@
+'use strict';
+
 /*jshint browser: true */
 /*global define, console, _secretDebug */
 
 define(function(require) {
-  var evt = require('evt'),
-      mozL10n = require('l10n!');
+  var mozL10n = require('l10n!'),
+      Cards = require('mail_common').Cards;
 
   /**
    * mixin properties for cards that share similar actions around the account
@@ -11,13 +13,16 @@ define(function(require) {
    * ASSUMES the following properties have been initialized on the object
    * - this.domNode
    * - this.account
+   * - this.identity
    */
 
   return {
     // Call this in target object's constructor to wire up the common prefs.
     _bindPrefs: function(checkIntervalClassName, //sync interval select box
                          notifyEmailClassName,   //notify email checkbox
-                         soundOnSendClassName) { //send sound on send checkbox
+                         soundOnSendClassName,   //send sound on send checkbox
+                         signatureEnabledClassName,
+                         signatureButtonClassName) {
 
       if (checkIntervalClassName) {
         // Wire up the sync interval select box.
@@ -47,7 +52,8 @@ define(function(require) {
               seconds = interval / 1000;
 
           node.value = String(interval);
-          mozL10n.localize(node, 'settings-check-dynamic', { n: seconds });
+          mozL10n.setAttributes(node, 'settings-check-dynamic',
+                                { n: seconds });
           checkIntervalNode.appendChild(node);
         });
 
@@ -72,15 +78,23 @@ define(function(require) {
                                         false);
         soundOnSendNode.checked = this.account.playSoundOnSend;
       }
-    },
 
-    _modifyAccountPref: function(data) {
-      // On account creation, may not have a full account object yet.
-      if (this.account.modifyAccount) {
-        this.account.modifyAccount(data);
-      } else {
-        evt.emitWhenListener('accountModified', this.account.id, data);
+      if (signatureEnabledClassName) {
+        var signatureEnabledNode =
+          this.nodeFromClass(signatureEnabledClassName);
+        signatureEnabledNode.addEventListener('click',
+                                    this.onSignatureEnabledClick.bind(this),
+                                    false);
+        signatureEnabledNode.checked = !!this.identity.signatureEnabled;
       }
+
+      if (signatureButtonClassName) {
+        this.signatureButton = this.nodeFromClass(signatureButtonClassName);
+        this.updateSignatureButton();
+        this.signatureButton.addEventListener('click',
+          this.onClickSignature.bind(this), false);
+      }
+
     },
 
     nodeFromClass: function(className) {
@@ -90,19 +104,54 @@ define(function(require) {
     onChangeSyncInterval: function(event) {
       var value = parseInt(event.target.value, 10);
       console.log('sync interval changed to', value);
-      this._modifyAccountPref({ syncInterval: value });
+      this.account.modifyAccount({ syncInterval: value });
     },
 
     onNotifyEmailClick: function(event) {
       var checked = event.target.checked;
       console.log('notifyOnNew changed to: ' + checked);
-      this._modifyAccountPref({ notifyOnNew: checked });
+      this.account.modifyAccount({ notifyOnNew: checked });
     },
 
     onSoundOnSendClick: function(event) {
       var checked = event.target.checked;
       console.log('playSoundOnSend changed to: ' + checked);
-      this._modifyAccountPref({ playSoundOnSend: checked });
+      this.account.modifyAccount({ playSoundOnSend: checked });
+    },
+
+    onSignatureEnabledClick: function(event) {
+      var checked = event.target.checked;
+      console.log('signatureEnabled changed to: ' + checked);
+      this.identity.modifyIdentity({ signatureEnabled: checked });
+    },
+
+    updateSignatureButton: function() {
+      // Allow the text to be just whitespace, but treat it as
+      // empty as far as labeling is concerned.
+      var text = this.identity.signature || '',
+          isEmpty = text.trim().length === 0,
+          node = this.signatureButton.firstElementChild;
+
+      node.textContent = text;
+      node.classList.toggle('empty-placeholder', isEmpty);
+
+      if (isEmpty) {
+        mozL10n.setAttributes(node, 'settings-empty-signature-label');
+      } else {
+        node.removeAttribute('data-l10n-id');
+      }
+    },
+
+    onClickSignature: function(index) {
+     Cards.pushCard(
+        'settings_signature', 'default', 'animate',
+        {
+          account: this.account,
+          index: index
+        },
+        'right');
     }
+
+
   };
 });

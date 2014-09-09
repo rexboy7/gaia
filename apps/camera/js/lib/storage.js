@@ -101,11 +101,14 @@ Storage.prototype.addPicture = function(blob, options, done) {
 
   function refetchFile(filepath, absolutePath) {
     var req = self.picture.get(filepath);
-    req.onerror = function() { self.emit('error'); };
+    req.onerror = function() {
+      self.emit('error');
+      done('Error adding picture to storage');
+    };
     req.onsuccess = function(e) {
       debug('image file blob handle retrieved');
       var fileBlob = e.target.result;
-      done(filepath, absolutePath, fileBlob);
+      done(null, filepath, absolutePath, fileBlob);
     };
   }
 };
@@ -129,13 +132,21 @@ Storage.prototype.addPicture = function(blob, options, done) {
  */
 Storage.prototype.createVideoFilepath = function(done) {
   var videoStorage = this.video;
+
   this.createFilename(this.video, 'video', function(filepath) {
     var dummyFilepath = getDir(filepath) + 'tmp.3gp';
     var blob = new Blob([''], { type: 'video/3gpp' });
     var req = videoStorage.addNamed(blob, dummyFilepath);
+
+    req.onerror = function(e) {
+      done('Error creating video file path');
+      debug('Failed to add' + filepath +
+            'from DeviceStorage:' + e.target.error);
+    };
+
     req.onsuccess = function(e) {
       videoStorage.delete(e.target.result);
-      done(filepath);
+      done(null, filepath);
     };
   });
 };
@@ -188,6 +199,12 @@ Storage.prototype.configure = function(storageVolumeName) {
         break;
       }
     }
+  }
+
+  // Shouldn't happen?
+  if (!this.picture) {
+    this.setState('unavailable');
+    return;
   }
 
   this.picture.addEventListener('change', this.onStorageChange);
@@ -288,6 +305,13 @@ Storage.prototype.isSpace = function(done) {
  * @param  {Function} done
  */
 Storage.prototype.getState = function(done) {
+  if (!this.picture) {
+    setTimeout(function() {
+      done('unavailable');
+    });
+    return;
+  }
+
   this.picture
     .available()
     .onsuccess = function(e) {
@@ -309,11 +333,17 @@ Storage.prototype.available = function() {
  *
  * @param  {String} filepath
  */
-Storage.prototype.deletePicture = function(filepath) {
-  this.picture.delete(filepath).onerror = function(e) {
-    console.warn(
-      'Failed to delete', filepath,
-      'from DeviceStorage:', e.target.error);
+Storage.prototype.deletePicture = function(filepath, done) {
+  var req = this.picture.delete(filepath);
+  req.onerror = function(e) {
+    var message = 'Failed to delete ' + filepath +
+      ' from DeviceStorage:' + e.target.error;
+    console.warn(message);
+    done(message);
+  };
+
+  req.onsuccess = function() {
+    done(null);
   };
 };
 

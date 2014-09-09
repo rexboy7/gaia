@@ -1,8 +1,8 @@
 /* -*- Mode: js; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- /
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
-/* global ParsedProvisioningDoc, ProvisioningAuthentication,
-          StoreProvisioning, WapPushManager, ParsedMessage */
+/* global MessageDB, ParsedProvisioningDoc, ProvisioningAuthentication,
+          StoreProvisioning, WapPushManager */
 
 /* exported CpScreenHelper */
 
@@ -76,6 +76,9 @@ var CpScreenHelper = (function() {
 
   /** All APNs list */
   var apns = null;
+
+  /** Index of the card on which the message was received. */
+  var iccCardIndex = 0;
 
   function cpsh_init() {
     _ = navigator.mozL10n.get;
@@ -156,8 +159,21 @@ var CpScreenHelper = (function() {
       pin.blur();
     }
 
-    title.textContent = message.sender;
+    var _title = message.sender;
+    /* If the phone has more than one SIM prepend the number of the SIM on
+     * which this message was received */
+    if (navigator.mozIccManager &&
+        navigator.mozIccManager.iccIds.length > 1) {
+      var simName = _('sim', { id: +message.serviceId + 1 });
 
+      _title = _(
+        'dsds-notification-title-with-sim',
+         { sim: simName, title: _title }
+      );
+    }
+    title.textContent = _title;
+
+    iccCardIndex = message.serviceId;
     messageTag = message.timestamp;
   }
 
@@ -174,18 +190,6 @@ var CpScreenHelper = (function() {
   }
 
   /**
-   * Deletes a message from the database
-   */
-  function cpsh_deleteMessage(messageTag) {
-    ParsedMessage.delete(messageTag,
-      function cpsh_deleteSuccess() {},
-      function cpsh_deleteError(error) {
-        console.error('Could not remove message from database: ' + error);
-      }
-    );
-  }
-
-  /**
    * Handles the application flow when the user clicks on the 'Quit' button
    * from the client provisioning quit app confirm dialog.
    */
@@ -193,8 +197,12 @@ var CpScreenHelper = (function() {
     evt.preventDefault();
     quitAppConfirmDialog.hidden = true;
     WapPushManager.clearNotifications(messageTag);
-    cpsh_deleteMessage(messageTag);
-    WapPushManager.close();
+    MessageDB.deleteByTimestamp(messageTag).then(function() {
+      WapPushManager.close();
+    }, function() {
+      console.error('Could not delete message from the database');
+      WapPushManager.close();
+    });
   }
 
   /**
@@ -296,14 +304,18 @@ var CpScreenHelper = (function() {
 
       processed = true;
       // Store the APNs into the database.
-      StoreProvisioning.provision(apns);
+      StoreProvisioning.provision(apns, iccCardIndex);
 
       WapPushManager.clearNotifications(messageTag);
-      cpsh_deleteMessage(messageTag);
 
-      // Show finish confirm dialog.
-      finishConfirmDialog.hidden = false;
-      return;
+      /* Show finish confirm dialog after having deleted the message, this is
+       * done even if the deletion fails for some reason. */
+      MessageDB.deleteByTimestamp(messageTag).then(function() {
+        finishConfirmDialog.hidden = false;
+      }, function(e) {
+        console.error('Could not delete message from the database: ', e);
+        finishConfirmDialog.hidden = false;
+      });
     }
   }
 

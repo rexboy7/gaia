@@ -38,8 +38,7 @@
   }
 
   .finish-screen-base .content {
-    background: url(images/start_for_large.png) no-repeat center center,
-                url(images/bg_for_large.png) no-repeat;
+    background: #2d2d2d url(images/start_for_large.png) no-repeat center center;
   }
 
   .finish-screen-base .content .for-tiny {
@@ -99,10 +98,5 @@
     width: 81.4rem;
     height: 6rem;
     margin: 0 auto;
-  }
-
-  .tutorial-screen-base .step-state:before {
-    width: calc(100% / 4);
-    background: #FFFFFF;
   }
 }

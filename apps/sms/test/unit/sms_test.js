@@ -24,6 +24,7 @@ require('/shared/test/unit/mocks/mock_contact_photo_helper.js');
 require('/shared/test/unit/mocks/mock_async_storage.js');
 require('/test/unit/mock_settings.js');
 
+require('/js/event_dispatcher.js');
 require('/js/navigation.js');
 requireApp('sms/js/link_helper.js');
 requireApp('sms/js/drafts.js');
@@ -195,7 +196,7 @@ suite('SMS App Unit-Test', function() {
     // Setup. We need an async. way due to threads are rendered
     // async.
     setup(function(done) {
-      this.sinon.spy(navigator.mozL10n, 'localize');
+      this.sinon.spy(navigator.mozL10n, 'setAttributes');
       ThreadListUI.renderThreads(done);
       _tci = ThreadListUI.checkInputs;
     });
@@ -277,8 +278,12 @@ suite('SMS App Unit-Test', function() {
         // Given a number, we should retrieve the contact and update the info
         var threadWithContact = document.getElementById('thread-1');
         var contactName = threadWithContact.getElementsByClassName('name')[0];
-        assert.deepEqual(navigator.mozL10n.localize.args[0],
-          [contactName, 'thread-header-text', {name: 'Pepito O\'Hare', n: 0}]);
+        sinon.assert.calledWith(
+          navigator.mozL10n.setAttributes,
+          contactName,
+          'thread-header-text',
+          { name: 'Pepito O\'Hare', n: 0 }
+        );
       });
     });
 
@@ -301,27 +306,32 @@ suite('SMS App Unit-Test', function() {
         for (i = inputs.length - 1; i >= 0; i--) {
           inputs[i].checked = true;
         }
-
-        var checkAllButton =
-          document.getElementById('threads-check-all-button');
-        var uncheckAllButton =
-          document.getElementById('threads-uncheck-all-button');
+        var checkUncheckAllButton =
+          document.getElementById('threads-check-uncheck-all-button');
 
         ThreadListUI.checkInputs();
-        assert.isTrue(checkAllButton.disabled);
-        assert.isFalse(uncheckAllButton.disabled);
+        assert.equal(
+          checkUncheckAllButton.getAttribute('data-l10n-id'),
+          'deselect-all'
+        );
         // Deactivate all inputs
         for (i = inputs.length - 1; i >= 0; i--) {
           inputs[i].checked = false;
         }
         ThreadListUI.checkInputs();
-        assert.isFalse(checkAllButton.disabled);
-        assert.isTrue(uncheckAllButton.disabled);
+        assert.equal(
+          checkUncheckAllButton.getAttribute('data-l10n-id'),
+          'select-all'
+        );
+        assert.isFalse(checkUncheckAllButton.disabled);
         // Activate only one
         inputs[0].checked = true;
         ThreadListUI.checkInputs();
-        assert.isFalse(checkAllButton.disabled);
-        assert.isFalse(uncheckAllButton.disabled);
+        assert.equal(
+          checkUncheckAllButton.getAttribute('data-l10n-id'),
+          'select-all'
+        );
+        assert.isFalse(checkUncheckAllButton.disabled);
       });
 
       test('Select all while receiving new thread', function(done) {
@@ -330,6 +340,8 @@ suite('SMS App Unit-Test', function() {
 
         var checkboxes =
           ThreadListUI.container.querySelectorAll('input[type=checkbox]');
+        var checkUncheckAllButton =
+          document.getElementById('threads-check-uncheck-all-button');
         assert.equal(5,
           [].slice.call(checkboxes).filter(function(i) {
             return i.checked;
@@ -356,11 +368,9 @@ suite('SMS App Unit-Test', function() {
         // new checkbox should have been added
         assert.equal(checkboxes[0].checked, false);
 
-        // Select all and Deselect all should both be enabled
-        assert.isFalse(document.getElementById('threads-check-all-button')
-          .hasAttribute('disabled'), 'Check all enabled');
-        assert.isFalse(document.getElementById('threads-uncheck-all-button')
-          .hasAttribute('disabled'), 'Uncheck all enabled');
+        // Select-Deselect all should both be enabled
+        assert.isFalse(checkUncheckAllButton
+          .hasAttribute('disabled'), 'Check-Uncheck all enabled');
 
         done();
       });
@@ -453,14 +463,11 @@ suite('SMS App Unit-Test', function() {
           ThreadUI.chooseMessage(inputs[i]);
         }
 
-        var checkAllButton =
-          document.getElementById('messages-check-all-button');
-        var uncheckAllButton =
-          document.getElementById('messages-uncheck-all-button');
+        var checkUncheckAllButton =
+          document.getElementById('messages-check-uncheck-all-button');
 
         ThreadUI.checkInputs();
-        assert.isTrue(checkAllButton.disabled);
-        assert.isFalse(uncheckAllButton.disabled);
+        assert.isFalse(checkUncheckAllButton.disabled);
 
         // Deactivate all inputs
         for (i = inputs.length - 1; i >= 0; i--) {
@@ -468,15 +475,13 @@ suite('SMS App Unit-Test', function() {
           ThreadUI.chooseMessage(inputs[i]);
         }
         ThreadUI.checkInputs();
-        assert.isFalse(checkAllButton.disabled);
-        assert.isTrue(uncheckAllButton.disabled);
+        assert.isFalse(checkUncheckAllButton.disabled);
 
         // Activate only one
         inputs[0].checked = true;
         ThreadUI.chooseMessage(inputs[0]);
         ThreadUI.checkInputs();
-        assert.isFalse(checkAllButton.disabled);
-        assert.isFalse(uncheckAllButton.disabled);
+        assert.isFalse(checkUncheckAllButton.disabled);
       });
 
       test('Select all while receiving new message', function(done) {
@@ -485,6 +490,8 @@ suite('SMS App Unit-Test', function() {
 
         var checkboxes =
           ThreadUI.container.querySelectorAll('input[type=checkbox]');
+        var checkUncheckAllButton =
+          document.getElementById('messages-check-uncheck-all-button');
         assert.equal(checkboxes.length, 5);
         assert.equal(checkboxes.length,
           [].slice.call(checkboxes).filter(function(i) {
@@ -510,14 +517,12 @@ suite('SMS App Unit-Test', function() {
         assert.equal(checkboxes[2].checked, true);
         assert.equal(checkboxes[5].checked, false);
 
-        // Select all and Deselect all should both be enabled
-        assert.isFalse(document.getElementById('messages-check-all-button')
-          .hasAttribute('disabled'), 'Check all enabled');
-        assert.isFalse(document.getElementById('messages-uncheck-all-button')
-          .hasAttribute('disabled'), 'Uncheck all enabled');
+        // Select-Deselect all should both be enabled
+        assert.isFalse(checkUncheckAllButton
+          .hasAttribute('disabled'), 'Check-Uncheck all enabled');
 
         // now delete the selected messages...
-        MessageManager.deleteMessage = stub(function(list, itCb) {
+        MessageManager.deleteMessages = stub(function(list, itCb) {
           setTimeout(itCb);
         });
 
@@ -528,8 +533,8 @@ suite('SMS App Unit-Test', function() {
         setTimeout(function() {
           getMessageReq.onsuccess();
           assert.isTrue(MockDialog.triggers.confirm.called);
-          assert.equal(MessageManager.deleteMessage.callCount, 1);
-          assert.equal(MessageManager.deleteMessage.calledWith[0].length, 5);
+          assert.equal(MessageManager.deleteMessages.callCount, 1);
+          assert.equal(MessageManager.deleteMessages.calledWith[0].length, 5);
           assert.equal(ThreadUI.container.querySelectorAll('li').length, 1,
             'correct number of Thread li');
           assert.equal(

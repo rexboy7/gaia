@@ -64,9 +64,9 @@ var ContactsSDExport = function ContactsSDExport() {
     } else {
       var today = new Date();
       filename.push(
-        today.getDate(),
-        today.getMonth() + 1,
         today.getFullYear(),
+        today.getMonth() + 1,
+        today.getDate(),
         contacts.length
       );
     }
@@ -120,10 +120,10 @@ var ContactsSDExport = function ContactsSDExport() {
 
       getStorage(getFileName(), blob,
         function onStorage(error, storage, finalName) {
-          if (error) {
+          if (error !== null) {
             var reason = error;
             // numeric error means not enough space available
-            if (parseInt(error, 10) > 0) {
+            if (parseInt(error, 10) >= 0) {
               reason = 'noSpace';
             }
             finishCallback({
@@ -161,7 +161,7 @@ var ContactsSDExport = function ContactsSDExport() {
     'getExportTitle': getExportTitle,
     'doExport': doExport,
     'setProgressStep': setProgressStep,
-    'cancelExport' : cancelExport,
+    'cancelExport': cancelExport,
     get name() { return 'SD'; } // handling error messages on contacts_exporter
   };
 

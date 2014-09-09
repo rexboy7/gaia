@@ -3,9 +3,9 @@
 <head>
   <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1">
   <meta charset="utf-8">
+  <meta name="theme-color" content="#eeeeee">
 
   <!-- Common style -->
-  <link rel="stylesheet" href="/shared/style/headers.css">
   <link rel="stylesheet" href="/shared/style/switches.css">
   <link rel="stylesheet" href="/shared/style/input_areas.css">
   <link rel="stylesheet" href="/shared/style/buttons.css">
@@ -45,6 +45,7 @@
   <script src="/shared/js/l10n_date.js"></script>
   <script src="/shared/js/tz_select.js"></script>
   <script defer src="/shared/js/keyboard_helper.js"></script>
+  <script defer src="/shared/js/language_list.js"></script>
   <script defer src="/shared/js/version_helper.js"></script>
 
   <!-- Import contacts help files -->
@@ -70,6 +71,7 @@
   <script defer src="/shared/js/contacts/import/facebook/fb_query.js"></script>
   <script defer src="/shared/js/fb/fb_reader_utils.js"></script>
   <script defer src="/shared/js/contacts/import/facebook/fb_contact_utils.js"></script>
+  <script defer src="/shared/js/contacts/import/import_status_data.js"></script>
   <script defer src="/shared/js/async_storage.js"></script>
   <script defer src="/shared/js/mobile_operator.js"></script>
   <script defer src="/shared/js/icc_helper.js"></script>
@@ -98,6 +100,11 @@
   <script defer src="/shared/js/component_utils.js"></script>
   <script defer src="/shared/elements/gaia_switch/script.js"></script>
   <script defer src="/shared/elements/gaia_buttons/script.js"></script>
+  <script defer src="/shared/elements/gaia_subheader/script.js"></script>
+  <script defer src="/shared/elements/config.js"></script>
+  <script defer src="/shared/elements/gaia-header/dist/script.js"></script>
+  <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-theme/style.css" />
+  <!-- <link rel="stylesheet" type="text/css" href="/shared/elements/gaia-icons/style.css" /> -->
 
   <!--
     <link href="/shared/pages/import/import.html">
@@ -116,15 +123,14 @@
     <link href="/shared/js/contacts/utilities/http_rest.js">
   -->
 </head>
-<body>
+<body id="container" class="theme-settings" aria-hidden="true">
   <section id="splash-screen" role="region" class="show">
   </section>
 
   <section id="unlock-sim-screen" role="region" class="skin-organic">
-    <header>
-      <button id="unlock-sim-back"><span class="icon icon-back">back</span></button>
+    <gaia-header id="unlock-sim-action" action="back">
       <h1 id="unlock-sim-header"></h1>
-    </header>
+    </gaia-header>
     <article role="main">
       <section id="pincode-screen" role="region">
         <label id="pin-label"></label>
@@ -179,9 +185,9 @@
   </section>
 
   <section id="sim-info-screen" role="region" class="skin-organic">
-    <header>
+    <gaia-header>
       <h1 id="sim-info-header" data-l10n-id="simManager">SIM Manager</h1>
-    </header>
+    </gaia-header>
     <article role="main">
       <section>
         <section id="sim-info-1" class="sim-info">
@@ -219,23 +225,10 @@
   </section>
 
   <section id="activation-screen" role="region" class="skin-organic no-options">
-    <header>
-      <menu type="toolbar">
-        <button id="wifi-refresh-button" data-l10n-id="refresh">Refresh</button>
-      </menu>
+    <gaia-header>
       <h1 id="main-title"></h1>
-    </header>
-    <ol id="progress-bar" class="step-state" role="progressbar" aria-label="First Time Experience" data-l10n-id="progressbar">
-      <li id="progress-bar-state" class="step-state-bar" role="presentation"></li>
-      <li role="presentation">languages</li>
-      <li role="presentation">SIM_mandatory</li>
-      <li role="presentation">3g</li>
-      <li role="presentation">wifi</li>
-      <li role="presentation">configure network</li>
-      <li role="presentation">date and time</li>
-      <li role="presentation">geolocation</li>
-      <li role="presentation">browser privacy</li>
-    </ol>
+      <button id="wifi-refresh-button" data-l10n-id="refresh">Refresh</button>
+    </gaia-header>
     <article role="main">
       <section role="region" id="languages">
         <article data-type="list" class="pack-value-selector">
@@ -254,7 +247,9 @@
             </li>
           </ul>
         </article>
-        <header><h2 id="dataCaution" data-l10n-id="caution"></h2></header>
+        <gaia-subheader id="dataCaution" skin="organic">
+          <span data-l10n-id="caution" />
+        </gaia-subheader>
         <section class="content">
           <p id="dataExplanation" data-l10n-id="dataConnectionInfo">Some text here</p>
         </section>
@@ -281,7 +276,7 @@
               </li>
               <li>
                 <label for="wifi_password" data-l10n-id="password">Password</label>
-                <input type="password" id="wifi_password" data-l10n-id="passwordInput" placeholder="Password" value="" x-inputmode="verbatim"></input>
+                <input type="password" id="wifi_password" data-l10n-id="passwordInput" placeholder="Password" value="" maxlength="63" x-inputmode="verbatim"></input>
                 <label class="pack-checkbox" id="label_show_password">
                   <input type="checkbox" data-ignore name="show_password" />
                   <span id="wifi_show_password" data-l10n-id="showPassword">Show Password</span>
@@ -324,7 +319,7 @@
                 <label id="label_hidden_wifi_password" for="hidden-wifi-password" data-l10n-id="password">
                   Password
                 </label>
-                <input type="password" name="wifi_hidden_password" id="hidden-wifi-password" value=""/>
+                <input type="password" name="wifi_hidden_password" id="hidden-wifi-password" value="" maxlength="63" />
                 <label class="pack-checkbox" id="label_show_password" for="hidden-wifi-show-password">
                   <input type="checkbox" id="hidden-wifi-show-password">
                   <span data-l10n-id="showPassword">
@@ -393,7 +388,9 @@
             </li>
           </ul>
         </article>
-        <header><h2 id="geolocationNotice" data-l10n-id="notice"></h2></header>
+        <gaia-subheader id="geolocationNotice" skin="organic">
+          <span data-l10n-id="notice" />
+        </gaia-subheader>
         <section class="content">
           <p id="geolocationInfo" data-l10n-id="geolocationInfo2">Some text here</p>
           <p id="geolocationInfoMore" data-l10n-id="geolocationInfoMore">Some text here</p>
@@ -427,9 +424,9 @@
             </li>
           </ul>
         </article>
-        <header>
-          <h2 data-l10n-id="otherAccount">Other accounts</h2>
-        </header>
+        <gaia-subheader skin="organic">
+          <span data-l10n-id="otherAccount">Other accounts</span>
+        </gaia-subheader>
         <article data-type="list">
           <ul id="fb_container">
             <li id="fb_import" class="importOption">
@@ -496,9 +493,9 @@
       </section>
       <section role="region" id="about-your-privacy">
         <i class='hack-first-child'></i> <!-- see Bug 819886 -->
-        <header>
-          <h2> Mozilla </h2>
-        </header>
+        <gaia-subheader skin="organic">
+          <span>Mozilla</span>
+        </gaia-subheader>
         <article data-type="list">
           <ul>
             <li>
@@ -517,16 +514,16 @@
             </li>
           </ul>
         </article>
-        <header>
-          <h2 data-l10n-id="about-other"> Other </h2>
-        </header>
+        <gaia-subheader skin="organic">
+          <span data-l10n-id="about-other">Other</span>
+        </gaia-subheader>
         <article data-type="list">
           <ul>
             <li>
               <a class="privacy-menuitem privacy-everythingME external"
-                href="http://corp.everything.me/privacy"
-                data-l10n-id="privacy-e-me"
-                title="everything.me">everything.me</a>
+                href="http://everything.me/privacy"
+                data-l10n-id="privacy-eme"
+                title="EverythingMe">EverythingMe</a>
             </li>
           </ul>
         </article>
@@ -646,11 +643,11 @@
 
   <section id="update-screen" class="finish-screen-base" role="region">
     <section class="content">
-      <h1 data-l10n-id="whatsNew">
-        What's new
+      <h1 data-l10n-id="startYourPhone">
+        Start your phone tour!
       </h1>
-      <p data-l10n-id="updatedSuccessfully">
-        Your phone has updated successfully! Start the tour to find out more about the new features.
+      <p data-l10n-id="joinTutorialUpdated">
+        Join us for a quick tutorial about the updates to your phone!
       </p>
     </section>
     <gaia-buttons skin="dark">
@@ -664,9 +661,6 @@
   </section>
 
   <section id="tutorial" role="region" data-step="1">
-    <ol id="tutorial-progress" class="step-state" role="progressbar" aria-label="Tutorial" data-l10n-id="tutorial">
-      <li id="tutorial-progress-bar" class="step-state-bar"></li>
-    </ol>
     <article id="tutorial-steps-container" role="main">
       <section id="tutorial-step-header">
         <p id="tutorial-step-title">
@@ -687,8 +681,11 @@
       <h1 data-l10n-id="thatsIt">
         That's it!
       </h1>
-      <h2 data-l10n-id="enjoyYourPhone">
+      <h2 id="enjoyYourPhone" data-l10n-id="enjoyYourPhone">
         You're ready to enjoy your new phone ;)
+      </h2>
+      <h2 id="enjoyYourPhoneUpdated" data-l10n-id="enjoyYourPhoneUpdated" hidden>
+        You're ready to enjoy your updated phone.
       </h2>
       </section>
       <gaia-buttons skin="dark" class="forward-only">

@@ -1,6 +1,6 @@
 /* global MockStackManager, MockNavigatorSettings, MockAppWindowManager,
-          TaskManager, Card, TaskCard, AppWindow,
-          MockScreenLayout, MocksHelper */
+          TaskManager, Card, TaskCard, AppWindow, HomescreenLauncher,
+          HomescreenWindow, MockScreenLayout, MocksHelper */
 'use strict';
 require('/shared/test/unit/mocks/mock_gesture_detector.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
@@ -10,6 +10,8 @@ requireApp('system/test/unit/mock_trusted_ui_manager.js');
 requireApp('system/test/unit/mock_utility_tray.js');
 requireApp('system/test/unit/mock_app_window_manager.js');
 requireApp('system/test/unit/mock_app_window.js');
+requireApp('system/test/unit/mock_homescreen_launcher.js');
+requireApp('system/test/unit/mock_homescreen_window.js');
 require('/shared/test/unit/mocks/mock_system.js');
 requireApp('system/test/unit/mock_orientation_manager.js');
 requireApp('system/test/unit/mock_rocketbar.js');
@@ -26,8 +28,10 @@ var mocksForTaskManager = new MocksHelper([
   'AppWindowManager',
   'Rocketbar',
   'sleepMenu',
+  'HomescreenLauncher',
   'OrientationManager',
   'StackManager',
+  'HomescreenWindow',
   'AppWindow',
   'System'
 ]).init();
@@ -50,7 +54,10 @@ function waitForEvent(target, name, timeout) {
 }
 
 function failOnReject(err) {
-  throw err;
+  if (err) {
+    return err;
+  }
+  assert.isTrue(false, 'Should not reject');
 }
 
 suite('system/TaskManager >', function() {
@@ -88,7 +95,7 @@ suite('system/TaskManager >', function() {
     window.dispatchEvent(evt);
   }
 
-  var apps;
+  var apps, home;
   var sms, game, game2, game3, game4;
   var taskManager;
 
@@ -106,6 +113,9 @@ suite('system/TaskManager >', function() {
         rotatingDegree: 0,
         requestScreenshotURL: function() {
           return null;
+        },
+        killable: function() {
+          return true;
         },
         getScreenshot: function(callback) {
           callback();
@@ -333,6 +343,16 @@ suite('system/TaskManager >', function() {
       }
     };
 
+    home = new HomescreenWindow('fakeHome');
+    var homescreenLauncher = new HomescreenLauncher();
+    window.homescreenLauncher = homescreenLauncher;
+    window.homescreenLauncher.start();
+    homescreenLauncher.mFeedFixtures({
+      mHomescreenWindow: home,
+      mOrigin: 'fakeOrigin',
+      mReady: true
+    });
+
     requireApp('system/js/cards_helper.js');
     requireApp('system/js/base_ui.js');
     requireApp('system/js/card.js');
@@ -384,34 +404,36 @@ suite('system/TaskManager >', function() {
       cardsList.innerHTML = '';
     });
 
-    test('isRocketbar tracks rocketbar.enabled setting', function() {
+    test('isTaskStrip tracks taskstrip.enabled setting', function() {
       // var withRocketBar = new TaskManager();
-      MockNavigatorSettings.mTriggerObservers('rocketbar.enabled',
+      MockNavigatorSettings.mTriggerObservers('taskstrip.enabled',
                                               { settingValue: true });
-      assert.isTrue(taskManager.isRocketbar,
-                    'isRocketbar is true when setting goes true');
+      assert.isTrue(taskManager.isTaskStrip,
+                    'isTaskStrip is true when setting goes true');
 
-      taskManager.isRocketbar = true;
-      MockNavigatorSettings.mTriggerObservers('rocketbar.enabled',
+      taskManager.isTaskStrip = true;
+      MockNavigatorSettings.mTriggerObservers('taskstrip.enabled',
                                               { settingValue: false });
-      assert.isFalse(taskManager.isRocketbar,
-                    'isRocketbar is false when setting goes false');
+      assert.isFalse(taskManager.isTaskStrip,
+                    'isTaskStrip is false when setting goes false');
     });
 
-    test('creates Card instances when isRocketbar is false', function(){
-      taskManager.isRocketbar = false;
-      taskManager.addCard(0, apps['http://sms.gaiamobile.org']);
-      var card = taskManager.getCardAtIndex(0);
+    test('creates Card instances when isTaskStrip is false', function(){
+      taskManager.isTaskStrip = false;
+      var app = apps['http://sms.gaiamobile.org'];
+      taskManager.addCard(0, app);
+      var card = taskManager.cardsByAppID[app.instanceID];
       assert.ok(card && card instanceof Card,
-                'creates Card instances when isRocketbar is false');
+                'creates Card instances when isTaskStrip is false');
     });
 
-    test('creates TaskCard instances when isRocketbar is true', function(){
-      taskManager.isRocketbar = true;
-      taskManager.addCard(0, apps['http://sms.gaiamobile.org']);
-      var card = taskManager.getCardAtIndex(0);
+    test('creates TaskCard instances when isTaskStrip is true', function(){
+      taskManager.isTaskStrip = true;
+      var app = apps['http://sms.gaiamobile.org'];
+      taskManager.addCard(0, app);
+      var card = taskManager.cardsByAppID[app.instanceID];
       assert.ok(card && card instanceof TaskCard,
-                'creates TaskCard instances when isRocketbar is true');
+                'creates TaskCard instances when isTaskStrip is true');
     });
 
     suite('screenshots settings >', function() {
@@ -454,18 +476,20 @@ suite('system/TaskManager >', function() {
       for (var app in apps) {
         MockStackManager.mStack.push(apps[app]);
       }
+      apps.home = home;
       MockStackManager.mCurrent = 0;
 
       MockAppWindowManager.mRunningApps = apps;
-      MockAppWindowManager.mDisplayedApp = 'http://sms.gaiamobile.org';
+      MockAppWindowManager.mActiveApp = apps['http://sms.gaiamobile.org'];
     });
 
     suite('display cardsview >', function() {
       setup(function(done) {
         taskManager.hide(true);
+        MockAppWindowManager.mActiveApp = apps['http://sms.gaiamobile.org'];
         waitForEvent(window, 'cardviewshown')
           .then(function() { done(); }, failOnReject);
-        taskManager.isRocketbar = false;
+        taskManager.isTaskStrip = false;
         taskManager.show();
       });
 
@@ -501,41 +525,92 @@ suite('system/TaskManager >', function() {
                   'has no prevCard at initial position');
       });
 
-      test('transitions are removed correctly after swiping', function() {
-        var card = taskManager.getCardAtIndex(0);
-        var applyStyleStub = sinon.spy(card, 'applyStyle');
+      function undefinedProps(value) {
+        for (var key in value) {
+          if (typeof value[key] === 'undefined') {
+            return true;
+          }
+        }
+        return false;
+      }
 
-        var undefinedProps =
-          function(value) {
-            for (var key in value) {
-              if (typeof value[key] === 'undefined') {
-                return true;
-              }
-            }
-            return false;
-          };
+      test('applyStyle is called by swiping', function(done) {
+        var card = taskManager.getCardAtIndex(0);
+        var element = card.element;
+        var applyStyleSpy = this.sinon.spy(card, 'applyStyle');
+
+        waitForEvent(element, 'touchend').then(function() {
+          var callCount = applyStyleSpy.callCount;
+          assert.isTrue(callCount > 0,
+                        'card.applyStyle was called at least once');
+          assert.isFalse(applyStyleSpy.calledWith(sinon.match(undefinedProps)),
+            'card.applyStyle was not called with undefined properties');
+
+        }, failOnReject).then(function() { done(); }, done);
 
         // Simulate a drag up that doesn't remove the card
-        var element = card.element;
         element.dispatchEvent(createTouchEvent('touchstart', element, 0, 500));
         element.dispatchEvent(createTouchEvent('touchmove', element, 0, 250));
         element.dispatchEvent(createTouchEvent('touchend', element, 0, 450));
+      });
 
-        var callCount = applyStyleStub.callCount;
-        assert.isTrue(callCount > 0,
-                      'card.applyStyle was called at least once');
-        assert.isFalse(applyStyleStub.calledWith(sinon.match(undefinedProps)),
-          'card.applyStyle was not called with undefined properties');
+      test('wheel up event', function() {
+        var card = taskManager.getCardAtIndex(0);
+        var closeAppStub = this.sinon.stub(taskManager, 'closeApp');
+        var alignCurrentCardStub = this.sinon.stub(taskManager,
+          'alignCurrentCard');
+
+        taskManager.handleEvent({
+          type: 'wheel',
+          deltaMode: 2,
+          DOM_DELTA_PAGE: 2,
+          deltaY: 1
+        });
+        assert.isTrue(closeAppStub.called);
+        assert.isTrue(closeAppStub.calledWith(card));
+        assert.isTrue(alignCurrentCardStub.called);
+      });
+
+      test('wheel left/right event', function() {
+        var alignCurrentCardSpy = this.sinon.spy(taskManager,
+          'alignCurrentCard');
+
+        assert.equal(taskManager.currentPosition, 0);
+        taskManager.handleEvent({
+          type: 'wheel',
+          deltaMode: 2,
+          DOM_DELTA_PAGE: 2,
+          deltaX: 1
+        });
+        assert.equal(taskManager.currentPosition, 1);
+
+        taskManager.handleEvent({
+          type: 'wheel',
+          deltaMode: 2,
+          DOM_DELTA_PAGE: 2,
+          deltaX: -1
+        });
+        assert.equal(taskManager.currentPosition, 0);
+
+        assert.equal(alignCurrentCardSpy.callCount, 2);
+      });
+
+      test('transitions are removed correctly after swiping', function(done) {
+        var card = taskManager.getCardAtIndex(0);
+        var applyStyleSpy = this.sinon.spy(card, 'applyStyle');
+        var element = card.element;
 
         // Simulate a swipe to the side
+        waitForEvent(element, 'touchend').then(function() {
+          assert.isTrue(applyStyleSpy.callCount > 0,
+                        'card.applyStyle was called');
+          assert.isFalse(applyStyleSpy.calledWith(sinon.match(undefinedProps)),
+            'card.applyStyle was not called with undefined properties');
+        }, failOnReject).then(function() { done(); }, done);
+
         element.dispatchEvent(createTouchEvent('touchstart', element, 0, 500));
         element.dispatchEvent(createTouchEvent('touchmove', element, 100, 500));
         element.dispatchEvent(createTouchEvent('touchend', element, 100, 500));
-
-        assert.isTrue(applyStyleStub.callCount > callCount,
-                      'card.applyStyle was called more times');
-        assert.isFalse(applyStyleStub.calledWith(sinon.match(undefinedProps)),
-          'card.applyStyle was not called with undefined properties');
       });
 
       test('user can change swipe direction', function() {
@@ -596,7 +671,7 @@ suite('system/TaskManager >', function() {
 
     suite('populated task manager in rocketbar >', function() {
       setup(function(done) {
-        taskManager.isRocketbar = true;
+        taskManager.isTaskStrip = true;
         assert.isFalse(taskManager.isShown(), 'taskManager isnt showing yet');
         waitForEvent(window, 'cardviewshown')
           .then(function() { done(); }, failOnReject);
@@ -626,7 +701,7 @@ suite('system/TaskManager >', function() {
       taskManager.hide(true);
     });
 
-    test('when isRocketbar is true, empty task manager closes', function(done) {
+    test('when isTaskStrip is true, empty task manager closes', function(done) {
       var events = [];
       window.Promise.race([
         waitForEvent(window, 'cardviewclosed').then(function() {
@@ -645,11 +720,11 @@ suite('system/TaskManager >', function() {
         done();
       }, failOnReject);
       // Haida/rocketbar mode: taskManager aborts show when empty
-      taskManager.isRocketbar = true;
+      taskManager.isTaskStrip = true;
       taskManager.show();
     });
 
-    test('when isRocketbar is false, empty task manager opens', function(done) {
+    test('when isTaskStrip is false, empty task manager opens', function(done) {
       var events = [];
       window.Promise.race([
         waitForEvent(window, 'cardviewclosed').then(function() {
@@ -668,7 +743,7 @@ suite('system/TaskManager >', function() {
         done();
       }, failOnReject);
       // Pre-Haida/Cardsview mode: taskManager shows empty message
-      taskManager.isRocketbar = false;
+      taskManager.isTaskStrip = false;
       taskManager.show();
     });
 
@@ -696,8 +771,8 @@ suite('system/TaskManager >', function() {
                       'cardviewclosedhome event raised when touch starts');
           assert.isFalse(cardsView.classList.contains('active'));
           assert.isFalse(taskManager.isShown());
-          done();
-        }, failOnReject);
+        }, failOnReject)
+        .then(done, done);
 
         cardsView.dispatchEvent(
           createTouchEvent('touchstart', cardsView, 100, 100));
@@ -718,7 +793,7 @@ suite('system/TaskManager >', function() {
       assert.isFalse(taskManager.isShown(), 'taskManager isnt showing yet');
       waitForEvent(window, 'cardviewshown')
         .then(function() { done(); }, failOnReject);
-      taskManager.isRocketbar = false;
+      taskManager.isTaskStrip = false;
       taskManager.show();
     });
 
@@ -741,21 +816,22 @@ suite('system/TaskManager >', function() {
     });
 
     test('hide: raises cardviewclosed event', function(done) {
+      taskManager.newStackPosition = 1;
       waitForEvent(window, 'cardviewclosed').then(function(event) {
         assert.equal(typeof event.detail, 'object',
                     'gets event with detail object');
-        assert.equal(event.detail.newStackPosition, 0,
-                    'newStackPosition is the position passed to hide method');
-        done();
-      }, failOnReject);
-      taskManager.hide(true, 0);
+        assert.equal(event.detail.newStackPosition, 1,
+                    'event detail reflects taskManager.newStackPosition');
+        delete taskManager.newStackPosition;
+      }, failOnReject).then(done, done);
+      taskManager.hide(true);
     });
 
     test('hide: removes cards', function(done) {
       waitForEvent(window, 'cardviewclosed').then(function(event) {
         assert.equal(cardsList.childNodes.length, 0,
                     'all card elements are gone');
-        assert.equal(Object.keys(taskManager.cardsByOrigin).length, 0,
+        assert.equal(Object.keys(taskManager.cardsByAppID).length, 0,
                     'cards lookup is empty');
         done();
       }, failOnReject);
@@ -818,7 +894,7 @@ suite('system/TaskManager >', function() {
       assert.isFalse(taskManager.isShown(), 'taskManager isnt showing yet');
       waitForEvent(window, 'cardviewshown')
         .then(function() { done(); }, failOnReject);
-      taskManager.isRocketbar = false;
+      taskManager.isTaskStrip = false;
       taskManager.show();
     });
 
@@ -852,7 +928,7 @@ suite('system/TaskManager >', function() {
       assert.isFalse(taskManager.isShown(), 'taskManager isnt showing yet');
       waitForEvent(window, 'cardviewshown')
         .then(function() { done(); }, failOnReject);
-      taskManager.isRocketbar = true;
+      taskManager.isTaskStrip = true;
       taskManager.show();
     });
 
@@ -901,7 +977,7 @@ suite('system/TaskManager >', function() {
       assert.isFalse(taskManager.isShown(), 'taskManager isnt showing yet');
       waitForEvent(window, 'cardviewshown')
         .then(function() { done(); }, failOnReject);
-      taskManager.isRocketbar = false;
+      taskManager.isTaskStrip = false;
       taskManager.show();
     });
     teardown(function() {
@@ -919,14 +995,151 @@ suite('system/TaskManager >', function() {
 
     test('destroys the card', function() {
       var card = taskManager.getCardAtIndex(0);
+      var destroySpy = this.sinon.spy(card, 'destroy');
       assert.isTrue(card && card.element &&
                     card.element.parentNode == taskManager.cardsList);
-      var destroySpy = this.sinon.spy(card, 'destroy');
-
+      var instanceID = card.app.instanceID;
       taskManager.closeApp(card);
       assert.isTrue(destroySpy.calledOnce);
       assert.equal(cardsList.childNodes.length, 1);
-      assert.isFalse('http://sms.gaiamobile.org' in taskManager.cardsByOrigin);
+      assert.isFalse(instanceID in taskManager.cardsByAppID);
     });
   });
+
+  suite('app is killed', function() {
+    setup(function(done) {
+      MockStackManager.mStack = [
+        apps['http://sms.gaiamobile.org'],
+        apps['http://game.gaiamobile.org']
+      ];
+      MockStackManager.mCurrent = 0;
+      MockAppWindowManager.mRunningApps = {
+        'http://sms.gaiamobile.org': apps['http://sms.gaiamobile.org'],
+        'http://game.gaiamobile.org': apps['http://game.gaiamobile.org']
+      };
+
+      assert.isFalse(taskManager.isShown(), 'taskManager isnt showing yet');
+      waitForEvent(window, 'cardviewshown')
+        .then(function() { done(); }, failOnReject);
+      taskManager.isRocketbar = false;
+      taskManager.show();
+    });
+    teardown(function() {
+      taskManager.hide(true);
+      cardsList.innerHTML = '';
+    });
+
+    test('removeCard is called on appterminated', function() {
+      var deadApp = apps['http://game.gaiamobile.org'];
+      var card = taskManager.cardsByAppID[deadApp.instanceID];
+      var removeCardSpy = this.sinon.spy(taskManager, 'removeCard');
+      var destroySpy = this.sinon.spy(card, 'destroy');
+      var event = new CustomEvent('appterminated',
+                                  { detail: deadApp });
+      window.dispatchEvent(event);
+
+      assert.isTrue(removeCardSpy.calledOnce, 'removeCard was called');
+      assert.isTrue(destroySpy.calledOnce, 'card.destroy was called');
+      assert.equal(cardsList.childNodes.length, 1);
+    });
+  });
+
+  suite('exit >', function() {
+    setup(function(done) {
+      taskManager.hide(true);
+      MockAppWindowManager.mRunningApps = apps;
+      MockAppWindowManager.mActiveApp = apps['http://sms.gaiamobile.org'];
+      waitForEvent(window, 'cardviewshown')
+        .then(function() { done(); }, failOnReject);
+      taskManager.isTaskStrip = false;
+      taskManager.show();
+    });
+
+    teardown(function() {
+      taskManager.hide(true);
+    });
+
+    test('selected app is opened', function(done) {
+      var targetApp = apps['http://game.gaiamobile.org'];
+      var stub = this.sinon.stub(targetApp, 'open');
+
+      waitForEvent(window, 'cardviewclosed').then(function() {
+        assert.isTrue(stub.calledOnce, 'selected app open method was called');
+      }, failOnReject)
+      .then(function() { done(); }, done);
+
+      taskManager.exitToApp(targetApp);
+    });
+
+    test('when exitToApp is passed no app', function(done) {
+      var activeApp = MockAppWindowManager.mActiveApp;
+      var stub = this.sinon.stub(activeApp, 'open');
+
+      waitForEvent(window, 'cardviewclosed').then(function() {
+        assert.isTrue(stub.calledOnce, 'active app open method was called');
+      }, failOnReject)
+      .then(function() { done(); }, done);
+
+      taskManager.exitToApp();
+    });
+
+    test('active app is opened on home event', function(done) {
+      var activeApp = MockAppWindowManager.mActiveApp;
+      var stub = this.sinon.stub(activeApp, 'open');
+
+      waitForEvent(window, 'cardviewclosed').then(function() {
+        assert.isTrue(stub.calledOnce, 'active app open method was called');
+      }, failOnReject)
+      .then(function() { done(); }, done);
+
+      var event = new CustomEvent('home');
+      window.dispatchEvent(event);
+    });
+
+    test('newStackPosition is defined when app is selected', function(done) {
+      MockStackManager.mCurrent = 0;
+      var targetApp = apps['http://game.gaiamobile.org'];
+
+      waitForEvent(window, 'cardviewclosed').then(function(evt) {
+        var stackPosition = taskManager.stack.indexOf(targetApp);
+        assert.equal(evt.detail.newStackPosition,
+                     stackPosition,
+                     'current newStackPosition in event.detail');
+        assert.equal(taskManager.newStackPosition,
+                     stackPosition,
+                     'current newStackPosition taskManaget');
+      }, failOnReject)
+      .then(function() { done(); }, done);
+
+      taskManager.exitToApp(targetApp);
+    });
+
+  });
+
+  suite('filtering > ', function() {
+    setup(function() {
+      taskManager.hide(true);
+      MockAppWindowManager.mRunningApps = apps;
+      MockAppWindowManager.mActiveApp = apps['http://sms.gaiamobile.org'];
+      taskManager.isTaskStrip = false;
+    });
+
+    teardown(function() {
+      taskManager.hide(true);
+    });
+
+    test('filter function is called and empty stack is the result', function() {
+      var _filterName = 'browser-only';
+      var stub = this.sinon.stub(taskManager, 'filter', function(filterName) {
+          assert.equal(filterName, _filterName);
+          taskManager.stack = [];
+        });
+      taskManager.show(_filterName);
+      stub.calledWith([_filterName]);
+      assert.isTrue(cardsView.classList.contains('empty'),
+                    'Should be displaying no recent browser windows');
+    });
+
+  });
+
 });

@@ -2,10 +2,9 @@
 
 var MockUIManager = {
   domSelectors: [
+    'container',
     'splash-screen',
     'activation-screen',
-    'progress-bar',
-    'progress-bar-state',
     'finish-screen',
     'update-screen',
     'nav-bar',
@@ -119,6 +118,7 @@ var MockUIManager = {
     }.bind(this));
   },
 
+  timeZoneNeedsConfirmation: true,
   sendNewsletter: function(callback) {return callback(true);},
   updateDataConnectionStatus: function(status) {return DataMobile.getStatus();},
   displayOfflineDialog: function() {},

@@ -1,4 +1,31 @@
+/* jshint moz:true */
+/* global ConfirmDialogHelper */
+/* global FtuLauncher */
+/* global KeyboardHelper */
+/* global KeyboardManager */
+/* global LazyLoader */
+/* global ManifestHelper */
+/* global ModalDialog */
+/* global NotificationScreen */
+/* global StatusBar */
+/* global SystemBanner */
+/* global Template */
+/* global UtilityTray */
+/* global applications */
+
 'use strict';
+/* global ModalDialog */
+/* global SystemBanner */
+/* global StatusBar */
+/* global KeyboardManager */
+/* global LazyLoader */
+/* global ManifestHelper */
+/* global FtuLauncher */
+/* global Template */
+/* global NotificationScreen */
+/* global KeyboardHelper */
+/* global UtilityTray */
+/* global applications */
 
 var AppInstallManager = {
   mapDownloadErrorsToMessage: {
@@ -54,6 +81,9 @@ var AppInstallManager = {
       if (e.detail.type == 'webapps-ask-install') {
         this.handleAppInstallPrompt(e.detail);
       }
+      if (e.detail.type == 'webapps-ask-uninstall') {
+        this.handleAppUninstallPrompt(e.detail);
+      }
     }).bind(this));
 
     window.addEventListener('applicationinstall',
@@ -78,8 +108,9 @@ var AppInstallManager = {
                              this.handleSetupConfirmAction.bind(this);
     this.imeCancelButton.onclick = this.hideIMEList.bind(this);
     this.imeConfirmButton.onclick = this.handleImeConfirmAction.bind(this);
-    // lazy load template.js
-    LazyLoader.load('shared/js/template.js');
+    LazyLoader.load(['shared/js/template.js',
+                     'shared/js/homescreens/confirm_dialog_helper.js']);
+
     // bind these handlers so that we can have only one instance and check
     // them later on
     ['handleDownloadSuccess',
@@ -130,8 +161,9 @@ var AppInstallManager = {
     // updateManifest is used by packaged apps until they are installed
     var manifest = app.manifest ? app.manifest : app.updateManifest;
 
-    if (!manifest)
+    if (!manifest) {
       return;
+    }
 
     this.dialog.classList.add('visible');
 
@@ -168,12 +200,65 @@ var AppInstallManager = {
   },
 
   handleInstall: function ai_handleInstall(evt) {
-    if (evt)
+    if (evt) {
       evt.preventDefault();
-    if (this.installCallback)
+    }
+    if (this.installCallback) {
       this.installCallback();
+    }
     this.installCallback = null;
     this.dialog.classList.remove('visible');
+  },
+
+  handleAppUninstallPrompt: function ai_handleUninstallPrompt(detail) {
+    var app = detail.app;
+    var id = detail.id;
+
+    // updateManifest is used by packaged apps until they are installed
+    var manifest = app.manifest ? app.manifest : app.updateManifest;
+    if (!manifest) {
+      return;
+    }
+
+    // Wrap manifest to get localized properties
+    manifest = new ManifestHelper(manifest);
+
+    var unrecoverable = app.installState === 'pending' &&
+                        !app.downloadAvailable &&
+                        !app.readyToApplyDownload;
+
+    var dialogConfig;
+
+    if (unrecoverable) {
+      dialogConfig = {
+        type: 'unrecoverable',
+        title: 'unrecoverable-error-title',
+        body: 'unrecoverable-error-body',
+        confirm: {
+          title: 'unrecoverable-error-action',
+          cb: () => { this.dispatchResponse(id, 'webapps-uninstall-granted'); }
+        }
+      };
+    } else {
+      var nameObj = { name: manifest.name };
+      dialogConfig = {
+        type: 'remove',
+        title: {id: 'delete-title', args: nameObj},
+        body: {id: 'delete-body', args: nameObj},
+        cancel: {
+          title: 'cancel',
+          cb: () => { this.dispatchResponse(id, 'webapps-uninstall-denied'); }
+        },
+        confirm: {
+          title: 'delete',
+          type: 'danger',
+          cb: () => { this.dispatchResponse(id, 'webapps-uninstall-granted'); }
+        }
+      };
+    }
+
+    var dialog = new ConfirmDialogHelper(dialogConfig);
+    dialog.show(document.body);
   },
 
   prepareForDownload: function ai_prepareForDownload(app) {
@@ -345,9 +430,9 @@ var AppInstallManager = {
 
     switch (errorName) {
       case 'INSUFFICIENT_STORAGE':
-        var title = _('not-enough-space'),
-            buttonText = _('ok'),
-            message = _('not-enough-space-message');
+        var title = 'not-enough-space',
+            buttonText = 'ok',
+            message = 'not-enough-space-message';
 
         ModalDialog.alert(title, message, {title: buttonText});
         break;
@@ -412,7 +497,8 @@ var AppInstallManager = {
 
     var newNotif =
       '<div class="fake-notification" role="link">' +
-        '<div class="message"></div>' +
+        '<div data-icon="rocket" class="alert"></div>' +
+        '<div class="title-container"></div>' +
         '<progress></progress>' +
       '</div>';
 
@@ -428,7 +514,7 @@ var AppInstallManager = {
       appName: new ManifestHelper(manifest).name
     });
 
-    newNode.querySelector('.message').textContent = message;
+    newNode.querySelector('.title-container').textContent = message;
 
     var progressNode = newNode.querySelector('progress');
     if (app.updateManifest && app.updateManifest.size) {
@@ -530,8 +616,9 @@ var AppInstallManager = {
     var _ = navigator.mozL10n.get;
     var units = ['bytes', 'kB', 'MB', 'GB', 'TB', 'PB'];
 
-    if (!bytes)
+    if (!bytes) {
       return '0.00 ' + _(units[0]);
+    }
 
     var e = Math.floor(Math.log(bytes) / Math.log(1024));
     return (bytes / Math.pow(1024, Math.floor(e))).toFixed(2) + ' ' +
@@ -539,15 +626,17 @@ var AppInstallManager = {
   },
 
   showInstallCancelDialog: function ai_showInstallCancelDialog(evt) {
-    if (evt)
+    if (evt) {
       evt.preventDefault();
+    }
     this.installCancelDialog.classList.add('visible');
     this.dialog.classList.remove('visible');
   },
 
   hideInstallCancelDialog: function ai_hideInstallCancelDialog(evt) {
-    if (evt)
+    if (evt) {
       evt.preventDefault();
+    }
     this.dialog.classList.add('visible');
     this.installCancelDialog.classList.remove('visible');
   },
@@ -577,8 +666,9 @@ var AppInstallManager = {
   },
 
   handleInstallCancel: function ai_handleInstallCancel() {
-    if (this.installCancelCallback)
+    if (this.installCancelCallback) {
       this.installCancelCallback();
+    }
     this.installCancelCallback = null;
     this.installCancelDialog.classList.remove('visible');
   },

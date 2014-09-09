@@ -6,7 +6,8 @@
           CandidateSelectionTargetHandler, CompositeTargetHandler,
           PageSwitchingTargetHandler, CapsLockTargetHandler,
           SwitchKeyboardTargetHandler, ToggleCandidatePanelTargetHandler,
-          DismissSuggestionsTargetHandler, BackspaceTargetHandler */
+          DismissSuggestionsTargetHandler, BackspaceTargetHandler,
+          KeyboardConsole */
 
 require('/js/keyboard/target_handlers.js');
 require('/js/keyboard/feedback_manager.js');
@@ -16,6 +17,7 @@ require('/js/keyboard/layout_manager.js');
 
 require('/shared/test/unit/mocks/mock_event_target.js');
 require('/shared/test/unit/mocks/mock_navigator_input_method.js');
+require('/js/keyboard/console.js');
 
 suite('target handlers', function() {
   var app;
@@ -33,6 +35,7 @@ suite('target handlers', function() {
     this.sinon.stub(window, 'clearInterval');
 
     app = {
+      console: this.sinon.stub(KeyboardConsole.prototype),
       feedbackManager: this.sinon.stub(FeedbackManager.prototype),
       visualHighlightManager: this.sinon.stub(VisualHighlightManager.prototype),
       candidatePanelManager: this.sinon.stub(CandidatePanelManager.prototype),
@@ -273,8 +276,6 @@ suite('target handlers', function() {
         dataset: {
         }
       };
-
-      app = {};
 
       handler = new NullTargetHandler(target, app);
     });
@@ -871,6 +872,24 @@ suite('target handlers', function() {
         assert.isTrue(app.visualHighlightManager.hide.calledOnce);
 
         assert.isTrue(app.inputMethodManager.currentIMEngine.empty.calledOnce);
+      });
+    });
+
+    suite('KEYCODE_SYMBOL_LAYOUT', function() {
+      setup(function() {
+        target.dataset.keycode =
+          app.layoutManager.KEYCODE_SYMBOL_LAYOUT.toString(10);
+      });
+
+      test('commit', function() {
+        handler.commit();
+
+        assert.isTrue(app.setLayoutPage.calledWith(
+          app.layoutManager.LAYOUT_PAGE_SYMBOLS_II));
+        assert.isTrue(app.setLayoutPage.calledOnce);
+
+        assert.isTrue(app.visualHighlightManager.hide.calledWith(target));
+        assert.isTrue(app.visualHighlightManager.hide.calledOnce);
       });
     });
 

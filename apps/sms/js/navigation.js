@@ -1,5 +1,4 @@
-/* global
-      Promise,
+/* global Promise,
       Utils,
       Startup
 */
@@ -43,23 +42,28 @@ var Navigation = window.Navigation = {
   panels: {
     'thread': {
       behaviour: 'ThreadUI',
-      wrapperPosition: 'left'
+      wrapperPosition: 'left',
+      container: 'thread-messages'
     },
     'thread-list': {
       behaviour: 'ThreadListUI',
-      wrapperPosition: 'right'
+      wrapperPosition: 'right',
+      container: 'thread-list'
     },
     'composer': {
       behaviour: 'ThreadUI',
-      wrapperPosition: 'left'
+      wrapperPosition: 'left',
+      container: 'thread-messages'
     },
     'group-view': {
       behaviour: 'GroupView',
-      wrapperPosition: 'left'
+      wrapperPosition: 'left',
+      container: 'thread-messages'
     },
     'report-view': {
       behaviour: 'ReportView',
-      wrapperPosition: 'left'
+      wrapperPosition: 'left',
+      container: 'thread-messages'
     }
   },
 
@@ -181,6 +185,7 @@ var Navigation = window.Navigation = {
     };
 
     var nextPanelInfo = this.panels[panel];
+    var nextPanelContainer = document.getElementById(nextPanelInfo.container);
     var nextPanelObject = this.panelObjects[nextPanelInfo.behaviour];
 
     if (!nextPanelObject) {
@@ -191,9 +196,12 @@ var Navigation = window.Navigation = {
     }
 
     var currentPanelObject;
+    var currentPanelContainer;
     if (currentPanel) {
       var currentPanelInfo = this.panels[currentPanel.panel];
       currentPanelObject = this.panelObjects[currentPanelInfo.behaviour];
+      currentPanelContainer = document.getElementById(
+        currentPanelInfo.container);
     }
 
     var promise = Promise.resolve();
@@ -249,6 +257,13 @@ var Navigation = window.Navigation = {
     promise = promise.then(
       function resolved() {
         this.transitioning = false;
+        if (nextPanelContainer === currentPanelContainer) {
+          return;
+        }
+        nextPanelContainer.setAttribute('aria-hidden', false);
+        if (currentPanelContainer) {
+          currentPanelContainer.setAttribute('aria-hidden', true);
+        }
       }.bind(this),
       function rejected(e) {
         catchError(e);

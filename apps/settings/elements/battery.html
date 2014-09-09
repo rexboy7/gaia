@@ -1,15 +1,15 @@
 <element name="battery" extends="section">
   <template>
 
-    <header>
-      <a href="#root"><span class="icon icon-back">back</span></a>
+    <gaia-header action="back" data-href="#root">
       <h1 data-l10n-id="battery-header"> Battery </h1>
-    </header>
+    </gaia-header>
 
     <div>
       <ul>
         <li>
-          <a id="battery-level" data-l10n-id="batteryLevel">Current Battery Life
+          <a id="battery-level">
+            <span data-l10n-id="batteryLevel">Current Battery Life</span>
             <span></span>
           </a>
         </li>

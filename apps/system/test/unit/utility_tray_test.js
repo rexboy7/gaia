@@ -1,13 +1,18 @@
+/* global MocksHelper, UtilityTray, MockAppWindowManager */
+
 'use strict';
 
 requireApp('system/shared/test/unit/mocks/mock_lazy_loader.js');
 requireApp('system/test/unit/mock_app_window_manager.js');
+requireApp('system/test/unit/mock_app_window.js');
+requireApp('system/test/unit/mock_statusbar.js');
 require('/shared/test/unit/mocks/mock_system.js');
 
 var mocksHelperForUtilityTray = new MocksHelper([
   'AppWindowManager',
   'LazyLoader',
-  'System'
+  'System',
+  'StatusBar'
 ]);
 mocksHelperForUtilityTray.init();
 
@@ -104,7 +109,6 @@ suite('system/UtilityTray', function() {
     stubById.restore();
     window.System.locked = false;
   });
-
 
   suite('show', function() {
     setup(function() {
@@ -231,9 +235,9 @@ suite('system/UtilityTray', function() {
 
 
   // handleEvent
-  suite('handleEvent: attentionscreenshow', function() {
+  suite('handleEvent: attentionopened', function() {
     setup(function() {
-      fakeEvt = createEvent('attentionscreenshow');
+      fakeEvt = createEvent('attentionopened');
       UtilityTray.show();
       UtilityTray.handleEvent(fakeEvt);
     });
@@ -296,15 +300,66 @@ suite('system/UtilityTray', function() {
     });
   });
 
-  suite('handleEvent: launchapp', function() {
-    setup(function() {
-      fakeEvt = createEvent('launchapp');
+  suite('handleEvent: accessibility-control', function() {
+    test('first swipe should show', function() {
+      UtilityTray.hide();
+      var evt = new CustomEvent('mozChromeEvent', {
+        detail: {
+          type: 'accessibility-control',
+          details: JSON.stringify({ eventType: 'edge-swipe-down' })
+        }
+      });
+      UtilityTray.handleEvent(evt);
+      assert.equal(UtilityTray.shown, true);
+    });
+
+    test('second swipe should hide', function() {
       UtilityTray.show();
-      UtilityTray.handleEvent(fakeEvt);
+      var evt = new CustomEvent('mozChromeEvent', {
+        detail: {
+          type: 'accessibility-control',
+          details: JSON.stringify({ eventType: 'edge-swipe-down' })
+        }
+      });
+      UtilityTray.handleEvent(evt);
+      assert.equal(UtilityTray.shown, false);
+    });
+  });
+
+  suite('handleEvent: imemenushow', function() {
+    setup(function() {
+      UtilityTray.show();
     });
 
     test('should be hidden', function() {
+      fakeEvt = createEvent('imemenushow', false, true, {});
+      UtilityTray.handleEvent(fakeEvt);
       assert.equal(UtilityTray.shown, false);
+    });
+  });
+
+  suite('handleEvent: launchapp', function() {
+    setup(function() {
+      UtilityTray.show();
+    });
+
+    test('should be hidden', function() {
+      fakeEvt = createEvent('launchapp', false, true, {
+        origin: 'app://otherApp'
+      });
+      UtilityTray.handleEvent(fakeEvt);
+      assert.equal(UtilityTray.shown, false);
+    });
+
+    test('should not be hidden if the event is sent from background app',
+      function() {
+        var findMyDeviceOrigin =
+          window.location.origin.replace('system', 'findmydevice');
+        fakeEvt = createEvent('launchapp', false, true, {
+          origin: findMyDeviceOrigin
+        });
+        UtilityTray.handleEvent(fakeEvt);
+        assert.equal(UtilityTray.shown, true);
     });
   });
 
@@ -313,6 +368,10 @@ suite('system/UtilityTray', function() {
     setup(function() {
       fakeEvt = createEvent('touchstart', false, true);
       fakeEvt.touches = [0];
+    });
+
+    teardown(function() {
+      window.System.runningFTU = false;
     });
 
     test('onTouchStart is not called if LockScreen is locked', function() {
@@ -334,6 +393,13 @@ suite('system/UtilityTray', function() {
       var stub = this.sinon.stub(UtilityTray, 'onTouchStart');
       UtilityTray.topPanel.dispatchEvent(fakeEvt);
       assert.ok(stub.calledOnce);
+    });
+
+    test('onTouchStart is called when ftu is running', function() {
+      window.System.runningFTU = true;
+      var stub = this.sinon.stub(UtilityTray, 'onTouchStart');
+      UtilityTray.topPanel.dispatchEvent(fakeEvt);
+      assert.ok(stub.notCalled);
     });
 
     test('Dont preventDefault if the target is the overlay', function() {
@@ -427,6 +493,32 @@ suite('system/UtilityTray', function() {
       var defaultStub = this.sinon.stub(evt, 'preventDefault');
       UtilityTray._pdIMESwitcherShow(evt);
       assert.isTrue(defaultStub.notCalled);
+    });
+  });
+
+  suite('handle software button bar', function() {
+    test('enabling/disabling soft home updates the cached height', function() {
+      var adjustedHeight = UtilityTray.screenHeight - 50;
+      var stub = sinon.stub(
+          UtilityTray.overlay,
+          'getBoundingClientRect',
+          function() {
+            return {width: 100, height: adjustedHeight};
+          }
+      );
+
+      var sbEnabledEvt = createEvent('software-button-enabled');
+      UtilityTray.handleEvent(sbEnabledEvt);
+
+      assert.equal(UtilityTray.screenHeight, adjustedHeight);
+
+      adjustedHeight += 50;
+      var sbDisabledEvt = createEvent('software-button-disabled');
+      UtilityTray.handleEvent(sbDisabledEvt);
+
+      assert.equal(UtilityTray.screenHeight, adjustedHeight);
+
+      stub.restore();
     });
   });
 });

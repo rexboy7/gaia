@@ -15,13 +15,8 @@ suite('vertical_homescreen.js >', function() {
   var numCols = 4;
   var updateStub = null;
   var updateHandler = null;
-  var colsPrefEnabled = 'cols.preference.enabled';
-  var colsPref = 'grid.cols';
+  var pref = 'grid.cols';
   var realMozSettings = null;
-
-  var defaultValues = {};
-  defaultValues[colsPref] = numCols;
-  defaultValues[colsPrefEnabled] = true;
 
   suiteTemplate('homescreen', {
     id: 'homescreen'
@@ -49,10 +44,10 @@ suite('vertical_homescreen.js >', function() {
   });
 
   setup(function(done) {
-    var getStub = sinon.stub(verticalPreferences, 'get', function(key) {
+    var getStub = sinon.stub(verticalPreferences, 'get', function() {
       return {
         then: function(resolve, refect) {
-          resolve(defaultValues[key]);
+          resolve(numCols);
         }
       };
     });
@@ -72,7 +67,6 @@ suite('vertical_homescreen.js >', function() {
     test('Grid layout select initialized correctly ', function() {
       // Four columns (second option -> index 1)
       assertNumberOfColumns(numCols);
-      assert.equal(verticalHomescreen.section.hidden, false);
     });
   });
 
@@ -83,7 +77,7 @@ suite('vertical_homescreen.js >', function() {
     }
 
     function assertPreferenceUpdated(id, value, expectedValue) {
-      assert.equal(id, colsPref);
+      assert.equal(id, pref);
       assert.equal(value, expectedValue);
     }
 
@@ -104,111 +98,24 @@ suite('vertical_homescreen.js >', function() {
 
   suite('Updating Datastore > ', function() {
 
-    function dispatchUpdatedEvent(prefName, prefValue) {
+    function dispatchUpdatedEvent(cols) {
       updateHandler.handleEvent({
         type: 'updated',
         target: {
-          name: prefName,
-          value: prefValue
+          name: pref,
+          value: cols
         }
       });
     }
 
     test('The grid layout select was updated properly ', function() {
       var expectedNumCols = 4;
-      dispatchUpdatedEvent(colsPref, expectedNumCols);
+      dispatchUpdatedEvent(expectedNumCols);
       assertNumberOfColumns(expectedNumCols);
 
       expectedNumCols = 3;
-      dispatchUpdatedEvent(colsPref, expectedNumCols);
+      dispatchUpdatedEvent(expectedNumCols);
       assertNumberOfColumns(expectedNumCols);
     });
   });
-
-  suite('Initialise search engines', function() {
-    var xhr;
-    var requests = [];
-
-    setup(function() {
-      navigator.mozSettings.mSetup();
-      navigator.mozSettings.mSyncRepliesOnly = true;
-       xhr = sinon.useFakeXMLHttpRequest();
-       xhr.onCreate = function (xhr) {
-         requests.push(xhr);
-       };
-    });
-
-    teardown(function() {
-      navigator.mozSettings.mTeardown();
-      xhr.restore();
-    });
-
-    test('getCurrentSearchEngine()', function() {
-      navigator.mozSettings.mSettings['search.urlTemplate'] = 'foo.com';
-      verticalHomescreen.getCurrentSearchEngine();
-      navigator.mozSettings.mReplyToRequests();
-      assert.equal(verticalHomescreen.searchUrlTemplate, 'foo.com');
-    });
-
-    test('initSearchEngineSelect()', function() {
-      var populateSearchEnginesStub = this.sinon.stub(verticalHomescreen,
-      'populateSearchEngines');
-      var generateSearchEngineOptionsStub = this.sinon.stub(
-        verticalHomescreen, 'generateSearchEngineOptions');
-      verticalHomescreen.initSearchEngineSelect();
-      navigator.mozSettings.mReplyToRequests();
-      assert.ok(populateSearchEnginesStub.calledOnce);
-
-      navigator.mozSettings.mSettings['search.providers'] = [{'foo': 'bar'}];
-      verticalHomescreen.initSearchEngineSelect();
-      navigator.mozSettings.mReplyToRequests();
-      assert.ok(generateSearchEngineOptionsStub.called);
-
-      populateSearchEnginesStub.restore();
-      generateSearchEngineOptionsStub.restore();
-    });
-
-    test('populateSearchEngines()', function() {
-      var callback = sinon.spy();
-      verticalHomescreen.populateSearchEngines(callback);
-      assert.equal(1, requests.length);
-
-      requests[0].respond(200, { 'Content-Type': 'application/json' },
-        '[{ "foo": "bar"}]');
-      assert.ok(callback.called);
-
-      assert.equal((navigator.mozSettings.mSettings['search.providers']).
-        toString(), ([{ 'foo': 'bar'}]).toString());
-    });
-
-    test('generateSearchEngineOptions()', function() {
-      var realSearchEngineSelect = verticalHomescreen.searchEngineSelect;
-      verticalHomescreen.searchEngineSelect = document.createElement('select');
-      var option = document.createElement('option');
-      option.value = 'dummy';
-      option.text = 'dummy';
-      verticalHomescreen.searchEngineSelect.add(option);
-
-      var data = [
-        {
-          'title': 'Foo Search',
-          'urlTemplate': 'http://foo.com/?q={searchTerms}'
-        },
-        {
-          'bar': 'Bar Search',
-          'urlTemplate': 'http://bar.com/?q={searchTerms}'
-        }
-      ];
-      verticalHomescreen.generateSearchEngineOptions(data);
-      assert.equal(verticalHomescreen.searchEngineSelect.length, 2);
-      assert.equal(verticalHomescreen.searchEngineSelect[0].value,
-        'http://foo.com/?q={searchTerms}');
-      assert.equal(verticalHomescreen.searchEngineSelect[0].text,
-        'Foo Search');
-
-      verticalHomescreen.searchEngineSelect = realSearchEngineSelect;
-    });
-
-  });
-
 });

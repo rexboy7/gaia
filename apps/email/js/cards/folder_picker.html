@@ -1,4 +1,5 @@
-<div class="card-folder-picker card anim-vertical anim-overlay one-account">
+<div class="card-folder-picker card anim-vertical anim-overlay one-account"
+     data-statuscolor="default">
   <!-- Our card does not have a header of its own; it reuses the message_list's
        header.  We want to steal clicks on its menu button too, hence this node
        and fld-header-back which is a transparent button that overlays the menu
@@ -25,7 +26,11 @@
              expanded.  The actual items live in fld-accountlist-container
              for animation reasons; see below. -->
         <a class="fld-acct-header closed" role="region">
-          <span class="fld-acct-header-account-label"></span>
+          <!--
+            The &nbsp; is on purpose, so that initial height measurement of the
+            element be correct even before this element has real content.
+          -->
+          <span class="fld-acct-header-account-label">&nbsp;</span>
           <span class="fld-acct-header-account-header"
                 data-l10n-id="drawer-accounts-header">AccountS</span>
           <span class="fld-account-switch-arrow"></span>

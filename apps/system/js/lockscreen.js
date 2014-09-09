@@ -17,6 +17,8 @@
     configs: {
       mode: 'default'
     },
+    // 'notificationId' for opening app after unlocking.
+    _unlockingMessage: {},
     // The unlocking strategy.
     _unlocker: null,
     _unlockerInitialized: false,
@@ -141,9 +143,6 @@
   LockScreen.prototype.handleEvent =
   function ls_handleEvent(evt) {
     switch (evt.type) {
-      case 'ftuopen':
-        this.unlock(true);
-        break;
       case 'screenchange':
         // Don't lock if screen is turned off by promixity sensor.
         if (evt.detail.screenOffBy == 'proximity') {
@@ -207,6 +206,11 @@
         // Cancel the default action of <a>
         evt.preventDefault();
         this.handlePassCodeInput(key);
+        window.dispatchEvent(new window.CustomEvent(
+          'lockscreen-keypad-input', { detail: {
+            key: key
+          }
+        }));
         break;
 
       case 'touchstart':
@@ -238,7 +242,6 @@
         }
 
         if (!this.locked) {
-          this.switchPanel();
           this.overlay.hidden = true;
           this.unlockDetail = undefined;
         }
@@ -246,11 +249,6 @@
 
       case 'home':
         if (this.locked) {
-          if (this.passCodeEnabled) {
-            this.switchPanel('passcode');
-          } else {
-            this.switchPanel();
-          }
           this.dispatchEvent('secure-closeapps');
           evt.stopImmediatePropagation();
         }
@@ -271,10 +269,6 @@
           emergencyCallBtn.classList.add('disabled');
         } else {
           emergencyCallBtn.classList.remove('disabled');
-        }
-        // Return to main panel once call state changes.
-        if (this.locked) {
-          this.switchPanel();
         }
         break;
       case 'lockscreenslide-unlocker-initializer':
@@ -339,6 +333,12 @@
           break;
         }
         break;
+      case 'timeformatchange':
+        this.timeFormat = window.navigator.mozHour12 ?
+          navigator.mozL10n.get('shortTimeFormat12') :
+          navigator.mozL10n.get('shortTimeFormat24');
+        this.refreshClock(new Date());
+        break;
     }
   };  // -- LockScreen#handleEvent --
 
@@ -363,6 +363,10 @@
      * the slider specified in that bugzilla issue
      */
     this._unlocker = new window.LockScreenSlide({useNewStyle: true});
+    // The default one is 12 hour.
+    this.timeFormat = window.navigator.mozHour12 ?
+      navigator.mozL10n.get('shortTimeFormat12') :
+      navigator.mozL10n.get('shortTimeFormat24');
     this.getAllElements();
     this.notificationsContainer =
       document.getElementById('notifications-lockscreen-container');
@@ -370,7 +374,6 @@
     this.lockIfEnabled(true);
     this.writeSetting(this.enabled);
     this.initUnlockerEvents();
-    this.initEmergencyCallEvents();
 
     /* Status changes */
     window.addEventListener('volumechange', this);
@@ -382,7 +385,10 @@
 
     /* Telephony changes */
     if (navigator.mozTelephony) {
+      this.initEmergencyCallEvents();
       navigator.mozTelephony.addEventListener('callschanged', this);
+    } else {
+      this.passcodePad.querySelector('a[data-key=e]').classList.add('disabled');
     }
 
     /* Gesture */
@@ -403,8 +409,8 @@
 
     /* blocking holdhome and prevent Cards View from show up */
     window.addEventListener('holdhome', this, true);
-
     window.addEventListener('ftuopen', this);
+    window.addEventListener('timeformatchange', this);
 
     /* mobile connection state on lock screen */
     if (window.navigator.mozMobileConnections) {
@@ -490,8 +496,6 @@
     // Clock always uses one Timeouts/Intervals so it's safe in
     // other scenarios (such as turning on lockscreen after boot in settings)
     this.clock.start(this.refreshClock.bind(this));
-
-    window.lockScreenNotifications.bindLockScreen(this);
   };
 
   LockScreen.prototype.initUnlockerEvents =
@@ -631,9 +635,7 @@
   LockScreen.prototype._activateUnlock =
   function ls_activateUnlock() {
     var passcodeOrUnlock = (function() {
-      if (this.passCodeEnabled && this.checkPassCodeTimeout()) {
-          this.switchPanel('passcode');
-      } else {
+      if (!(this.passCodeEnabled && this.checkPassCodeTimeout())) {
         this.unlock();
       }
     }).bind(this);
@@ -679,7 +681,7 @@
         break;
 
       case 'c': // 'C'ancel
-        this.switchPanel();
+        // Delegate to LockScreenStateManager
         break;
 
       case 'b': // 'B'ackspace for correction
@@ -705,11 +707,6 @@
         }
         break;
     }
-  };
-
-  LockScreen.prototype.handleEmergencyCallLeave =
-  function ls_handleEmergencyCallLeave() {
-    this.switchPanel();
   };
 
   LockScreen.prototype.lockIfEnabled =
@@ -743,10 +740,13 @@
     this.writeSetting(false);
 
     if (this.unlockSoundEnabled) {
-      var unlockAudio = new Audio('./resources/sounds/unlock.ogg');
+      var unlockAudio = new Audio('./resources/sounds/unlock.opus');
       unlockAudio.play();
     }
 
+    if (!detail) {
+      detail = this._unlockingMessage;
+    }
     this.overlay.classList.toggle('no-transition', instant);
     this.dispatchEvent('lockscreen-request-unlock', detail);
     this.dispatchEvent('secure-modeoff');
@@ -755,18 +755,18 @@
     // If we don't unlock instantly here,
     // these are run in transitioned callback.
     if (instant) {
-      this.switchPanel();
       this.overlay.hidden = true;
     } else {
       this.unlockDetail = detail;
     }
+    // Clear the state after we send the request.
+    this._unlockingMessage = {};
   };
 
   LockScreen.prototype.lock =
   function ls_lock(instant) {
     var wasAlreadyLocked = this.locked;
     this.locked = true;
-    this.switchPanel();
 
     this.overlay.focus();
     this.overlay.classList.toggle('no-transition', instant);
@@ -905,7 +905,7 @@
     var f = new navigator.mozL10n.DateTimeFormat();
     var _ = navigator.mozL10n.get;
 
-    var timeFormat = _('shortTimeFormat').replace('%p', '<span>%p</span>');
+    var timeFormat = this.timeFormat.replace('%p', '<span>%p</span>');
     var dateFormat = _('longDateFormat');
     this.clockTime.innerHTML = f.localeFormat(now, timeFormat);
     this.date.textContent = f.localeFormat(now, dateFormat);
@@ -1190,20 +1190,14 @@
     };
 
   /**
-   * When validation success, do UI change, then unlock.
+   * When validation success, do unlock.
    */
   LockScreen.prototype.onPasscodeValidationSuccess =
     function ls_onPasscodeValidationSuccess() {
-      this.overlay.dataset.passcodeStatus = 'success';
       this.passCodeError = 0;
       this.kPassCodeErrorTimeout = 500;
       this.kPassCodeErrorCounter = 0;
-
-      var transitionend = () => {
-        this.passcodeCode.removeEventListener('transitionend', transitionend);
-        this.unlock();
-      };
-      this.passcodeCode.addEventListener('transitionend', transitionend);
+      this.unlock();
     };
 
   /** @exports LockScreen */

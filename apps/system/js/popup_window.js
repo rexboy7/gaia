@@ -17,8 +17,7 @@
       this.containerElement = configs.rearWindow.element;
     }
     configs.chrome = {
-      bar: true,
-      navigation: false
+      bar: true
     };
 
     AppWindow.call(this, configs);
@@ -59,7 +58,7 @@
    * @type String
    * @memberof PopupWindow
    */
-  PopupWindow.prototype.openAnimation = 'slideup';
+  PopupWindow.prototype.openAnimation = 'slide-from-bottom';
 
   /**
    * Default closing animation.
@@ -67,7 +66,7 @@
    * @type String
    * @memberof PopupWindow
    */
-  PopupWindow.prototype.closeAnimation = 'slidedown';
+  PopupWindow.prototype.closeAnimation = 'slide-to-bottom';
 
   PopupWindow.prototype.CLASS_LIST = 'appWindow popupWindow';
 

@@ -7,7 +7,15 @@
 
 (function(exports) {
 
-  const PREVENT_CLICK_TIMEOUT = 300;
+  // This constant is the delay between the last scroll event and the moment we
+  // listen to touchstart events again.
+  const PREVENT_TAP_TIMEOUT = 300;
+
+  // If the delta move from touchstart to touchend is greater than this, we'll
+  // ignore the touchend event to launch an app.
+  // "20" comes from Gecko, and we also try to have a greater value for devices
+  // with more pixels.
+  var SCROLL_THRESHOLD = 20 * window.devicePixelRatio;
 
   /**
    * GridView is a generic class to render and display a grid of items.
@@ -16,8 +24,11 @@
    */
   function GridView(config) {
     this.config = config;
-    this.clickIcon = this.clickIcon.bind(this);
+    this.onTouchStart = this.onTouchStart.bind(this);
+    this.onTouchEnd = this.onTouchEnd.bind(this);
     this.onScroll = this.onScroll.bind(this);
+    this.onContextMenu = this.onContextMenu.bind(this);
+    this.lastScrollTime = 0;
 
     if (config.features.zoom) {
       this.zoom = new GridZoom(this);
@@ -128,21 +139,69 @@
     },
 
     start: function() {
-      this.element.addEventListener('click', this.clickIcon);
-      window.addEventListener('scroll', this.onScroll);
+      this.element.addEventListener('touchstart', this.onTouchStart);
+      this.element.addEventListener('touchend', this.onTouchEnd);
+      this.element.addEventListener('contextmenu', this.onContextMenu);
+      window.addEventListener('scroll', this.onScroll, true);
+      this.lastTouchStart = null;
     },
 
     stop: function() {
-      this.element.removeEventListener('click', this.clickIcon);
-      window.removeEventListener('scroll', this.onScroll);
+      this.element.removeEventListener('touchstart', this.onTouchStart);
+      this.element.removeEventListener('touchend', this.onTouchEnd);
+      this.element.removeEventListener('contextmenu', this.onContextMenu);
+      window.removeEventListener('scroll', this.onScroll, true);
+      this.lastTouchStart = null;
     },
 
-    onScroll: function(e) {
-      this.element.removeEventListener('click', this.clickIcon);
-      clearTimeout(this.preventClickTimeout);
-      this.preventClickTimeout = setTimeout(function addClickEvent() {
-        this.element.addEventListener('click', this.clickIcon);
-      }.bind(this), PREVENT_CLICK_TIMEOUT);
+    onContextMenu: function(e) {
+      setTimeout(function() {
+        if (e.defaultPrevented) {
+          this.lastTouchStart = null;
+        }
+      }.bind(this));
+    },
+
+    // bug 1015000
+    onScroll: function() {
+      this.lastScrollTime = Date.now();
+    },
+
+    onTouchStart: function(e) {
+      // we track the last touchstart
+      this.lastTouchStart = e.changedTouches[0];
+    },
+
+    // click = last touchstart, then touchend for same finger happening not too
+    // far
+    // Gecko does that automatically but since we want to use touch events for
+    // more responsiveness, we also need to replicate that behavior.
+    onTouchEnd: function(e) {
+      if (Date.now() - this.lastScrollTime < PREVENT_TAP_TIMEOUT) {
+        return;
+      }
+
+      var lastTouchStart = this.lastTouchStart;
+
+      if (!lastTouchStart) {
+        // This variable is deleted once a contextmenu event is received
+        return;
+      }
+
+      var touch = e.changedTouches.identifiedTouch(lastTouchStart.identifier);
+      if (!touch) {
+        return;
+      }
+
+      var deltaX = lastTouchStart.clientX - touch.clientX;
+      var deltaY = lastTouchStart.clientY - touch.clientY;
+
+      this.lastTouchStart = null;
+
+      var move = Math.hypot(deltaX, deltaY);
+      if (move < SCROLL_THRESHOLD) {
+        this.clickIcon(e);
+      }
     },
 
     /**
@@ -150,6 +209,7 @@
      */
     clickIcon: function(e) {
       e.preventDefault();
+
       var container = e.target;
       var action = 'launch';
 
@@ -314,6 +374,7 @@
      * @param {Object} options Options to render with including:
      *  - from {Integer} The index to start rendering from.
      *  - skipDivider {Boolean} Whether or not to skip the divider
+     *  - rerender {Boolean} Whether we should clean elements and re-render.
      */
     render: function(options) {
       var self = this;
@@ -362,6 +423,12 @@
       for (var idx = 0; idx <= to; idx++) {
         var item = this.items[idx];
 
+        // Remove the element if we are re-rendering.
+        if (options.rerender && item.element) {
+          this.element.removeChild(item.element);
+          item.element = null;
+        }
+
         // If the item would go over the boundary before rendering,
         // step the y-axis.
         if (x > 0 && item.gridWidth > 1 &&
@@ -397,9 +464,21 @@
 
       this.element.setAttribute('cols', this.layout.cols);
       pendingCachedIcons === 0 && onCachedIconRendered();
+      this.loadDragDrop();
+    },
 
+    /**
+     * Loads dragdrop libraries and instantiates if necessary.
+     * DragDrop libraries are lazy laoded to save on startup time. They are
+     * loaded after the initial paint in order to paint the icons as fast
+     * as possible.
+     */
+    loadDragDrop: function() {
       if (!this.dragdrop && this.config.features.dragdrop) {
         LazyLoader.load('shared/elements/gaia_grid/js/grid_dragdrop.js', () => {
+          if (this.dragdrop) {
+            return;
+          }
           this.dragdrop = new GridDragDrop(this);
         });
       }

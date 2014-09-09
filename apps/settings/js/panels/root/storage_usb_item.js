@@ -10,6 +10,7 @@ define(function(require) {
   var SettingsListener = require('shared/settings_listener');
   var AsyncStorage = require('shared/async_storage');
   var SettingsCache = require('modules/settings_cache');
+  var SettingsService = require('modules/settings_service');
 
   /**
    * @alias module:panels/root/storage_usb_item
@@ -52,7 +53,7 @@ define(function(require) {
       }
       if (value) { //observe
         // ums master switch on root panel
-        this._elements.umsEnabledCheckBox.addEventListener('change', this);
+        this._elements.usbEnabledCheckBox.addEventListener('change', this);
 
         SettingsListener.observe(this._umsSettingKey, false,
           this._boundUmsSettingHandler);
@@ -62,8 +63,11 @@ define(function(require) {
         SettingsListener.observe(this._defaultMediaVolumeKey, 'sdcard',
           this._boundMediaVolumeChangeHandler);
         window.addEventListener('localized', this);
+
+        // register USB storage split click handler
+        this._elements.usbStorage.addEventListener('click', this._onItemClick);
       } else { //unobserve
-        this._elements.umsEnabledCheckBox.removeEventListener('change', this);
+        this._elements.usbEnabledCheckBox.removeEventListener('change', this);
 
         SettingsListener.unobserve(this._umsSettingKey,
           this._boundUmsSettingHandler);
@@ -72,12 +76,20 @@ define(function(require) {
         SettingsListener.unobserve(this._defaultMediaVolumeKey,
           this._boundMediaVolumeChangeHandler);
         window.removeEventListener('localized', this);
+
+        this._elements.usbStorage.removeEventListener('click',
+          this._onItemClick);
       }
     },
 
     _umsSettingHandler: function storage_umsSettingHandler(enabled) {
-      this._elements.umsEnabledCheckBox.checked = enabled;
+      this._elements.usbEnabledCheckBox.checked = enabled;
       this._updateUmsDesc();
+    },
+
+    // navigate to USB Storage panel
+    _onItemClick: function storage_onItemClick(evt) {
+      SettingsService.navigate('usbStorage');
     },
 
     handleEvent: function storage_handleEvent(evt) {
@@ -86,7 +98,7 @@ define(function(require) {
           this._updateMediaStorageInfo();
           break;
         case 'change':
-          if (evt.target === this._elements.umsEnabledCheckBox) {
+          if (evt.target === this._elements.usbEnabledCheckBox) {
             this._umsMasterSettingChanged(evt);
           } else {
             // we are handling storage state changes
@@ -99,9 +111,8 @@ define(function(require) {
 
     // ums description
     _updateUmsDesc: function storage_updateUmsDesc() {
-      var localize = navigator.mozL10n.localize;
       var key;
-      if (this._elements.umsEnabledCheckBox.checked) {
+      if (this._elements.usbEnabledCheckBox.checked) {
         //TODO list all enabled volume name
         key = 'enabled';
       } else if (this._defaultVolumeState === 'shared') {
@@ -109,7 +120,7 @@ define(function(require) {
       } else {
         key = 'disabled';
       }
-      localize(this._elements.umsEnabledInfoBlock, key);
+      this._elements.usbEnabledInfoBlock.setAttribute('data-l10n-id', key);
     },
 
     _umsMasterSettingChanged: function storage_umsMasterSettingChanged(evt) {
@@ -199,7 +210,6 @@ define(function(require) {
     },
 
     _updateVolumeState: function storage_updateVolumeState(volume, state) {
-      var localize = navigator.mozL10n.localize;
       this._defaultVolumeState = state;
       this._updateUmsDesc();
       switch (state) {
@@ -209,12 +219,14 @@ define(function(require) {
           break;
 
         case 'shared':
-          localize(this._elements.mediaStorageDesc, '');
+          this._elements.mediaStorageDesc.removeAttribute('data-l10n-id');
+          this._elements.mediaStorageDesc.textContent = '';
           this._lockMediaStorageMenu(false);
           break;
 
         case 'unavailable':
-          localize(this._elements.mediaStorageDesc, 'no-storage');
+          this._elements.mediaStorageDesc.setAttribute('data-l10n-id',
+                                                       'no-storage');
           this._lockMediaStorageMenu(true);
           break;
       }

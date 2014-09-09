@@ -167,16 +167,9 @@
     },
     "ice_contacts": {
       "description": "Contains references to in case of emergency contacts"
-    }
-  },
-
-  "connections": {
-    "ftu-connection": {
-      "description": "FTU Token Data Facebook",
-      "rules": {
-        "manifestURLs": ["app://ftu.gaiamobile.org/manifest.webapp"]
-      },
-      "handler_path": "/contacts/iac.html"
+    },
+    "Import_Status_Data": {
+      "description": "Import status data shared between FTU and Contacts"
     }
   },
 

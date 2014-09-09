@@ -47,6 +47,15 @@ a {
   bottom: 6.5rem;
 }
 
+/*
+ * Responsive design for tablet
+ */
+@media (min-width: 768px) {
+  [role=main] {
+    bottom: 10rem;
+  }
+}
+
 [role=main] > [role=region] {
   background: none
 }
@@ -66,36 +75,13 @@ gaia-buttons.forward-only .icon-previous {
   display: none !important;
 }
 
-/* Steps state */
-.step-state {
-  height: 0;
-  font-size: 0;
-  border-top: solid 0.1rem #b7b7b7;
-  border-bottom: solid 0.1rem #fff;
-  position: absolute;
-  top: 5.5rem;
-  left: 1.5rem;
-  right: 1.5rem;
-  z-index: 100;
-}
-
-.step-state-bar {
-  content: "";
-  height: 0.3rem;
-  position: absolute;
-  top: 50%;
-  left: 0;
-  margin-top: -0.2rem;
-  background: #858585;
-  transition: all 0.35s cubic-bezier(0.000, 1.000, 0.535, 1.110);
-}
-
 /*
   Header conditional button
 */
 
-.no-options header menu {
-  display: none;
+.no-options header menu,
+.no-options gaia-header button {
+  display: none !important;
 }
 
 /*
@@ -311,10 +297,13 @@ gaia-buttons.forward-only .icon-previous {
 
 #wifi [data-type="list"] li > p {
   pointer-events: none;
+  padding-right: 6.2rem;
 }
 
 #wifi li {
   padding: 0 1.5rem;
+  display: flex;
+  flex-direction: column;
 }
 #wifi li.connected p {
   color: #00AACC;
@@ -390,6 +379,11 @@ gaia-buttons.forward-only .icon-previous {
 /*
  * States of Wifi signal
  */
+#wifi [data-type="list"] li > aside {
+  position: absolute;
+  right: 1.5rem;
+  top: 0;
+}
 aside.wifi-icon {
   background-repeat: no-repeat;
   background-position: 0 center;
@@ -459,7 +453,7 @@ aside.connecting {
 #hidden-wifi-authentication .pack-checkbox,
 #configure_network_params .pack-checkbox {
   position: relative;
-  transform: translateX(4rem);
+  left: auto;
   padding: 1rem 0 1rem 3rem;
   pointer-events: auto;
 }
@@ -472,7 +466,7 @@ aside.connecting {
   opacity: 0;
   z-index: 3010;
   transition: all 1s ease;
-  background: url(images/bg_grey-noise.png);
+  background: #2d2d2d;
 }
 
 .finish-screen-base.show, .tutorial-finish-base.show {
@@ -1111,11 +1105,16 @@ i.hack-first-child {
 /*
   RTL Tweeks
 */
+html[dir="rtl"] #hidden-wifi-authentication .pack-checkbox,
+html[dir="rtl"] #configure_network_params .pack-checkbox {
+  padding-right: 3rem;
+  padding-left: 3rem;
+}
 
-/* Right to left: position the check mark to the left */
-html[dir="rtl"] [data-type="list"].pack-value-selector li label:not([for]) input + span:after {
-  left: 0;
-  margin-left: auto;
+html[dir="rtl"] #hidden-wifi-authentication .pack-checkbox input ~ span:after,
+html[dir="rtl"] #configure_network_params .pack-checkbox input ~ span:after {
+  right: 0;
+  margin-right: 0;
 }
 
 html[dir="rtl"] #welcome_browser #form_share_statistics label {

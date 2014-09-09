@@ -3,7 +3,6 @@
   "description": "First Time Experience",
   "type": "certified",
   "launch_path": "/index.html",
-  "fullscreen": "true",
   "role": "system",
 
   "developer": {
@@ -56,6 +55,10 @@
     "Gaia_Facebook_Friends": {
       "readonly": false,
       "description": "Facebook contacts"
+    },
+    "Import_Status_Data": {
+      "readonly": false,
+      "description": "Import status data shared between FTU and Contacts"
     }
   }
 }

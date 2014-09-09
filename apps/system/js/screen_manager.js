@@ -104,6 +104,8 @@ var ScreenManager = {
   _cpuWakeLock: null,
 
   init: function scm_init() {
+    window.addEventListener('attentionopening', this);
+    window.addEventListener('attentionopened', this);
     window.addEventListener('sleep', this);
     window.addEventListener('wake', this);
     window.addEventListener('nfc-tech-discovered', this);
@@ -113,6 +115,9 @@ var ScreenManager = {
     // User is unlocking by sliding or other methods.
     window.addEventListener('unlocking-start', this);
     window.addEventListener('unlocking-stop', this);
+
+    // User is actively using the screen reader.
+    window.addEventListener('accessibility-action', this);
 
     this.screen = document.getElementById('screen');
 
@@ -198,6 +203,12 @@ var ScreenManager = {
 
   handleEvent: function scm_handleEvent(evt) {
     switch (evt.type) {
+      case 'attentionopening':
+      case 'attentionopened':
+        if (!this.enabled) {
+          this.turnScreenOn();
+        }
+        break;
       case 'devicelight':
         if (!this._deviceLightEnabled || !this.screenEnabled ||
             this._inTransition)
@@ -211,6 +222,10 @@ var ScreenManager = {
 
       case 'wake':
         this.turnScreenOn();
+        break;
+
+      case 'accessibility-action':
+        this._reconfigScreenTimeout();
         break;
 
       case 'nfc-tech-discovered':
@@ -272,9 +287,6 @@ var ScreenManager = {
         // If the _cpuWakeLock is already set we are in a multiple
         // call setup, the user will be notified by a tone.
         if (this._cpuWakeLock) {
-          // In case of user making an extra call, the attention screen
-          // may be hidden at top so we need to confirm it's shown again.
-          dialerAgent.showCallScreen();
           break;
         }
 

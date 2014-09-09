@@ -12,6 +12,9 @@ require.config({
     'settings': {
       exports: 'Settings'
     },
+    'shared/apn_helper': {
+      exports: 'ApnHelper'
+    },
     'shared/async_storage': {
       exports: 'asyncStorage'
     },
@@ -20,6 +23,9 @@ require.config({
     },
     'shared/keyboard_helper': {
       exports: 'KeyboardHelper'
+    },
+    'shared/language_list': {
+      exports: 'LanguageList'
     },
     'shared/lazy_loader': {
       exports: 'LazyLoader'
@@ -39,8 +45,27 @@ require.config({
     'shared/settings_listener': {
       exports: 'SettingsListener'
     },
+    'shared/toaster': {
+      exports: 'Toaster'
+    },
+    'shared/tz_select': {
+      exports: 'tzSelect'
+    },
     'shared/wifi_helper': {
       exports: 'WifiHelper'
+    },
+    'shared/bluetooth_helper': {
+      exports: 'BluetoothHelper'
+    },
+    'shared/simslot': {
+      exports: 'SIMSlot'
+    },
+    'shared/simslot_manager': {
+      exports: 'SIMSlotManager',
+      deps: ['shared/simslot']
+    },
+    'shared/mobile_operator': {
+      exports: 'MobileOperator'
     },
     'utils': {
       exports: ''
@@ -54,6 +79,14 @@ require.config({
       name: 'main'
     },
     {
+      name: 'modules/apn/apn_settings_manager',
+      exclude: [
+        'main',
+        'modules/async_storage',
+        'modules/mvvm/observable'
+      ]
+    },
+    {
       name: 'panels/root/panel',
       exclude: [
         'main',
@@ -64,7 +97,8 @@ require.config({
       name: 'panels/languages/panel',
       exclude: [
         'main',
-        'shared/keyboard_helper'
+        'shared/keyboard_helper',
+        'modules/date_time'
       ]
     },
     {
@@ -174,6 +208,22 @@ require.config({
     },
     {
       name: 'panels/wifi_wps/panel',
+      exclude: ['main']
+    },
+    {
+      name: 'panels/date_time/panel',
+      exclude: [
+        'main',
+        'modules/mvvm/observable',
+        'modules/date_time'
+      ]
+    },
+    {
+      name: 'panels/browsing_privacy/panel',
+      exclude: ['main']
+    },
+    {
+      name: 'panels/search/panel',
       exclude: ['main']
     }
   ]

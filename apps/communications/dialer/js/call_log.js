@@ -1,3 +1,8 @@
+/* globals PerformanceTestingHelper, Contacts, CallLogDBManager, LazyLoader,
+           Utils, LazyL10n, StickyHeader, KeypadManager, SimSettingsHelper,
+           CallHandler, AccessibilityHelper,
+           ConfirmDialog, Notification, fb, CallGroupMenu */
+
 'use strict';
 
 var CallLog = {
@@ -24,9 +29,9 @@ var CallLog = {
       '/shared/style/lists.css',
       '/shared/js/confirm.js',
       '/shared/js/dialer/utils.js',
-      '/dialer/js/phone_action_menu.js',
       '/shared/js/sticky_header.js',
-      '/shared/js/sim_settings_helper.js'
+      '/shared/js/sim_settings_helper.js',
+      '/shared/js/date_time_helper.js'
     ];
     var self = this;
 
@@ -45,7 +50,8 @@ var CallLog = {
           return;
         }
 
-        if (self._contactCache = (cacheRevision >= contactsRevision)) {
+        self._contactCache = (cacheRevision >= contactsRevision);
+        if (self._contactCache) {
           return;
         }
 
@@ -63,11 +69,11 @@ var CallLog = {
         'call-log-container',
         'call-log-edit-mode',
         'call-log-filter',
-        'call-log-icon-close',
         'call-log-icon-edit',
         'call-log-view',
         'deselect-all-threads',
         'delete-button',
+        'edit-mode-header',
         'header-edit-mode-text',
         'missed-filter',
         'select-all-threads',
@@ -87,9 +93,11 @@ var CallLog = {
         self._ = _;
         self.render();
 
+        window.addEventListener('timeformatchange',
+          self._updateCallTimes.bind(self));
         self.callLogIconEdit.addEventListener('click',
           self.showEditMode.bind(self));
-        self.callLogIconClose.addEventListener('click',
+        self.editModeHeader.addEventListener('action',
           self.hideEditMode.bind(self));
         self.missedFilter.addEventListener('click',
           self.filter.bind(self));
@@ -140,31 +148,21 @@ var CallLog = {
     };
   },
 
+  _updateCallTimes: function cl_updateCallTimes() {
+    var logItemElts = this.callLogContainer.querySelectorAll('.log-item');
+    for (var i = 0; i < logItemElts.length; i++) {
+      var logItemElt = logItemElts[i];
+      var timestamp = logItemElt.getAttribute('data-timestamp');
+      var formattedTime = Utils.prettyDate(parseInt(timestamp, 10)) + ' ';
+      var callTimeElt = logItemElt.querySelector('.call-time');
+      callTimeElt.textContent = formattedTime;
+    }
+  },
+
   // Helper to update UI and clean notifications when we got visibility
   becameVisible: function cl_becameVisible() {
     this.updateHeaders();
-    this.updateHighlight();
     this.cleanNotifications();
-  },
-
-  // Method for highlighting call events since last visit to call-log
-  updateHighlight: function cl_updateHighlight(target) {
-    var self = this;
-    var evtName = 'latestCallLogVisit';
-    var container = target || this.callLogContainer;
-    window.asyncStorage.getItem(evtName, function getItem(referenceTimestamp) {
-      if (referenceTimestamp) {
-        var logs = container.getElementsByTagName('li');
-        for (var i = 0, l = logs.length; i < l; i++) {
-          if (logs[i].dataset.timestamp > referenceTimestamp) {
-            logs[i].classList.add('highlighted');
-          } else {
-            logs[i].classList.remove('highlighted');
-          }
-        }
-      }
-      window.asyncStorage.setItem(evtName, Date.now());
-    });
   },
 
   // Method for updating the time in headers based on device time
@@ -197,7 +195,6 @@ var CallLog = {
     var daysToRender = [];
     var chunk = [];
     var prevDate;
-    var startDate = new Date().getTime();
     var screenRendered = false;
     var MAX_GROUPS_FOR_FIRST_RENDER = 8;
     var MAX_GROUPS_TO_BATCH_RENDER = 100;
@@ -272,7 +269,6 @@ var CallLog = {
       phoneNumbers.push(current.number);
     }
 
-    this.updateHighlight(callLogSection);
     this.callLogContainer.appendChild(callLogSection);
 
     // If the contacts cache is not valid, we retrieve the contacts information
@@ -287,8 +283,9 @@ var CallLog = {
     this.disableEditMode();
     // If rendering the empty call log for all calls (i.e. the
     // isEmptyMissedCallsGroup not set), set the _empty parameter to true
-    if (!isEmptyMissedCallsGroup)
+    if (!isEmptyMissedCallsGroup) {
       this._empty = true;
+    }
 
     var noResultContainer = document.getElementById('no-result-container');
     noResultContainer.hidden = false;
@@ -411,25 +408,22 @@ var CallLog = {
   // <li data-contact-id="4bfa5f07c5584d48a1af7931b976a223"
   //  id="1369695600000-6136112351-dialing" data-type="dialing"
   //  data-phone-number="6136112351" data-timestamp="1369731559902"
-  //  class="log-item">
-  //    <label class="pack-checkbox call-log-selection danger">
-  //      <input value="1369695600000-6136112351-dialing" type="checkbox"
-  //       aria-labelledby="1369695600000-6136112351-dialing-label">
+  //  class="log-item" role="option" aria-selected="false">
+  //    <label class="pack-checkbox call-log-selection danger"
+  //     aria-hidden="true">
+  //      <input value="1369695600000-6136112351-dialing" type="checkbox">
   //      <span></span>
   //    </label>
-  //    <aside class="pack-end">
-  //      <span data-type="img" class="call-log-contact-photo">
-  //    </aside>
-  //    <a role="button" id="1369695600000-6136112351-dialing-label">
+  //    <a role="presentation">
   //      <aside class="icon call-type-icon icon icon-outgoing">
   //      </aside>
-  //      <p aria-hidden="true" class="primary-info">
+  //      <p class="primary-info">
   //        <span class="primary-info-main">David R. Chichester</span>
-  //      </p>
-  //      <p aria-hidden="true" class="call-additional-info">Mobile, O2</p>
-  //      <p aria-hidden="true">
-  //        <span class="call-time">9:59 AM </span>
   //        <span class="retry-count">(1)</span>
+  //      </p>
+  //      <p aria-hidden="true" class="additional-info">
+  //        <span class="type-carrier">Mobile, O2</span>
+  //        <span class="call-time">9:59 AM</span>
   //      </p>
   //    </a>
   // </li>
@@ -446,6 +440,8 @@ var CallLog = {
     groupDOM.dataset.timestamp = date;
     groupDOM.dataset.phoneNumber = number;
     groupDOM.dataset.type = type;
+    groupDOM.setAttribute('role', 'option');
+    groupDOM.setAttribute('aria-selected', false);
     if (contact && contact.id) {
       groupDOM.dataset.contactId = contact.id;
     }
@@ -469,44 +465,29 @@ var CallLog = {
     }
 
     if (typeof group.serviceId !== 'undefined') {
-      var serviceClass = (group.serviceId == 0) ? 'first-sim' : 'second-sim';
+      var serviceClass =
+        (parseInt(group.serviceId) === 0) ? 'first-sim' : 'second-sim';
       iconStyle += ' ' + serviceClass;
     }
 
     var label = document.createElement('label');
+    label.setAttribute('aria-hidden', true);
     label.className = 'pack-checkbox call-log-selection danger';
     var input = document.createElement('input');
     input.setAttribute('type', 'checkbox');
     input.value = group.id;
-    var editLabel = group.id + '-label';
-    input.setAttribute('aria-labelledby', editLabel);
     var span = document.createElement('span');
 
     label.appendChild(input);
     label.appendChild(span);
 
-    var aside = document.createElement('aside');
-    aside.className = 'pack-end';
-    var img = document.createElement('span');
-    img.dataset.type = 'img';
-    img.className = 'call-log-contact-photo';
-
-    if (contact && contact.photo) {
-      this.loadBackgroundImage(img, contact.photo);
-      groupDOM.classList.add('hasPhoto');
-    }
-
-    aside.appendChild(img);
-
     var main = document.createElement('a');
-    main.setAttribute('role', 'button');
-    main.id = editLabel;
+    main.setAttribute('role', 'presentation');
     var icon = document.createElement('aside');
     icon.className = 'icon call-type-icon ' + iconStyle;
 
     var primInfo = document.createElement('p');
     primInfo.className = 'primary-info';
-    primInfo.setAttribute('aria-hidden', 'true');
 
     var primInfoMain = document.createElement('span');
     primInfoMain.className = 'primary-info-main';
@@ -516,7 +497,15 @@ var CallLog = {
       primInfoMain.textContent = number || this._('withheld-number');
     }
 
+    var retryCount = document.createElement('span');
+    retryCount.className = 'retry-count';
+
+    if (group.retryCount && group.retryCount > 1) {
+      retryCount.textContent = '(' + group.retryCount + ')';
+    }
+
     primInfo.appendChild(primInfoMain);
+    primInfo.appendChild(retryCount);
 
     var phoneNumberAdditionalInfo = '';
     var phoneNumberTypeLocalized = '';
@@ -528,40 +517,31 @@ var CallLog = {
       phoneNumberTypeLocalized =
         voicemail ? this._('voiceMail') :
           (emergency ? this._('emergencyNumber') : '');
+    } else {
+      phoneNumberAdditionalInfo = this._('unknown');
     }
 
-    var addInfo;
+    var addInfo = document.createElement('p');
+    addInfo.className = 'additional-info';
+    addInfo.setAttribute('aria-hidden', 'true');
+
+    var typeAndCarrier = document.createElement('span');
+    typeAndCarrier.className = 'type-carrier';
     if (phoneNumberAdditionalInfo && phoneNumberAdditionalInfo.length) {
-      addInfo = document.createElement('p');
-      addInfo.className = 'call-additional-info';
-      addInfo.textContent = phoneNumberAdditionalInfo;
-      addInfo.setAttribute('aria-hidden', 'true');
+      typeAndCarrier.textContent = phoneNumberAdditionalInfo;
     }
+    addInfo.appendChild(typeAndCarrier);
 
-    var thirdInfo = document.createElement('p');
-    thirdInfo.setAttribute('aria-hidden', 'true');
     var callTime = document.createElement('span');
     callTime.className = 'call-time';
     callTime.textContent = Utils.prettyDate(date) + ' ';
-    var retryCount = document.createElement('span');
-    retryCount.className = 'retry-count';
-
-    if (group.retryCount && group.retryCount > 1) {
-      retryCount.textContent = '(' + group.retryCount + ')';
-    }
-
-    thirdInfo.appendChild(callTime);
-    thirdInfo.appendChild(retryCount);
+    addInfo.appendChild(callTime);
 
     main.appendChild(icon);
     main.appendChild(primInfo);
-    if (addInfo) {
-      main.appendChild(addInfo);
-    }
-    main.appendChild(thirdInfo);
+    main.appendChild(addInfo);
 
-    if (addInfo && phoneNumberTypeLocalized &&
-        phoneNumberTypeLocalized.length) {
+    if (phoneNumberTypeLocalized && phoneNumberTypeLocalized.length) {
       primInfoMain.textContent = phoneNumberTypeLocalized;
       var primElem = primInfoMain.parentNode;
       var parent = primElem.parentNode;
@@ -569,7 +549,6 @@ var CallLog = {
     }
 
     groupDOM.appendChild(label);
-    groupDOM.appendChild(aside);
     groupDOM.appendChild(main);
 
     return groupDOM;
@@ -587,6 +566,8 @@ var CallLog = {
     header.dataset.update = true;
     var ol = document.createElement('ol');
     ol.classList.add('log-group');
+    ol.setAttribute('role', 'listbox');
+    ol.setAttribute('aria-multiselectable', true);
     ol.id = 'group-container-' + referenceTimestamp;
 
     groupContainer.appendChild(header);
@@ -626,8 +607,13 @@ var CallLog = {
     document.body.classList.remove('recents-edit');
     var cont = this.callLogContainer;
     var inputs = cont.querySelectorAll('input[type="checkbox"]');
-    for (var i = 0, l = inputs.length; i < l; i++) {
+    var logItems = cont.querySelectorAll('.log-item');
+    var i, l;
+    for (i = 0, l = inputs.length; i < l; i++) {
       inputs[i].checked = false;
+    }
+    for (i = 0, l = logItems.length; i < l; i++) {
+      logItems[i].setAttribute('aria-selected', false);
     }
   },
 
@@ -646,14 +632,17 @@ var CallLog = {
 
   // In case we are in edit mode, just update the counter of selected rows.
   handleEvent: function cl_handleEvent(evt) {
+    var logItem = evt.target;
     if (document.body.classList.contains('recents-edit')) {
+      if (logItem.dataset.phoneNumber) {
+        // Landed on the logItem (when using the screen reader).
+        var checkbox = logItem.getElementsByTagName('input')[0];
+        var toggleChecked = !checkbox.checked;
+        checkbox.checked = toggleChecked;
+        logItem.setAttribute('aria-selected', toggleChecked);
+      }
       this.updateHeaderCount();
       return;
-    }
-    var logItem = evt.target;
-    if (!evt.target.classList.contains('log-item')) {
-      // Landed on the link (when using the screen reader).
-      logItem = logItem.parentNode;
     }
     var dataset = logItem.dataset;
     var phoneNumber = dataset.phoneNumber;
@@ -672,20 +661,17 @@ var CallLog = {
         });
       }
     } else {
-      var contactIds = (dataset.contactId) ? dataset.contactId : null;
-      var contactId = null;
-      if (contactIds !== null) {
-        contactId = contactIds.split(',')[0];
-      }
-
-      var isMissedCall = logItem.classList.contains('missed-call');
-      PhoneNumberActionMenu.show(
-        contactId,
-        phoneNumber,
-        null,
-        isMissedCall
-      );
       evt.preventDefault();
+      var primaryInfo = logItem.querySelector('.primary-info-main').textContent;
+
+      LazyLoader.load(['/dialer/js/call_group_menu.js'], function() {
+        CallGroupMenu.show(
+          primaryInfo,
+          phoneNumber,
+          dataset.timestamp,
+          dataset.type,
+          dataset.status);
+      });
     }
   },
 
@@ -757,8 +743,9 @@ var CallLog = {
       this.deleteButton.setAttribute('disabled', 'disabled');
       return;
     }
-    this.headerEditModeText.textContent = this._('edit-selected',
-                                            {n: selected});
+    this.headerEditModeText.textContent =
+      this._('edit-selected', {n: selected});
+
     this.deleteButton.removeAttribute('disabled');
     if (selected === allInputs) {
       this.deselectAllThreads.removeAttribute('disabled');
@@ -798,10 +785,9 @@ var CallLog = {
           this.callLogContainer.querySelectorAll(selector);
 
     var self = this;
-    var msg = this._('delete-n-log?',
-      {n: inputsSelected.length});
+    var msg = {'id': 'delete-n-log?', 'args': {n: inputsSelected.length}};
     var yesObject = {
-      title: this._('delete'),
+      title: 'delete',
       isDanger: true,
       callback: function deleteLogGroup() {
 
@@ -845,7 +831,7 @@ var CallLog = {
     };
 
     var noObject = {
-      title: this._('cancel'),
+      title: 'cancel',
       callback: function onCancel() {
         ConfirmDialog.hide();
       }
@@ -936,8 +922,10 @@ var CallLog = {
         logs = container.querySelectorAll('li[data-contact-id="' + contactId +
                                           '"]');
         break;
+      /*
       case 'create':
       case 'update':
+      */
       default:
         logs = container.querySelectorAll('.log-item');
         break;
@@ -947,7 +935,7 @@ var CallLog = {
       var log = logs[i];
       var logInfo = log.dataset;
 
-      this._updateContact(log, logInfo.phoneNumber, contactId, i == 0);
+      this._updateContact(log, logInfo.phoneNumber, contactId, i === 0);
     }
   },
 
@@ -967,26 +955,14 @@ var CallLog = {
   updateContactInfo: function cl_updateContactInfo(element, contact,
                                                    matchingTel) {
     var primInfoCont = element.getElementsByClassName('primary-info-main')[0];
-    var contactPhoto = element.querySelector('.call-log-contact-photo');
-    var addInfo = element.getElementsByClassName('call-additional-info');
-    var addInfoCont;
-    if (addInfo && addInfo[0]) {
-      addInfoCont = addInfo[0];
-    } else {
-      addInfoCont = document.createElement('p');
-      addInfoCont.className = 'call-additional-info';
-      var primElem = primInfoCont.parentNode;
-      var parent = primElem.parentNode;
-      parent.insertBefore(addInfoCont, primElem.nextElementSibling);
-    }
+    var addInfo = element.getElementsByClassName('additional-info')[0];
+    var typeAndCarrier = addInfo.querySelector('.type-carrier');
 
     if (!matchingTel) {
       if (element.dataset.contactId) {
         // Remove contact info.
         primInfoCont.textContent = element.dataset.phoneNumber;
-        addInfoCont.textContent = '';
-        this.unloadBackgroundImage(contactPhoto);
-        element.classList.remove('hasPhoto');
+        typeAndCarrier.textContent = '';
         delete element.dataset.contactId;
       }
       return;
@@ -998,48 +974,15 @@ var CallLog = {
       primInfoCont.textContent = primaryInfo;
     }
 
-    var photo = ContactPhotoHelper.getThumbnail(contact);
-    if (photo) {
-      this.loadBackgroundImage(contactPhoto, photo);
-      element.classList.add('hasPhoto');
-    } else {
-      this.unloadBackgroundImage(contactPhoto);
-      element.classList.remove('hasPhoto');
-    }
-
     var phoneNumberAdditionalInfo =
       Utils.getPhoneNumberAdditionalInfo(matchingTel);
     if (phoneNumberAdditionalInfo && phoneNumberAdditionalInfo.length) {
-      addInfoCont.textContent = phoneNumberAdditionalInfo;
+      typeAndCarrier.textContent = phoneNumberAdditionalInfo;
     }
 
     if (contact) {
       element.dataset.contactId = contact.id;
     }
-  },
-
-  loadBackgroundImage: function cl_loadBackgroundImage(element, url) {
-    var REVOKE_TIMEOUT = 60000;
-
-    if (typeof url === 'string') {
-      element.style.backgroundImage = 'url(' + url + ')';
-    } else if (url instanceof Blob) {
-      url = URL.createObjectURL(url);
-      element.style.backgroundImage = 'url(' + url + ')';
-
-      // Revoke the blob once it's ready. A 1 min timeout is added in order
-      // to avoid a race condition between the revoke an the assignment of
-      // the background image
-      var image = new Image();
-      image.src = url;
-      image.onload = image.onerror = function() {
-        setTimeout(URL.revokeObjectURL, REVOKE_TIMEOUT, image.src);
-      };
-    }
-  },
-
-  unloadBackgroundImage: function cl_unloadBackgroundImage(element) {
-    element.style.backgroundImage = '';
   },
 
   cleanNotifications: function cl_cleanNotifcations() {
@@ -1085,7 +1028,7 @@ navigator.mozContacts.oncontactchange = function oncontactchange(event) {
   function contactChanged(contact, reason) {
     var phoneNumbers = [];
     if (contact.tel && contact.tel.length) {
-      var phoneNumbers = contact.tel.map(function(tel) {
+      phoneNumbers = contact.tel.map(function(tel) {
         return tel.value;
       });
     }

@@ -1,13 +1,12 @@
 /* global Card, TaskCard,
-          AppWindowManager, sleepMenu, SettingsListener, AttentionScreen,
-          OrientationManager, System,
+          AppWindowManager, sleepMenu, SettingsListener,
+          OrientationManager, System, homescreenLauncher,
           GestureDetector, UtilityTray, StackManager, Event */
 
 'use strict';
 
 (function(exports) {
   var DEBUG = false;
-
   /**
    * Represent a stack of apps as cards
    *
@@ -19,25 +18,23 @@
    */
   function TaskManager() {
     this.stack = null;
-    this.cardsByOrigin = {};
-    // Unkillable apps which have attention screen now
-    this.attentionScreenApps = [];
-
+    this.unfilteredStack = null;
+    this.cardsByAppID = {};
     // Listen for settings changes
-    this.onRocketbarEnabledChange = function(value) {
-      debug('rocketbar.enabled: '+ value);
-      this.isRocketbar = value;
+    this.onTaskStripEnabled = function(value) {
+      debug('taskstrip.enabled: '+ value);
+      this.isTaskStrip = value;
     }.bind(this);
-    SettingsListener.observe('rocketbar.enabled', false,
-                             this.onRocketbarEnabledChange);
+    SettingsListener.observe('taskstrip.enabled', false,
+                             this.onTaskStripEnabled);
   }
 
   TaskManager.prototype = Object.create({
     /**
      * Use the carousel-style card view (false) or
-     * the Haida-style horizontal task-manager (true)
+     * the Haida-style horizontal task strip (true)
      */
-    isRocketbar: false,
+    isTaskStrip: false,
 
     /**
      * The setting that enables/disables using screenshots vs. icons for the
@@ -177,14 +174,37 @@
     this.screenElement = document.getElementById('screen');
   };
 
-  TaskManager.prototype._registerEvents = function() {
-    window.addEventListener('attentionscreenshow', this);
-    window.addEventListener('attentionscreenhide', this);
-    window.addEventListener('taskmanagershow', this);
-    window.addEventListener('taskmanagerhide', this);
-    window.addEventListener('holdhome', this);
-    window.addEventListener('home', this);
+  TaskManager.prototype._registerShowingEvents = function() {
     window.addEventListener('appopen', this);
+    window.addEventListener('appterminated', this);
+    if (this.allowSwipeToClose) {
+      this.element.addEventListener('touchstart', this);
+    }
+    window.addEventListener('lockscreen-appopened', this);
+    window.addEventListener('tap', this);
+    window.addEventListener('wheel', this);
+    window.addEventListener('opencurrentcard', this);
+  };
+  TaskManager.prototype._unregisterShowingEvents = function() {
+    window.removeEventListener('appopen', this);
+    window.removeEventListener('appterminated', this);
+    window.removeEventListener('lockscreen-appopened', this);
+    window.removeEventListener('tap', this);
+    window.removeEventListener('wheel', this);
+    window.removeEventListener('opencurrentcard', this);
+
+    this.element && this.element.removeEventListener('touchstart', this);
+    window.removeEventListener('lockscreen-appopened', this);
+    window.removeEventListener('tap', this);
+    window.removeEventListener('opencurrentcard', this);
+  };
+
+
+  TaskManager.prototype._registerEvents = function() {
+    window.addEventListener('home', this);
+    window.addEventListener('attentionopened', this);
+    window.addEventListener('taskmanagershow', this);
+    window.addEventListener('holdhome', this);
 
     this.onPreviewSettingsChange = function(settingValue) {
       this.useAppScreenshotPreviews = settingValue;
@@ -196,18 +216,15 @@
   };
 
   TaskManager.prototype._unregisterEvents = function() {
-    window.removeEventListener('attentionscreenshow', this);
-    window.removeEventListener('attentionscreenhide', this);
-    window.removeEventListener('taskmanagershow', this);
-    window.removeEventListener('taskmanagerhide', this);
-    window.removeEventListener('holdhome', this);
     window.removeEventListener('home', this);
-    window.removeEventListener('appopen', this);
+    window.removeEventListener('attentionopened', this);
+    window.removeEventListener('taskmanagershow', this);
+    window.removeEventListener('holdhome', this);
 
     SettingsListener.unobserve(this.SCREENSHOT_PREVIEWS_SETTING_KEY,
                                this.onPreviewSettingsChange);
-    SettingsListener.unobserve('rocketbar.enabled',
-                               this.onRocketbarEnabledChange);
+    SettingsListener.unobserve('taskstrip.enabled',
+                               this.onTaskStripEnabled);
   };
 
   /**
@@ -246,21 +263,17 @@
    *
    * @memberOf TaskManager.prototype
    * @param {Boolean} removeImmediately true to skip transitions when hiding
-   * @param {Number} newStackPosition to include in the event detail
    *
    */
-  TaskManager.prototype.hide = function cs_hideCardSwitcher(removeImmediately,
-                                                            newStackPosition) {
+  TaskManager.prototype.hide = function cs_hideCardSwitcher(removeImmediately) {
     if (!this.isShown()) {
       return;
     }
 
     var cardsView = this.element;
 
-    // events to handle
-    window.removeEventListener('lockscreen-appopened', this);
-    window.removeEventListener('tap', this);
-    window.removeEventListener('opencurrentcard', this);
+    // events to unhandle
+    this._unregisterShowingEvents();
 
     if (removeImmediately) {
       this.element.classList.add('no-transition');
@@ -280,67 +293,115 @@
       }).bind(this);
       cardsView.addEventListener('transitionend', cardsViewHidden);
     }
+    this.fireCardViewClosed();
+  };
 
-    this.fireCardViewClosed(newStackPosition);
+  /**
+   * Apply filter 'filterName' to the card stack.
+   *
+   * @memberOf TaskManager.prototype
+   * @param filterName {string} The name of the filter to apply.
+   * @returns true if a filter was applied, false if not.
+   */
+  TaskManager.prototype.filter = function cs_filterCardStack(filterName) {
+    var noRecentWindows = document.getElementById('cards-no-recent-windows');
+    switch (filterName) {
+      // Filter out any application that is not a system browser window.
+      case 'browser-only':
+        this.stack =
+          this.unfilteredStack
+              .filter(function(app) { return app.isBrowser(); });
+        navigator.mozL10n.setAttributes(noRecentWindows,
+                                        'no-recent-browser-windows');
+        break;
+      // Filter out any application that is not an application only window.
+      case 'apps-only':
+        this.stack =
+          this.unfilteredStack
+              .filter(function(app) { return !app.isBrowser(); });
+        navigator.mozL10n.setAttributes(noRecentWindows,
+                                        'no-recent-app-windows');
+        break;
+      default:
+        return false;
+    }
+
+    // We need to figure out where we are in this filtered stack as we may have
+    // removed apps from it!
+    if (this.currentPosition != -1) {
+      this.currentPosition =
+        this.stack.indexOf(this.unfilteredStack[this.currentPosition]);
+    }
+
+    return true;
   };
 
   /**
    * Main entry point to show the card switcher
    *
    * @memberOf TaskManager.prototype
+   * @param filterName {string} The name of the filter to apply. Only two fitler
+   *                            types are supported at this time: 'browser-only'
+   *                            and 'apps-only'.
    */
-  TaskManager.prototype.show = function cs_showCardSwitcher() {
+  TaskManager.prototype.show = function cs_showCardSwitcher(filterName) {
     // Build and display the card switcher overlay
     // Note that we rebuild the switcher each time we need it rather
     // than trying to keep it in sync with app launches.
 
     // Apps info from Stack Manager.
-    var stack = this.stack = StackManager.snapshot();
+    this.unfilteredStack = StackManager.snapshot();
+    this.stack = this.unfilteredStack;
     this.currentPosition = StackManager.position;
+    this.newStackPosition = null;
+    this.initialTouchPosition = null;
+
+    // Apply the filter. Noop if no filterName.
+    if (this.filter(filterName)) {
+      // Update visual style to indicate we're filtered.
+      this.element.classList.add('filtered');
+    }
+
+    // Short-hand, but we need to get reference to it here as filter can
+    // change the stack that will be used.
+    var stack = this.stack;
 
     // If we are currently displaying the homescreen but we have apps in the
     // stack we will display the most recently used application.
-    if ((this.currentPosition == -1 || StackManager.outOfStack()) &&
-        stack.length) {
-      this.currentPosition = stack.length - 1;
+    if (this.currentPosition == -1 || StackManager.outOfStack()) {
+      if (stack.length) {
+        this.currentPosition = this.isTaskStrip ? 0 : stack.length - 1;
+      } else {
+      // consider homescreen the active app
+        this.currentPosition = -1;
+      }
     }
     this.currentDisplayed = this.currentPosition;
-
     var currentApp = (stack.length && this.currentPosition > -1 &&
                      stack[this.currentPosition]);
 
-    // Return early if isRocketbar and there are no apps.
-    if (!currentApp && this.isRocketbar) {
-      // Fire a cardchange event to notify rocketbar that there are no cards
-      this.fireCardViewClosed();
-      return;
-    } else {
-      // We can listen to appclose event
+    // Return early if isTaskStrip and there are no apps.
+    if (this.isTaskStrip) {
+      if (!currentApp) {
+        // Fire a cardchange event to notify rocketbar that there are no cards
+        this.fireCardViewClosed();
+        return;
+      }
     }
 
     // stash some measurements now to avoid unexpected reflow later
     this._windowWidth = window.innerWidth;
     this._windowHeight = window.innerHeight;
 
-    if (!this.initialTouchPosition) {
-      this.setupCardSwiping();
-    }
-
     // Close utility tray if it is opened.
     UtilityTray && UtilityTray.hide(true);
-
-    // Now we can switch to the homescreen.
-    // while the task manager is shown, the active app is the homescreen
-    // so selecting an app switches from homescreen to that app
-    // which gets us in the right state
-    AppWindowManager.display(null, null, 'to-cardview');
 
     // We're committed to showing the card switcher.
     // Homescreen fades (shows its fade-overlay) on cardviewbeforeshow events
     this.fireCardViewBeforeShow();
 
     this.screenElement.classList.add('cards-view');
-    if (this.isRocketbar) {
+    if (this.isTaskStrip) {
       this.screenElement.classList.add('task-manager');
     }
 
@@ -348,12 +409,8 @@
     if (stack.length) {
       this.element.classList.remove('empty');
     } else {
-      // (we already bailed for the isRocketbar case)
+      // (we already bailed for the isTaskStrip case)
       this.element.classList.add('empty');
-    }
-
-    if (this.allowSwipeToClose) {
-      this.element.addEventListener('touchstart', this);
     }
 
     // Make sure we're in default orientation
@@ -365,11 +422,14 @@
     }, this);
 
     // events to handle while shown
-    window.addEventListener('lockscreen-appopened', this);
-    window.addEventListener('tap', this);
-    window.addEventListener('opencurrentcard', this);
+    this._registerShowingEvents();
+    // only set up for card swiping if there's cards to show
+    if (!this.isTaskStrip && stack.length && !this.initialTouchPosition) {
+      this.setupCardSwiping();
+    }
 
     this.setActive(true);
+    this.setAccessibilityAttributes();
     this.placeCards();
 
     // At the beginning only the current card can listen to tap events
@@ -394,10 +454,10 @@
       _windowWidth: this.windowWidth,
       _windowHeight: this.windowHeight
     };
-    var card = (this.isRocketbar) ?
+    var card = (this.isTaskStrip) ?
                   new TaskCard(config) :
                   new Card(config);
-    this.cardsByOrigin[app.origin] = card;
+    this.cardsByAppID[app.instanceID] = card;
     this.cardsList.appendChild(card.render());
   };
 
@@ -412,7 +472,7 @@
                                                             removeImmediately) {
     var element = card.element;
     var position = element.dataset.position;
-    delete this.cardsByOrigin[element.dataset.origin];
+    delete this.cardsByAppID[card.app.instanceID];
     card.destroy();
     element = null;
 
@@ -440,8 +500,8 @@
     }
 
     // If there are no cards left, then dismiss the task switcher.
-    if (!cardsLength) {
-      this.hide(removeImmediately);
+    if (!cardsLength && this.isShown()) {
+      this.exitToApp();
     }
     else {
       this.alignCurrentCard();
@@ -455,14 +515,15 @@
    */
   TaskManager.prototype.removeCards = function cs_removeCards() {
     // bypass normal removeCards method to efficiently batch-remove all
-    Object.keys(this.cardsByOrigin).forEach(function(origin) {
-      var card = this.cardsByOrigin[origin];
+    Object.keys(this.cardsByAppID).forEach(function(instanceID) {
+      var card = this.cardsByAppID[instanceID];
       card.destroy();
     }, this);
-    this.cardsByOrigin = {};
+    this.cardsByAppID = {};
 
     this.screenElement.classList.remove('cards-view');
     this.screenElement.classList.remove('task-manager');
+    this.element.classList.remove('filtered');
     this.cardsList.innerHTML = '';
     this.currentDisplayed = -1;
     this.deltaX = null;
@@ -481,11 +542,10 @@
           this.closeApp(card);
         return;
       case 'favorite' :
-        debug('cardAction: TODO: favorite ' + card.element.origin);
+        debug('cardAction: TODO: favorite ' + card.element.dataset.origin);
         return;
       case 'select' :
-        this.newStackPosition = card.position;
-        AppWindowManager.display(
+        this.exitToApp(
           card.app,
           'from-cardview',
           null
@@ -493,6 +553,23 @@
         // Card switcher will get hidden when 'appopen' is fired.
         return;
     }
+  };
+
+  TaskManager.prototype.exitToApp = function(app,
+                                             openAnimation) {
+
+    if (!app) {
+      // return if possible to previous app.
+      // else homescreen
+      app = StackManager.getCurrent() ||
+            homescreenLauncher.getHomescreen(true);
+    }
+    var position = this.unfilteredStack.indexOf(app);
+    if (position !== StackManager.position) {
+      this.newStackPosition = position;
+    }
+    app.open(openAnimation || 'from-cardview');
+    this.hide();
   };
 
   /**
@@ -504,8 +581,45 @@
    */
   TaskManager.prototype.closeApp = function cs_closeApp(card,
                                                         removeImmediately) {
+    var wasActive = AppWindowManager.getActiveApp() === card.app;
     card.killApp();
+
+    // if we killed the active app, make homescreen active
+    if (wasActive) {
+      AppWindowManager._updateActiveApp(homescreenLauncher
+                                          .getHomescreen().instanceID);
+    }
     this.removeCard(card, removeImmediately);
+  };
+
+  /**
+   * Handle wheel events produced by the screen reader on two finger swipe.
+   * @memberOf TaskManager.prototype
+   * @param  {DOMEvent} evt The event.
+   */
+  TaskManager.prototype.handleWheel = function cs_handleWheel(evt) {
+    if (evt.deltaMode !== evt.DOM_DELTA_PAGE || evt.deltaY < 0) {
+      return;
+    }
+    if (evt.deltaY > 0) {
+      // Two finger swipe up.
+      var card = this.currentCard;
+      if (card.app.killable()) {
+        // Remove the card from the Task Manager for a smooth transition.
+        this.cardsList.removeChild(card.element);
+        this.closeApp(card);
+      } else {
+        card.applyStyle({ MozTransform: '' });
+      }
+    } else if (evt.deltaX > 0 &&
+      this.currentDisplayed < this.cardsList.childNodes.length - 1) {
+      // Two finger swipe left.
+      this.currentDisplayed = ++this.currentPosition;
+    } else if (this.currentDisplayed > 0) {
+      // Two finger swipe right.
+      this.currentDisplayed = --this.currentPosition;
+    }
+    this.alignCurrentCard();
   };
 
   /**
@@ -519,23 +633,12 @@
     var targetNode = evt.target;
     var containerNode = targetNode.parentNode;
 
-    var tmpNode;
     var cardElem;
     var card;
 
-    if (this.isRocketbar && ('buttonAction' in targetNode.dataset)) {
-      tmpNode = containerNode;
-      while ((tmpNode = tmpNode.parentNode)) {
-        if (tmpNode.classList && tmpNode.classList.contains('card')) {
-          cardElem = tmpNode;
-          break;
-        }
-      }
-      if (cardElem && (card = this.getCardForElement(cardElem))) {
-        evt.stopPropagation();
-        this.cardAction(card, targetNode.dataset.buttonAction);
-        return;
-      }
+    if (!this.isShown()) {
+      // ignore any bogus events received after we already started to hide
+      return;
     }
     if (targetNode.classList.contains('close-card') &&
         this.cardsList.contains(containerNode)) {
@@ -545,9 +648,23 @@
       }
       return;
     }
-    if (('position' in targetNode.dataset) ||
-        targetNode.classList.contains('card')) {
-      card = this.getCardForElement(targetNode);
+    // Screen reader lands on one of card's children.
+    var tmpNode = targetNode;
+    while (tmpNode) {
+      if (tmpNode.classList && tmpNode.classList.contains('card')) {
+        cardElem = tmpNode;
+        break;
+      }
+      tmpNode = tmpNode.parentNode;
+    }
+    if (this.isTaskStrip && ('buttonAction' in targetNode.dataset) &&
+      cardElem && (card = this.getCardForElement(cardElem))) {
+      evt.stopPropagation();
+      this.cardAction(card, targetNode.dataset.buttonAction);
+      return;
+    }
+    if (('position' in targetNode.dataset) || cardElem) {
+      card = this.getCardForElement(cardElem);
       if (card) {
         this.cardAction(card, 'select');
       }
@@ -617,7 +734,7 @@
       this.draggingCardUp = false;
       var card = this.getCardForElement(element);
       if (-dy > this.swipeUpThreshold &&
-          this.attentionScreenApps.indexOf(element.dataset.origin) == -1) {
+          card.app.killable()) {
         // Remove the card from the Task Manager for a smooth transition.
         this.cardsList.removeChild(element);
         this.closeApp(card);
@@ -631,7 +748,7 @@
   };
 
   /**
-   * Handle home events - hide the switcher and show the homescreen
+   * Hide the switcher and show the homescreen
    * @memberOf TaskManager.prototype
    * @param  {DOMEvent} evt The event.
    */
@@ -640,10 +757,11 @@
       return;
     }
 
+    var homescreen = homescreenLauncher.getHomescreen(true);
     window.dispatchEvent(new CustomEvent('cardviewclosedhome'));
 
     evt.stopImmediatePropagation();
-    this.hide();
+    this.exitToApp(homescreen);
   };
 
   /**
@@ -652,7 +770,7 @@
    * @param  {DOMEvent} evt The event.
    */
   TaskManager.prototype.handleEvent = function cv_handleEvent(evt) {
-    var app;
+    var app, card;
 
     switch (evt.type) {
       case 'touchstart':
@@ -672,8 +790,8 @@
         break;
 
       case 'opencurrentcard':
-        AppWindowManager.display(
-          this.currentCard.app.origin,
+        this.exitToApp(
+          this.currentCard.app,
           'from-cardview',
           null);
         break;
@@ -682,24 +800,28 @@
         this.handleTap(evt);
         break;
 
+      case 'wheel':
+        this.handleWheel(evt);
+        break;
+
       case 'home':
-        this.goToHomescreen(evt);
+        if (this.isShown()) {
+          evt.stopImmediatePropagation();
+          this.exitToApp();
+        }
         break;
 
       case 'lockscreen-appopened':
-      case 'attentionscreenshow':
-        this.attentionScreenApps =
-            AttentionScreen.getAttentionScreenOrigins();
-        this.hide();
-        break;
-
-      case 'attentionscreenhide':
-        this.attentionScreenApps =
-            AttentionScreen.getAttentionScreenOrigins();
+      case 'attentionopened':
+        this.newStackPosition = null;
+        this.hide(true);
+        // no need to animate while in background
+        this.exitToApp(null, 'immediately');
         break;
 
       case 'taskmanagershow':
-        this.show();
+        var filter = (evt.detail && evt.detail.filter) || null;
+        this.show(filter);
         break;
 
       case 'taskmanagerhide':
@@ -711,7 +833,7 @@
           return;
         }
         sleepMenu.hide();
-        if (this.isRocketbar) {
+        if (this.isTaskStrip) {
           this.show();
         } else {
           app = AppWindowManager.getActiveApp();
@@ -727,10 +849,17 @@
         break;
 
       case 'appopen':
-        if (!evt.detail.isHomescreen) {
-          this.hide(/* immediately */ true, this.newStackPosition);
-        }
+        this.hide(/* immediately */ true);
         break;
+      case 'appterminated':
+        if (this.isShown()) {
+          app = evt.detail;
+          card = app && this.cardsByAppID[app.instanceID];
+          if (card && card.app &&
+              app.instanceID === card.app.instanceID) {
+            this.removeCard(card);
+          }
+        }
     }
   };
 
@@ -768,11 +897,10 @@
   /**
    * @memberOf TaskManager.prototype
    */
-  TaskManager.prototype.fireCardViewClosed = function(newStackPosition) {
-    var detail = null;
-
-    if (!isNaN(newStackPosition)) {
-      detail = { 'detail': { 'newStackPosition': newStackPosition }};
+  TaskManager.prototype.fireCardViewClosed = function() {
+    var detail;
+    if (!isNaN(this.newStackPosition)) {
+      detail = { 'detail': { 'newStackPosition': this.newStackPosition }};
     }
 
     var event = new CustomEvent('cardviewclosed', detail);
@@ -836,13 +964,14 @@
    * @param {Number} idx index into the stack
    */
   TaskManager.prototype.getCardAtIndex = function(idx) {
-    if (idx > -1) {
-      var element = this.cardsList.childNodes[idx];
-      if (!element) {
-        debug('getCardAtIndex, no element at idx: ' + idx);
+    if (this.stack && idx > -1 && idx < this.stack.length) {
+      var app = this.stack[idx];
+      var card = app && this.cardsByAppID[app.instanceID];
+      if (card) {
+        return card;
       }
-      return element && this.cardsByOrigin[element.dataset.origin];
     }
+    debug('getCardAtIndex, no card at idx: ' + idx);
     return null;
   };
 
@@ -852,7 +981,23 @@
    * @param {DOMNode} element
    */
   TaskManager.prototype.getCardForElement = function(element) {
-    return element && this.cardsByOrigin[element.dataset.origin];
+    return element && this.cardsByAppID[element.dataset.appInstanceId];
+  };
+
+  /**
+   * Add ARIA attributes to available cards.
+   * @memberOf TaskManager.prototype
+   */
+  TaskManager.prototype.setAccessibilityAttributes = function() {
+    this.stack.forEach(function(app, idx) {
+      var card = this.cardsByAppID[app.instanceID];
+      // Hide non-current apps from the screen reader.
+      card.setVisibleForScreenReader(idx === this.currentDisplayed);
+      // Update the screen reader card list size.
+      card.element.setAttribute('aria-setsize', this.stack.length);
+      // Update the screen reader card index.
+      card.element.setAttribute('aria-posinset', idx + 1);
+    }, this);
   };
 
   /**
@@ -884,11 +1029,11 @@
     nextCard.element.dispatchEvent(new CustomEvent('onviewport'));
     var nextCardStyle = {};
 
-    if (this.isRocketbar) {
+    if (this.isTaskStrip) {
       // Scaling and translating cards to reach target positions
       this.stack.forEach(function(app, idx) {
         var offset = idx - currentPosition;
-        var card = this.cardsByOrigin[app.origin];
+        var card = this.cardsByAppID[app.instanceID];
         card.move(0, 0);
         var style = {
           opacity: 1
@@ -965,6 +1110,7 @@
       );
     }
 
+    this.setAccessibilityAttributes();
     this.placeCards();
 
     currentCard.applyStyle(currentCardStyle);
@@ -1004,10 +1150,10 @@
     var movementFactor = Math.abs(deltaX) / this.windowWidth;
     var currentCard = this.currentCard;
 
-    if (this.isRocketbar) {
+    if (this.isTaskStrip) {
 
       this.stack.forEach(function(app, idx) {
-        var card = this.cardsByOrigin[app.origin];
+        var card = this.cardsByAppID[app.instanceID];
         card.move(Math.abs(deltaX) * sign);
       }, this);
 

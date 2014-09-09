@@ -21,8 +21,8 @@
 
   const scrollStep = Math.round(SCREEN_HEIGHT / EDGE_PAGE_THRESHOLD);
 
-  /* The scroll step will be 10 times bigger over the edge */
-  const maxScrollStepFactor = 10;
+  /* The scroll step will be 5 times bigger over the edge */
+  const maxScrollStepFactor = 5;
 
   function DragDrop(gridView) {
     this.gridView = gridView;
@@ -223,8 +223,8 @@
 
     /**
      * The closer to edge the faster (bigger step).
-     ** Distance 0px -> 10 times faster
-     ** Distance 25px -> 5 times faster
+     ** Distance 0px -> 5 times faster
+     ** Distance 25px -> 2.5 times faster
      ** Distance 50px (EDGE_PAGE_THRESHOLD) -> 0 times
      */
     getScrollStep: function(distanceToEdge) {
@@ -420,6 +420,13 @@
               return;
             }
 
+            if (e.defaultPrevented) {
+              // other handlers already handled this.
+              // in the future, we should use the shadow root and dispatch a
+              // "contextmenu" event from here instead.
+              return;
+            }
+
             this.target = e.target;
 
             if (!this.target) {
@@ -435,7 +442,6 @@
 
             this.addDragHandlers();
 
-            e.stopImmediatePropagation();
             e.preventDefault();
 
             this.begin(e);

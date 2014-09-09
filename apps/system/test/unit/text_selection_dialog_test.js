@@ -1,18 +1,16 @@
-/* global MocksHelper, LayoutManager, AppWindow, TextSelectionDialog */
+/* global MocksHelper, LayoutManager, TextSelectionDialog */
 'use strict';
 
-mocha.globals(['AppWindow', 'TextSelectionDialog', 'System', 'BaseUI',
+mocha.globals(['TextSelectionDialog', 'System', 'BaseUI',
   'layoutManager']);
 
 requireApp('system/test/unit/mock_layout_manager.js');
 requireApp('system/test/unit/mock_app_window.js');
 
-var mocksForTextSelectionDialog = new MocksHelper([
-  'AppWindow', 'LayoutManager'
-]).init();
+var mocksForTextSelectionDialog = new MocksHelper([ 'LayoutManager' ]).init();
 
 suite('system/TextSelectionDialog', function() {
-  var app, td, fragment;
+  var td, fragment;
   mocksForTextSelectionDialog.attachTestHelpers();
   var mockDetail = {};
   setup(function(done) {
@@ -21,24 +19,25 @@ suite('system/TextSelectionDialog', function() {
     window.layoutManager.width = 360;
     window.layoutManager.height = 480;
     mockDetail = {
-      selectall: function() {},
-      pasteFromClipboard: function() {},
-      cutToClipboard: function() {},
-      copyToClipboard: function() {}
+      type: 'selectionchange',
+      detail: {
+        commands: {},
+        rect: {},
+        reasons: []
+      },
+      isCollapsed: false
     };
+
     requireApp('system/js/system.js');
     requireApp('system/js/base_ui.js');
 
     requireApp('system/js/text_selection_dialog.js',
       function() {
-        app = new AppWindow(fakeAppConfig1);
-        td = new TextSelectionDialog(app);
-
         fragment = document.createElement('div');
         fragment.id = 'TextSelectionDialogRoot';
-        fragment.innerHTML = td.view();
         document.body.appendChild(fragment);
-
+        td = new TextSelectionDialog();
+        fragment.innerHTML = td.view();
         done();
       }
     );
@@ -50,22 +49,13 @@ suite('system/TextSelectionDialog', function() {
     document.body.removeChild(fragment);
     fragment = null;
     td = null;
-    app = null;
     mockDetail = {};
   });
 
   var fakeTextSelectInAppEvent = {
-    type: 'mozbrowsertextualmenu',
+    type: 'mozChromeEvent',
     preventDefault: function() {},
     stopPropagation: function() {}
-  };
-
-  var fakeAppConfig1 = {
-    url: 'app://www.fake/index.html',
-    manifest: {},
-    manifestURL: 'app://wwww.fake/ManifestURL',
-    origin: 'app://www.fake',
-    name: 'Fake Application'
   };
 
   function verifyClickableOptions(config) {
@@ -73,11 +63,13 @@ suite('system/TextSelectionDialog', function() {
     for (var item1 in config) {
       if(config[item1]) {
         lastOption = item1;
-        mockDetail['can' + item1] = true;
+        mockDetail.detail.commands['can' + item1] = true;
       } else {
-        mockDetail['can' + item1] = false;
+        mockDetail.detail.commands['can' + item1] = false;
       }
     }
+
+    mockDetail.detail.reasons = ['mouseup'];
 
     fakeTextSelectInAppEvent.detail = mockDetail;
     td.handleEvent(fakeTextSelectInAppEvent);
@@ -112,91 +104,227 @@ suite('system/TextSelectionDialog', function() {
     ele.dispatchEvent(evt);
   }
 
-  test('New', function() {
-    assert.isDefined(td.instanceID);
+  test('_doCommand', function(done) {
+    this.sinon.stub(td, 'hide');
+    window.addEventListener('mozContentEvent',
+      function onReceiveMozContentEvent(evt) {
+        window.removeEventListener('mozContentEvent', onReceiveMozContentEvent);
+        assert.deepEqual(evt.detail, {
+          type: 'do-command',
+          cmd: 'testCommand'
+        });
+        done();
+      });
+
+    td._doCommand(fakeTextSelectInAppEvent, 'testCommand');
+    assert.isTrue(td.hide.calledOnce,
+      'should callhide when trigger _doCommand');
   });
 
-  test('option display', function() {
-    mockDetail.show = true;
-    verifyClickableOptions({
-      'SelectAll': true,
-      'Paste': false,
-      'Cut': true,
-      'Copy': false
+  test('copyHandler', function() {
+    var stubDoCommand = this.sinon.stub(td, '_doCommand');
+    var stubResetCutOrCopiedTimer =
+      this.sinon.stub(td, '_resetCutOrCopiedTimer');
+    td.copyHandler(null);
+    assert.isTrue(td._hasCutOrCopied);
+    assert.isTrue(stubDoCommand.calledWith(null, 'copy'));
+    assert.isTrue(stubResetCutOrCopiedTimer.calledOnce);
+  });
+
+  test('cutHandler', function() {
+    var stubDoCommand = this.sinon.stub(td, '_doCommand');
+    var stubResetCutOrCopiedTimer =
+      this.sinon.stub(td, '_resetCutOrCopiedTimer');
+    td.cutHandler(null);
+    assert.isTrue(td._hasCutOrCopied);
+    assert.isTrue(stubDoCommand.calledWith(null, 'cut'));
+    assert.isTrue(stubResetCutOrCopiedTimer.calledOnce);
+  });
+
+  test('pasteHandler', function() {
+    var stubDoCommand = this.sinon.stub(td, '_doCommand');
+    var stubClearTimeout = this.sinon.stub(window, 'clearTimeout');
+    td._resetCutOrCopiedTimeout = 'testtimer';
+    td.pasteHandler(null);
+    assert.isFalse(td._hasCutOrCopied);
+    assert.isTrue(stubDoCommand.calledWith(null, 'paste'));
+    assert.isTrue(stubClearTimeout.calledWith(td._resetCutOrCopiedTimeout));
+  });
+
+  test('hide', function() {
+    td.render();
+    this.sinon.stub(td.element, 'blur');
+    td.hide();
+    assert.isFalse(td.element.classList.contains('visible'));
+    assert.isTrue(td.element.blur.calledOnce);
+  });
+
+  test('_resetCutOrCopiedTimer', function() {
+    var clock = this.sinon.useFakeTimers();
+    td._hasCutOrCopied = true;
+    td._resetCutOrCopiedTimeout = 'testTimer';
+    td._resetCutOrCopiedTimer();
+    
+    clock.tick(td.RESET_CUT_OR_PASTE_TIMEOUT);
+    assert.isFalse(td._hasCutOrCopied);
+  });
+
+  test('when select all, gecko should receive two selection change events',
+    function() {
+      var stubHide = this.sinon.stub(td, 'hide');
+      mockDetail.detail.reasons = ['selectall'];
+      mockDetail.detail.isCollapsed = true;
+      fakeTextSelectInAppEvent.detail = mockDetail;
+      td.handleEvent(fakeTextSelectInAppEvent);
+      assert.isTrue(stubHide.calledOnce, 'we should fileter first event by' +
+        ' checking the length of selectedText');
     });
 
-    verifyClickableOptions({
-      'SelectAll': false,
-      'Paste': true,
-      'Cut': false,
-      'Copy': false
+  test('when select all, and content contains br frame gecko will bubble up' +
+       ' null reasons due to filter it',
+    function() {
+      var stubCalculateDialogPostion =
+        this.sinon.stub(td, 'calculateDialogPostion');
+      var stubHide = this.sinon.stub(td, 'hide');
+      mockDetail.detail.reasons = [];
+      fakeTextSelectInAppEvent.detail = mockDetail;
+      td.handleEvent(fakeTextSelectInAppEvent);
+      assert.isFalse(stubHide.calledOnce, 'we should not call hide');
+      assert.isFalse(stubCalculateDialogPostion.calledOnce, 'we should not' +
+        ' call calculateDialogPostion');
+    });
+
+  suite('Value selector', function() {
+    setup(function() {
+      td._injected = true;
+    });
+
+    test('is hidden', function() {
+      var stubShow = this.sinon.stub(td, 'show');
+      td.handleEvent({ type: 'value-selector-hidden' });
+      assert.isFalse(td._ignoreSelectionChange);
+
+      fakeTextSelectInAppEvent.detail = mockDetail;
+      td.handleEvent(fakeTextSelectInAppEvent);
+      assert.isTrue(stubShow.calledOnce, 'dialog should display');
+    });
+
+    test('is shown', function() {
+      var stubShow = this.sinon.stub(td, 'show');
+      td.handleEvent({ type: 'value-selector-showed' });
+      assert.isTrue(td._ignoreSelectionChange);
+
+      fakeTextSelectInAppEvent.detail = mockDetail;
+      td.handleEvent(fakeTextSelectInAppEvent);
+      assert.isFalse(stubShow.calledOnce, 'dialog should not display');
     });
   });
 
-  test('option handler, selectAll', function() {
-    mockDetail.show = true;
-    verifyClickableOptions({
-      'SelectAll': true,
-      'Paste': true,
-      'Cut': true,
-      'Copy': true
-    });
-    this.sinon.stub(mockDetail, 'selectall');
+  suite('Single click on text, and selection area is collapsed', function() {
+    test('has not done anything before click', function() {
+      var stubHide = this.sinon.stub(td, 'hide');
+      mockDetail.detail.isCollapsed = true;
 
-    emitMouseDownEvent(td.elements.selectall);
-    assert.equal(mockDetail.selectall.called, true);
-    assert.equal(td.element.classList.contains('visible'), false,
-      'dialog should be hidden after option is clicked');
+      mockDetail.detail.reasons = ['mouseup'];
+      fakeTextSelectInAppEvent.detail = mockDetail;
+      td.handleEvent(fakeTextSelectInAppEvent);
+
+      assert.isTrue(stubHide.calledOnce);
+    });
+
+    test('has cut or copied before click', function() {
+      var clock = this.sinon.useFakeTimers();
+      var stubHide = this.sinon.stub(td, 'hide');
+      var stubCalculateDialogPostion =
+        this.sinon.stub(td, 'calculateDialogPostion').returns({});
+
+      td._hasCutOrCopied = true;
+      mockDetail.detail.isCollapsed = true;
+      mockDetail.detail.reasons = ['mouseup'];
+      mockDetail.detail.commands.canPaste = true;
+      fakeTextSelectInAppEvent.detail = mockDetail;
+      td.handleEvent(fakeTextSelectInAppEvent);
+
+      assert.isFalse(stubHide.calledOnce);
+      assert.isTrue(stubCalculateDialogPostion.calledOnce);
+      clock.tick(td.SHORTCUT_TIMEOUT);
+      assert.isTrue(stubHide.calledOnce);
+    });
   });
 
-  test('option handler, paste', function() {
-    mockDetail.show = true;
-    verifyClickableOptions({
-      'SelectAll': true,
-      'Paste': true,
-      'Cut': true,
-      'Copy': true
+  suite('check functionality of each button', function() {
+    var stubDoCommand;
+    setup(function() {
+      stubDoCommand = sinon.stub(td, '_doCommand');
     });
-    this.sinon.stub(mockDetail, 'pasteFromClipboard');
 
-    emitMouseDownEvent(td.elements.paste);
-    assert.equal(mockDetail.pasteFromClipboard.called, true);
-    assert.equal(td.element.classList.contains('visible'), false,
-      'dialog should be hidden after option is clicked');
-  });
-
-  test('option handler, cut', function() {
-    mockDetail.show = true;
-    verifyClickableOptions({
-      'SelectAll': true,
-      'Paste': true,
-      'Cut': true,
-      'Copy': true
+    teardown(function() {
+      stubDoCommand = null;
     });
-    this.sinon.stub(mockDetail, 'cutToClipboard');
 
-    emitMouseDownEvent(td.elements.cut);
-    assert.equal(mockDetail.cutToClipboard.called, true);
-    assert.equal(td.element.classList.contains('visible'), false,
-      'dialog should be hidden after option is clicked');
-  });
+    test('option display', function() {
+      verifyClickableOptions({
+        'Paste': false,
+        'Copy': false,
+        'Cut': true,
+        'SelectAll': true
+      });
 
-  test('option handler, copy', function() {
-    mockDetail.show = true;
-    verifyClickableOptions({
-      'SelectAll': true,
-      'Paste': true,
-      'Cut': true,
-      'Copy': true
+      verifyClickableOptions({
+        'Paste': true,
+        'Copy': false,
+        'Cut': false,
+        'SelectAll': false
+      });
     });
-    this.sinon.stub(mockDetail, 'copyToClipboard');
 
-    emitMouseDownEvent(td.elements.copy);
-    assert.equal(mockDetail.copyToClipboard.called, true);
-    assert.equal(td.element.classList.contains('visible'), false,
-      'dialog should be hidden after option is clicked');
+    test('option handler, selectAll', function() {
+      verifyClickableOptions({
+        'Paste': true,
+        'Copy': true,
+        'Cut': true,
+        'SelectAll': true
+      });
+      emitMouseDownEvent(td.elements.selectall);
+      assert.equal(stubDoCommand.getCall(0).args[1], 'selectall');
+    });
+
+    test('option handler, paste', function() {
+      verifyClickableOptions({
+        'Paste': true,
+        'Copy': true,
+        'Cut': true,
+        'SelectAll': true
+      });
+
+      emitMouseDownEvent(td.elements.paste);
+      assert.equal(stubDoCommand.getCall(0).args[1], 'paste');
+    });
+
+    test('option handler, cut', function() {
+      verifyClickableOptions({
+        'Paste': true,
+        'Copy': true,
+        'Cut': true,
+        'SelectAll': true
+      });
+
+      emitMouseDownEvent(td.elements.cut);
+      assert.equal(stubDoCommand.getCall(0).args[1], 'cut');
+    });
+
+    test('option handler, copy', function() {
+      verifyClickableOptions({
+        'Paste': true,
+        'Copy': true,
+        'Cut': true,
+        'SelectAll': true
+      });
+
+      emitMouseDownEvent(td.elements.copy);
+      assert.equal(stubDoCommand.getCall(0).args[1], 'copy');
+    });
   });
-
   suite('dialog position', function() {
     var windowHeight;
     var windowWidth;
@@ -209,132 +337,128 @@ suite('system/TextSelectionDialog', function() {
       td.TEXTDIALOG_HEIGHT = 48;
     });
 
-    test('if space is enough, and not app', function() {
+    test('if space is enough', function() {
       var numOfSelectOptions = 3;
-      mockDetail.top = windowHeight - 120;
-      mockDetail.bottom = windowHeight - 20;
-      mockDetail.left = windowWidth - 300;
-      mockDetail.right = windowWidth - 100;
-      mockDetail.zoomFactor = 1;
-      mockDetail.frameOffsetY = 20;
-      mockDetail.frameOffsetX = 15;
+      var positionDetail = {
+        rect: {}
+      };
+      positionDetail.rect.top = windowHeight - 120;
+      positionDetail.rect.bottom = windowHeight - 20;
+      positionDetail.rect.left = windowWidth - 300;
+      positionDetail.rect.right = windowWidth - 100;
+      positionDetail.zoomFactor = 1;
+      positionDetail.offsetY = 20;
+      positionDetail.offsetX = 15;
       td.app = false;
       var result =
-        td.calculateDialogPostion(mockDetail, numOfSelectOptions, false);
+        td.calculateDialogPostion(positionDetail, numOfSelectOptions, false);
       assert.deepEqual(result, {
-        top: mockDetail.top * mockDetail.zoomFactor - td.TEXTDIALOG_HEIGHT -
-          td.DISTANCE_FROM_MENUBOTTOM_TO_SELECTEDAREA + mockDetail.frameOffsetY,
-        left: ((mockDetail.left + mockDetail.right) * mockDetail.zoomFactor -
-          numOfSelectOptions * td.TEXTDIALOG_WIDTH)/ 2 + mockDetail.frameOffsetX
-      });
-    });
-
-    test('if space is enough, and is app', function() {
-      var numOfSelectOptions = 3;
-      mockDetail.top = windowHeight - 120;
-      mockDetail.bottom = windowHeight - 20;
-      mockDetail.left = windowWidth - 300;
-      mockDetail.right = windowWidth - 100;
-      mockDetail.zoomFactor = 1;
-      mockDetail.frameOffsetY = 20;
-      mockDetail.frameOffsetX = 15;
-      td.app = true;
-      var result =
-        td.calculateDialogPostion(mockDetail, numOfSelectOptions, false);
-      assert.deepEqual(result, {
-        top: mockDetail.top * mockDetail.zoomFactor - td.TEXTDIALOG_HEIGHT -
-          td.DISTANCE_FROM_MENUBOTTOM_TO_SELECTEDAREA,
-        left: ((mockDetail.left + mockDetail.right) * mockDetail.zoomFactor -
-          numOfSelectOptions * td.TEXTDIALOG_WIDTH)/ 2
+        top: positionDetail.rect.top * positionDetail.zoomFactor -
+          td.TEXTDIALOG_HEIGHT - td.DISTANCE_FROM_MENUBOTTOM_TO_SELECTEDAREA +
+          positionDetail.offsetY,
+        left: ((positionDetail.rect.left + positionDetail.rect.right) *
+          positionDetail.zoomFactor - numOfSelectOptions *
+          td.TEXTDIALOG_WIDTH)/ 2 + positionDetail.offsetX
       });
     });
 
     test('if utility bubble can overlay the header, and not app', function() {
       var numOfSelectOptions = 3;
-      mockDetail.top = 10;
-      mockDetail.bottom = windowHeight - 100;
-      mockDetail.left = windowWidth - 300;
-      mockDetail.right = windowWidth - 100;
-      mockDetail.zoomFactor = 1;
-      mockDetail.frameOffsetY = 20;
-      mockDetail.frameOffsetX = 15;
+      var positionDetail = {
+        rect: {}
+      };
+      positionDetail.rect.top = 10;
+      positionDetail.rect.bottom = windowHeight - 100;
+      positionDetail.rect.left = windowWidth - 300;
+      positionDetail.rect.right = windowWidth - 100;
+      positionDetail.zoomFactor = 1;
+      positionDetail.offsetY = 20;
+      positionDetail.offsetX = 15;
       td.app = false;
       var result =
-        td.calculateDialogPostion(mockDetail, numOfSelectOptions, false);
+        td.calculateDialogPostion(positionDetail, numOfSelectOptions, false);
       assert.deepEqual(result, {
-        top: mockDetail.bottom * mockDetail.zoomFactor +
-          td.DISTANCE_FROM_SELECTEDAREA_TO_MENUTOP + mockDetail.frameOffsetY,
-        left: ((mockDetail.left + mockDetail.right) * mockDetail.zoomFactor -
-          numOfSelectOptions * td.TEXTDIALOG_WIDTH)/ 2 + mockDetail.frameOffsetX
+        top: positionDetail.rect.bottom * positionDetail.zoomFactor +
+          td.DISTANCE_FROM_SELECTEDAREA_TO_MENUTOP + positionDetail.offsetY,
+        left: ((positionDetail.rect.left + positionDetail.rect.right) *
+          positionDetail.zoomFactor -
+          numOfSelectOptions * td.TEXTDIALOG_WIDTH)/ 2 + positionDetail.offsetX
       });
     });
 
-    test('if utility bubble can overlay the header and zoom factor is 2,' +
-      'and not app', function() {
+    test('if utility bubble can overlay the header and zoom factor is 2 ',
+      function() {
         var numOfSelectOptions = 3;
-        mockDetail.top = 10;
-        mockDetail.bottom = windowHeight - 100;
-        mockDetail.left = windowWidth - 300;
-        mockDetail.right = windowWidth - 100;
-        mockDetail.zoomFactor = 2;
-        mockDetail.frameOffsetY = 20;
-        mockDetail.frameOffsetX = 15;
-        td.app = false;
+        var positionDetail = {
+          rect: {}
+        };
+        positionDetail.rect.top = 10;
+        positionDetail.rect.bottom = windowHeight - 100;
+        positionDetail.rect.left = windowWidth - 300;
+        positionDetail.rect.right = windowWidth - 100;
+        positionDetail.zoomFactor = 2;
+        positionDetail.offsetY = 20;
+        positionDetail.offsetX = 15;
         var result =
-          td.calculateDialogPostion(mockDetail, numOfSelectOptions, false);
+          td.calculateDialogPostion(positionDetail, numOfSelectOptions, false);
         var posTop;
-        if (mockDetail.bottom * mockDetail.zoomFactor >= windowHeight) {
-          posTop = (mockDetail.top * mockDetail.zoomFactor + windowHeight -
-            td.TEXTDIALOG_HEIGHT) / 2 + mockDetail.frameOffsetY;
+        if (positionDetail.rect.bottom * positionDetail.zoomFactor >=
+          windowHeight) {
+          posTop = (positionDetail.rect.top * positionDetail.zoomFactor +
+            windowHeight - td.TEXTDIALOG_HEIGHT) / 2 + positionDetail.offsetY;
         } else {
-          posTop = ((mockDetail.top + mockDetail.bottom) *
-            mockDetail.zoomFactor - td.TEXTDIALOG_HEIGHT) / 2 +
-            mockDetail.frameOffsetY;
+          posTop = ((positionDetail.rect.top + positionDetail.rect.bottom) *
+            positionDetail.zoomFactor - td.TEXTDIALOG_HEIGHT) / 2 +
+            positionDetail.offsetY;
         }
         assert.deepEqual(result, {
           top: posTop,
           left: windowWidth - numOfSelectOptions * td.TEXTDIALOG_WIDTH +
-            mockDetail.frameOffsetX
+            positionDetail.offsetX
         });
       });
 
-    test('if utility bubble can overlay the left boundary, and not app',
+    test('if utility bubble can overlay the left boundary',
       function() {
         var numOfSelectOptions = 3;
-        mockDetail.top = 10;
-        mockDetail.bottom = windowHeight - 100;
-        mockDetail.left = 10;
-        mockDetail.right = 20;
-        mockDetail.zoomFactor = 1;
-        mockDetail.frameOffsetY = 20;
-        mockDetail.frameOffsetX = 15;
-        td.app = false;
+        var positionDetail = {
+          rect: {}
+        };
+        positionDetail.rect.top = 10;
+        positionDetail.rect.bottom = windowHeight - 100;
+        positionDetail.rect.left = 10;
+        positionDetail.rect.right = 20;
+        positionDetail.zoomFactor = 1;
+        positionDetail.offsetY = 20;
+        positionDetail.offsetX = 15;
         var result =
-          td.calculateDialogPostion(mockDetail, numOfSelectOptions, false);
+          td.calculateDialogPostion(positionDetail, numOfSelectOptions, false);
         assert.deepEqual(result, {
-          top: mockDetail.bottom * mockDetail.zoomFactor +
-            td.DISTANCE_FROM_SELECTEDAREA_TO_MENUTOP + mockDetail.frameOffsetY,
-          left: mockDetail.frameOffsetX
+          top: positionDetail.rect.bottom * positionDetail.zoomFactor +
+            td.DISTANCE_FROM_SELECTEDAREA_TO_MENUTOP + positionDetail.offsetY,
+          left: positionDetail.offsetX
         });
       });
 
-    test('if utility bubble can overlay the right boundary, and not app',
+    test('if utility bubble can overlay the right boundary',
       function() {
         var numOfSelectOptions = 3;
-        mockDetail.top = 10;
-        mockDetail.bottom = windowHeight - 100;
-        mockDetail.left = windowWidth - 10;
-        mockDetail.right = windowWidth;
-        mockDetail.zoomFactor = 1;
-        mockDetail.frameOffsetY = 20;
-        mockDetail.frameOffsetX = 15;
-        td.app = false;
+        var positionDetail = {
+          rect: {}
+        };
+        positionDetail.rect.top = 10;
+        positionDetail.rect.bottom = windowHeight - 100;
+        positionDetail.rect.left = windowWidth - 10;
+        positionDetail.rect.right = windowWidth;
+        positionDetail.zoomFactor = 1;
+        positionDetail.offsetY = 20;
+        positionDetail.offsetX = 15;
         var result =
-          td.calculateDialogPostion(mockDetail, numOfSelectOptions, false);
+          td.calculateDialogPostion(positionDetail, numOfSelectOptions, false);
         assert.deepEqual(result, {
-          top: mockDetail.bottom * mockDetail.zoomFactor +
-            td.DISTANCE_FROM_SELECTEDAREA_TO_MENUTOP + mockDetail.frameOffsetY,
-          left: windowWidth + mockDetail.frameOffsetX -
+          top: positionDetail.rect.bottom * positionDetail.zoomFactor +
+            td.DISTANCE_FROM_SELECTEDAREA_TO_MENUTOP + positionDetail.offsetY,
+          left: windowWidth + positionDetail.offsetX -
             numOfSelectOptions * td.TEXTDIALOG_WIDTH
         });
       });

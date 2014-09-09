@@ -8,6 +8,7 @@
 
 require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
 require('/test/unit/mock_call_screen.js');
+require('/shared/test/unit/mocks/mock_audio.js');
 require('/shared/test/unit/mocks/mock_contact_photo_helper.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_icc_manager.js');
 require('/shared/test/unit/mocks/dialer/mock_contacts.js');
@@ -24,6 +25,8 @@ require('/js/handled_call.js');
 require('/shared/js/dialer/voicemail.js');
 
 var mocksHelperForHandledCall = new MocksHelper([
+  'Audio',
+  'AudioContext',
   'Contacts',
   'CallScreen',
   'CallsHandler',
@@ -111,6 +114,7 @@ suite('dialer/handled_call', function() {
     this.sinon.stub(MockContactPhotoHelper,
                     'getThumbnail').returns(photoThumbnail);
     this.sinon.useFakeTimers(Date.now());
+    this.sinon.spy(MockCallsHandler, 'updatePlaceNewCall');
 
     mockCall = new MockCall(String(phoneNumber), 'dialing');
     subject = new HandledCall(mockCall);
@@ -141,7 +145,13 @@ suite('dialer/handled_call', function() {
     });
 
     test('call event listener', function() {
-      assert.isTrue(mockCall._eventListeners.statechange.length > 0);
+      assert.equal(mockCall._eventListeners.statechange.length, 2);
+    });
+
+    test('CallsHandler.updatePlaceNewCall added as call state listener',
+      function() {
+      subject.call.mChangeState();
+      sinon.assert.calledOnce(MockCallsHandler.updatePlaceNewCall);
     });
 
     suite('node', function() {
@@ -211,7 +221,6 @@ suite('dialer/handled_call', function() {
       mockCall = new MockCall(String(phoneNumber), 'connected');
       subject = new HandledCall(mockCall);
 
-      assert.isTrue(MockCallScreen.mEnableKeypadCalled);
       assert.isFalse(subject.node.hidden);
       assert.isTrue(subject.node.classList.contains('ongoing'));
     });
@@ -273,32 +282,6 @@ suite('dialer/handled_call', function() {
     });
   });
 
-  suite('while dialing', function() {
-    var updateKeypadSpy;
-
-    setup(function() {
-      updateKeypadSpy = this.sinon.spy(MockCallsHandler, 'updateKeypadEnabled');
-      mockCall.mChangeState('dialing');
-    });
-
-    test('should check if we can enable the keypad', function() {
-      assert.isTrue(updateKeypadSpy.calledOnce);
-    });
-  });
-
-  suite('while alerting', function() {
-    var updateKeypadSpy;
-
-    setup(function() {
-      updateKeypadSpy = this.sinon.spy(MockCallsHandler, 'updateKeypadEnabled');
-      mockCall.mChangeState('alerting');
-    });
-
-    test('should check if we can enable the keypad', function() {
-      assert.isTrue(updateKeypadSpy.calledOnce);
-    });
-  });
-
   suite('on connect', function() {
     setup(function() {
       this.sinon.spy(AudioCompetingHelper, 'compete');
@@ -315,10 +298,6 @@ suite('dialer/handled_call', function() {
 
     test('start the timer', function() {
       assert.isTrue(MockCallScreen.mCalledCreateTicker);
-    });
-
-    test('keypad enabled', function() {
-      assert.isTrue(MockCallScreen.mEnableKeypadCalled);
     });
 
     test('sync speaker', function() {
@@ -352,8 +331,8 @@ suite('dialer/handled_call', function() {
       assert.isTrue(MockUtils.mCalledGetPhoneNumberPrimaryInfo);
     });
 
-    test('additional contact info', function() {
-      assert.isTrue(MockUtils.mCalledGetPhoneNumberAdditionalInfo);
+    test('phone number and type', function() {
+      assert.isTrue(MockUtils.mCalledGetPhoneNumberAndType);
     });
 
     test('mute initially off', function() {
@@ -498,17 +477,13 @@ suite('dialer/handled_call', function() {
       mockCall._hold();
     });
 
-    test('disable keypad', function() {
-      assert.equal(MockCallsHandler.mUpdateKeypadEnabledCalled, false);
-    });
-
     test('add the css class', function() {
       assert.isTrue(subject.node.classList.contains('held'));
     });
 
     test('AudioCompetingHelper leaveCompetition gets called when held',
-      function() {
-	sinon.assert.called(AudioCompetingHelper.leaveCompetition);
+    function() {
+      sinon.assert.called(AudioCompetingHelper.leaveCompetition);
     });
   });
 
@@ -523,10 +498,6 @@ suite('dialer/handled_call', function() {
 
     test('remove the css class', function() {
       assert.isFalse(subject.node.classList.contains('held'));
-    });
-
-    test('enable keypad', function() {
-      assert.isTrue(MockCallScreen.mEnableKeypadCalled);
     });
 
     test('sync speaker', function() {
@@ -552,6 +523,7 @@ suite('dialer/handled_call', function() {
         mockCall._connect();
         assert.isTrue(subject.node.classList.contains('ongoing'));
         assert.isTrue(subject.node.classList.contains('outgoing'));
+        assert.equal(subject.node.getAttribute('aria-label'), 'outgoing');
       });
     });
 
@@ -567,6 +539,7 @@ suite('dialer/handled_call', function() {
         mockCall._connect();
         assert.isTrue(subject.node.classList.contains('ongoing'));
         assert.isTrue(subject.node.classList.contains('incoming'));
+        assert.equal(subject.node.getAttribute('aria-label'), 'incoming');
       });
     });
   });
@@ -626,13 +599,7 @@ suite('dialer/handled_call', function() {
     test('check additional info updated', function() {
       mockCall = new MockCall('888', 'incoming');
       subject = new HandledCall(mockCall);
-      assert.equal(subject.additionalInfoNode.textContent, '888');
-    });
-
-    test('check without additional info', function() {
-      mockCall = new MockCall('999', 'incoming');
-      subject = new HandledCall(mockCall);
-      assert.equal('', subject.additionalInfoNode.textContent);
+      assert.equal(subject.additionalInfoNode.textContent, 'type, 888');
     });
 
     test('check switch-calls mode', function() {
@@ -681,25 +648,45 @@ suite('dialer/handled_call', function() {
         });
       });
     });
-
-    test('check restore additional info', function() {
-      mockCall = new MockCall('888', 'incoming');
-      subject = new HandledCall(mockCall);
-      subject.replaceAdditionalContactInfo('test additional info');
-      subject.restoreAdditionalContactInfo();
-      assert.equal(subject.additionalInfoNode.textContent, '888');
-    });
   });
 
   suite('phone number', function() {
-    test('formatPhoneNumber should call the font size manager',
-    function() {
+    test('formatPhoneNumber should call the font size manager if call is not' +
+         ' in a conference', function() {
       this.sinon.spy(FontSizeManager, 'adaptToSpace');
       subject.formatPhoneNumber('end');
       sinon.assert.calledWith(
         FontSizeManager.adaptToSpace, MockCallScreen.mScenario,
-        subject.numberNode, subject.node.querySelector('.fake-number'),
-        false, 'end');
+        subject.numberNode, false, 'end');
+    });
+
+    test('formatPhoneNumber should not call the font size manager if call is' +
+         ' in a conference', function() {
+      subject.call.group = {};
+      this.sinon.spy(FontSizeManager, 'adaptToSpace');
+      subject.formatPhoneNumber('end');
+      assert.equal(FontSizeManager.adaptToSpace.callCount, 0);
+      delete subject.call.group;
+    });
+
+    test('should ensureFixedBaseline with a contact', function() {
+      mockCall = new MockCall('888', 'dialing');
+      subject = new HandledCall(mockCall);
+      this.sinon.spy(FontSizeManager, 'ensureFixedBaseline');
+      subject.formatPhoneNumber('end');
+      sinon.assert.calledWith(
+        FontSizeManager.ensureFixedBaseline,
+        MockCallScreen.mScenario,
+        subject.numberNode
+      );
+    });
+
+    test('should not ensureFixedBaseline without a contact', function() {
+      mockCall = new MockCall('111', 'dialing');
+      subject = new HandledCall(mockCall);
+      this.sinon.spy(FontSizeManager, 'ensureFixedBaseline');
+      subject.formatPhoneNumber('end');
+      sinon.assert.notCalled(FontSizeManager.ensureFixedBaseline);
     });
 
     test('check replace number', function() {

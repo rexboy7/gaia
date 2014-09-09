@@ -10,9 +10,6 @@ define(function(require) {
   var WifiNetworkList = require('panels/wifi/wifi_network_list');
   var wifiManager = WifiHelper.getWifiManager();
 
-  var _ = navigator.mozL10n.get;
-  var localize = navigator.mozL10n.localize;
-
   return function ctor_wifi() {
     var elements;
 
@@ -25,13 +22,16 @@ define(function(require) {
         elements = {
           panel: panel,
           wifi: panel,
-          wpsColumn: panel.querySelector('#wps-column'),
-          wpsInfoBlock: panel.querySelector('#wps-column small'),
-          wpsPbcLabelBlock: panel.querySelector('#wps-column a'),
-          manageNetworksBtn: panel.querySelector('#manageNetworks'),
-          wifiCheckbox: panel.querySelector('#wifi-enabled input'),
-          manageCertificatesBtn: panel.querySelector('#manageCertificates'),
-          wifiAvailableNetworks: panel.querySelector('#wifi-availableNetworks'),
+          wpsColumn: panel.querySelector('.wps-column'),
+          wpsInfoBlock: panel.querySelector('.wps-column small'),
+          wpsPbcLabelBlock: panel.querySelector('.wps-column a'),
+          manageNetworksBtn: panel.querySelector('.manageNetworks'),
+          wifiCheckbox: panel.querySelector('.wifi-enabled input'),
+          manageCertificatesBtn: panel.querySelector('.manageCertificates'),
+          wifiAvailableNetworks: panel.querySelector('.wifi-availableNetworks'),
+          dialogElement: panel.querySelector('.wifi-bad-credentials-dialog'),
+          okBtn: panel.querySelector('.wifi-bad-credentials-confirm'),
+          cancelBtn: panel.querySelector('.wifi-bad-credentials-cancel')
         };
 
         elements.infoItem = elements.wifiAvailableNetworks.querySelector(
@@ -56,9 +56,11 @@ define(function(require) {
         this._networkList = WifiNetworkList(elements.networklist);
         this._wps = WifiWps();
         this._wps.addEventListener('statusreset', function() {
-          localize(elements.wps.wpsPbcLabelBlock, 'wpsMessage');
+          elements.wps.wpsPbcLabelBlock.setAttribute('data-l10n-id',
+                                                     'wpsMessage');
           setTimeout(function resetWpsInfoBlock() {
-            localize(elements.wps.wpsPbcLabelBlock, 'wpsDescription2');
+            elements.wps.wpsPbcLabelBlock.setAttribute('data-l10n-id',
+                                                       'wpsDescription2');
           }, 1500);
         });
 
@@ -105,7 +107,6 @@ define(function(require) {
         WifiContext.addEventListener('wifiStatusChange', function(event) {
           var scanStates =
             new Set(['connected', 'connectingfailed', 'disconnected']);
-
           this._updateNetworkState();
           if (scanStates.has(event.status)) {
             if (this._wifiSectionVisible) {
@@ -115,7 +116,15 @@ define(function(require) {
             }
           }
         }.bind(this));
+
+        WifiContext.addEventListener('wifiWrongPassword', function(event) {
+          var currentNetwork = WifiContext.currentNetwork;
+          if (currentNetwork.known === false) {
+            this._openBadCredentialsDialog(currentNetwork);
+          }
+        }.bind(this));
       },
+
       onBeforeShow: function() {
         this._wifiSectionVisible = true;
         this._updateVisibilityStatus();
@@ -128,11 +137,13 @@ define(function(require) {
         if (this._wps.inProgress) {
           this._wps.cancel({
             onSuccess: function() {
-              localize(elements.wpsInfoBlock, 'fullStatus-wps-canceled');
+              elements.wpsInfoBlock.setAttribute('data-l10n-id',
+                                                 'fullStatus-wps-canceled');
             },
             onError: function(error) {
-              elements.wpsInfoBlock.textContent =
-                _('wpsCancelFailedMessage') + ' [' + error.name + ']';
+              navigator.mozL10n.setAttributes(elements.wpsInfoBlock,
+                                              'wpsCancelFailedMessageError',
+                                              { error: error.name });
             }
           });
         } else {
@@ -140,14 +151,14 @@ define(function(require) {
             onSubmit: function() {
               self._wps.connect({
                 onSuccess: function() {
-                  localize(elements.wps.wpsPbcLabelBlock,
+                  elements.wps.wpsPbcLabelBlock.setAttribute('data-l10n-id',
                     'wpsCancelMessage');
-                  localize(elements.wps.wpsInfoBlock,
+                  elements.wps.wpsInfoBlock.setAttribute('data-l10n-id',
                     'fullStatus-wps-inprogress');
                 },
                 onError: function(error) {
-                  elements.wps.wpsInfoBlock.textContent =
-                    _('fullStatus-wps-failed') + ' [' + error.name + ']';
+                  navigator.mozL10n.setAttributes(elements.wpsInfoBlock,
+                    'fullStatus-wps-failed-error', { error: error.name });
                 }
               });
             },
@@ -188,7 +199,15 @@ define(function(require) {
           elements.wpsColumn.hidden = false;
         } else {
           if (this._wps.inProgress) {
-            elements.wpsInfoBlock.textContent = WifiContext.wifiStatusText;
+            elements.wpsInfoBlock.
+              setAttribute('data-l10n-id', WifiContext.wifiStatusText.id);
+            if (WifiContext.wifiStatusText.args) {
+              elements.wpsInfoBlock.
+                setAttribute('data-l10n-args',
+                             JSON.stringify(WifiContext.wifiStatusText.args));
+            } else {
+              elements.wpsInfoBlock.removeAttribute('data-l10n-args');
+            }
           }
           this._networkList.clear(false);
           this._networkList.autoscan = false;
@@ -201,7 +220,15 @@ define(function(require) {
 
         if (this._wps.inProgress) {
           if (networkStatus !== 'disconnected') {
-            elements.wpsInfoBlock.textContent = WifiContext.wifiStatusText;
+            elements.wpsInfoBlock.
+              setAttribute('data-l10n-id', WifiContext.wifiStatusText.id);
+            if (WifiContext.wifiStatusText.args) {
+              elements.wpsInfoBlock.
+                setAttribute('data-l10n-args',
+                             JSON.stringify(WifiContext.wifiStatusText.args));
+            } else {
+              elements.wpsInfoBlock.removeAttribute('data-l10n-args');
+            }
           }
           if (networkStatus === 'connected' ||
             networkStatus === 'wps-timedout' ||
@@ -211,6 +238,35 @@ define(function(require) {
               this._wps.statusReset();
           }
         }
+      },
+      _openBadCredentialsDialog: function(network) {
+        var self = this;
+        var dialogElement = elements.dialogElement;
+
+        var onConfirm = function onConfirm() {
+          self._networkList._toggleNetwork(network);
+          enableDialog(false);
+        };
+
+        var onCancel = function onCancel() {
+          enableDialog(false);
+        };
+
+        var enableDialog = function enableDialog(enabled) {
+          if (enabled) {
+            navigator.mozL10n.setAttributes(dialogElement.querySelector('p'),
+              'wifi-bad-credentials-confirm', {ssid : network.ssid});
+            elements.okBtn.addEventListener('click', onConfirm);
+            elements.cancelBtn.addEventListener('click', onCancel);
+            dialogElement.hidden = false;
+          } else {
+            elements.okBtn.removeEventListener('click', onConfirm);
+            elements.cancelBtn.removeEventListener('click', onCancel);
+            dialogElement.hidden = true;
+          }
+        };
+
+        enableDialog(true);
       }
     });
   };

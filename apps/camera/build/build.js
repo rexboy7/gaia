@@ -8,7 +8,9 @@ function optimize(options) {
   var r = require('r-wrapper').get(options.GAIA_DIR);
   var configFile = utils.getFile(options.APP_DIR, 'build',
     'require_config.jslike');
-  r.optimize([configFile.path]);
+  var optimizeOption = 'optimize=' + (options.GAIA_OPTIMIZE === '1' ?
+    'uglify2' : 'none');
+  r.optimize([configFile.path, optimizeOption]);
 }
 
 function copyUserConfig(options) {
@@ -19,7 +21,9 @@ function copyUserConfig(options) {
   if (options.GAIA_DISTRIBUTION_DIR) {
     var distConfig = utils.getFile(options.GAIA_DISTRIBUTION_DIR,
       'camera-config.js');
-    utils.copyFileTo(distConfig, parent, filename, true);
+    if (distConfig.exists()) {
+      utils.copyFileTo(distConfig, parent, filename, true);
+    }
   }
 }
 

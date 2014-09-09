@@ -31,7 +31,7 @@ gaia-grid {
 
 #curtain {
   background: #000;
-  opacity: 0.1;
+  opacity: 0;
   height: 100%;
   width: 100%;
   position: fixed;
@@ -40,7 +40,7 @@ gaia-grid {
 }
 
 .edit-mode #curtain {
-  background: #333333;
+  background: var(--background, #333);
   opacity: 1;
   transition: opacity 0.5s ease-in;
 }

@@ -38,6 +38,7 @@ var Selector = {
   msgUpBtn: '.card-message-reader .msg-up-btn',
   msgEnvelopeSubject: '.card-message-reader .msg-envelope-subject',
   showMailButton: '.card-setup-done .sup-show-mail-btn',
+  confirmDialogOkButton: '.confirm-dialog-form .confirm-dialog-ok',
   manualConfigButton: '.scrollregion-below-header .sup-manual-config-btn',
   composeButton: '.msg-list-header .msg-compose-btn',
   composeEmailContainer: '.card-compose .cmp-to-container',
@@ -202,12 +203,9 @@ Email.prototype = {
   // going to setting up a new account after triggering email launch
   // from an activity.
   confirmWantAccount: function() {
-    this.client.helper.waitForAlert('not set up to send or receive email');
-    // inlined selector since it is specific to the out-of-app confirm
-    // dialog found in system/index.html
-    this._tapSelector('#modal-dialog-confirm-ok');
     this.client.switchToFrame();
     this.client.apps.switchToApp(Email.EMAIL_ORIGIN);
+    this.client.helper.waitForElement(Selector.confirmDialogOkButton).tap();
     this.client.helper.waitForElement(Selector.manualConfigButton);
     this.client.helper.waitForElement(Selector.manualConfigButton).tap();
   },
@@ -371,13 +369,26 @@ Email.prototype = {
     return elements;
   },
 
+  isElementDisabled: function(selector) {
+    var client = this.client;
+
+    client.helper.waitForElement(selector);
+
+    client.waitFor(function() {
+      return client.executeScript(function(selector) {
+        var doc = window.wrappedJSObject.document,
+            selectNode = doc.querySelector(selector);
+
+        return selectNode.disabled;
+      }, [selector]);
+    });
+  },
+
   /**
    * Taps the trash button in edit mode.
    */
-  editModeTrash: function() {
-    this.client.helper
-      .waitForElement(Selector.editModeTrash)
-      .tap();
+  isEditModeTrashDisabled: function() {
+    this.isElementDisabled(Selector.editModeTrash);
   },
 
   abortCompose: function(cardId) {

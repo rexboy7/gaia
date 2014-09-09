@@ -28,6 +28,33 @@
   height: 4rem;
 }
 
+/* Override some styles set by header.css to allow flexbox content */
+section[role="region"] > header:first-child h1.msg-list-header-folder-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.msg-list-header-folder-name {
+  display: inline-block;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+/* Display unread messages number */
+.msg-list-header-folder-unread {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0 1rem;
+  border-radius: 1.3rem;
+  background-color: #E06F14;
+  line-height: 2.1rem;
+  font-size: smaller;
+  font-weight: 200;
+  font-style: italic;
+}
+
 [data-mode="search"] .msg-search-tease-bar {
   display: none;
 }
@@ -497,18 +524,37 @@ reflows. Foreground/background colors should be safe.
 }
 
 .msg-reader-load-infobar {
-  position: absolute;
-  -moz-box-sizing: border-box;
-  color: white;
-  font-size: 1.2rem;
-  left: 0;
-  bottom: 4.8rem;
-  width: 100%;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+
+  margin: 1rem 1.5rem;
+  padding: .2rem 0 1rem 0;
+  border-bottom: 0.1rem solid #f2f2f1;
+
+  font-size: 1.4rem;
+  font-style: italic;
   /* we do not specify a height because text may be more than 1 line high */
-  line-height: 2.2rem;
-  padding: 0.8rem 1.6rem;
-  background-color: #424242;;
+  line-height: 1.8rem;
+  color: #008eab;
 }
+
+
+.msg-reader-load-infobar-text {
+  flex: 1;
+  margin: 0 1.5rem 0 0;
+}
+
+.msg-reader-load-infobar-button {
+  display: inline-block;
+  width: 3rem;
+  height: 3rem;
+  margin: 0;
+  font-size: 0;
+  background: url("images/icons/icon_show_external_image.png") no-repeat center / 3rem auto;
+}
+
 
 /* For WVGA (800 x 480) */
 .msg-list-action-toolbar .msg-refresh-btn:after {
@@ -581,7 +627,11 @@ reflows. Foreground/background colors should be safe.
 }
 
 .bb-tablist .msg-mark-read-btn {
-  background-image: url("images/icons/mark.png");
+  background-image: url("images/icons/mark_read.png");
+}
+
+.bb-tablist .msg-mark-read-btn.unread {
+  background-image: url("images/icons/mark_unread.png");
 }
 
 /* Scrollable Area has to have a solid
@@ -669,21 +719,24 @@ reflows. Foreground/background colors should be safe.
 
 .msg-messages-sync-container > .msg-messages-syncing,
 .msg-messages-sync-container > .msg-messages-sync-more {
-  width: calc(100% - 3rem);
-  margin: 0 auto;
+  width: 100%;
+  color: #5f5f5f;
+  background-color: #f2f2f2;
   text-align: center;
 }
 
-.msg-messages-sync-more {
-  height: 8rem;
-  padding: 0;
-  margin: 0;
-  font-weight: 500;
-  font-size: 1.5rem;
-  line-height: 8rem;
+.msg-messages-sync-container span {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin: 0 auto;
+  font-weight: normal;
 }
+
 .msg-messages-sync-more > span {
-  margin: 0 3rem;
+  margin: 0 auto;
+  padding-left: 3rem;
+  background: url("images/icons/download_trimmed.png") no-repeat center left / 2rem;
 }
 
 .message-list-topbar {
@@ -691,15 +744,24 @@ reflows. Foreground/background colors should be safe.
   display: inline-block;
   margin: 1.5rem 1.5rem 0 0;
   opacity: .8;
-  transform: translateY(-6.5rem);
+  transform: translate(0, -6.5rem);
   transition-property: transform;
   transition-duration: .6s;
   transition-timing-function: ease;
   transition-delay: 0s;
 }
 
+.message-list-topbar.no-anim {
+  transition-property: none;
+}
+
+.message-list-topbar.horiz-top,
+.message-list-topbar.closing[data-state="top"] {
+  transform: translate(0, -6.5rem);
+}
+
 .message-list-topbar[data-state="top"] {
-  transform: translateY(0);
+  transform: translate(0, 0);
   right: 0;
   width: 5rem;
   height: 5rem;
@@ -708,8 +770,14 @@ reflows. Foreground/background colors should be safe.
   font-size: 0;
 }
 
+.message-list-topbar.horiz-message,
+.message-list-topbar.closing[data-state="message"] {
+  transform: translate(-50%, -6.5rem);
+}
+
 .message-list-topbar[data-state="message"] {
-  transform: translateY(0);
+  transform: translate(-50%, 0);
+  left: 50%;
   margin: 1.5rem auto;
   padding: 0 1.3rem;
   height: 4rem;
@@ -719,11 +787,6 @@ reflows. Foreground/background colors should be safe.
   color: white;
   background-color: #a6a6a6;
   opacity: .95;
-}
-
-.message-list-topbar.closing[data-state="message"],
-.message-list-topbar.closing[data-state="top"] {
-  transform: translateY(-6.5rem);
 }
 
 .msg-reply-menu button:before {

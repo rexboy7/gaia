@@ -60,7 +60,7 @@
     }
   };
 
-  getTestFile('/test/unit/media/kitten-450.jpg', function(testImageBlob) {
+  getTestFile('/js/desktop-only/assets/kitten.jpg', function(testImageBlob) {
     messagesDb.messages.push({
       id: messagesDb.id++,
       threadId: 6,
@@ -224,7 +224,7 @@
     });
   });
 
-  getTestFile('/test/unit/media/kitten-45.bmp', function(testImageBlob) {
+  getTestFile('/js/desktop-only/assets/kitten.bmp', function(testImageBlob) {
     messagesDb.messages.push({
       id: messagesDb.id++,
       threadId: 6,
@@ -393,6 +393,7 @@
         read: true,
         type: 'sms',
         timestamp: now,
+        iccId: 'FAKE-ICCID-0',
         deliveryStatus: 'success',
         deliveryTimestamp: now
       },
@@ -404,6 +405,7 @@
         delivery: 'sent',
         read: true,
         type: 'sms',
+        iccId: 'FAKE-ICCID-1',
         deliveryStatus: 'not-applicable',
         timestamp: now - 8400000000
       },
@@ -876,6 +878,7 @@
 
   messagesDb.messages.push({
     threadId: 10,
+    sender: '+12125551234',
     receivers: ['+12125551234', '+15551237890'],
     delivery: 'received',
     id: messagesDb.id++,

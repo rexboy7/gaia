@@ -1,10 +1,22 @@
 /* global getSupportedNetworkInfo, SettingsListener, ForwardLock, URL,
-          MozActivity */
+          MozActivity, loadJSON */
 /* -*- Mode: js; js-indent-level: 2; indent-tabs-mode: nil -*- */
 /* vim: set shiftwidth=2 tabstop=2 autoindent cindent expandtab: */
 
 (function() {
   'use strict';
+
+  // Bug 964776 - [Flatfish][Settings] No vibrating alert motor, "Vibrate"
+  // option should be removed from Settings
+  // https://bugzilla.mozilla.org/show_bug.cgi?id=964776
+  //
+  // Show/Hide 'Virate' checkbox according to device-features.json
+  (function() {
+    loadJSON(['/resources/device-features.json'], function(data) {
+      var vibrationSetting = document.getElementById('vibration-setting');
+      vibrationSetting.hidden = !data.vibration;
+    });
+  })();
 
   // Setup the sliders for previewing the tones.
   (function() {
@@ -135,11 +147,11 @@
 
       function getDefaultTone(type, toneKey, callback) {
         var mediaToneURL = '/shared/resources/media/notifications/' +
-          'notifier_bop.opus';
+          'notifier_firefox.opus';
         var ringerToneURL = '/shared/resources/media/ringtones/' +
           'ringer_firefox.opus';
         var alarmToneURL = '/shared/resources/media/alarms/' +
-          'ac_classic_clock_alarm.opus';
+          'ac_awake.opus';
 
         var toneURLs = {
           'content' : mediaToneURL,
@@ -227,10 +239,13 @@
     // it is just text.
     SettingsListener.observe(namekey, '', function(tonename) {
       var l10nID = tonename && tonename.l10nID;
-      var name = l10nID ? _(l10nID) : tonename;
 
-      toneType.button.textContent = name || _('change');
-      toneType.button.dataset.l10nId = l10nID || '';
+      if (l10nID) {
+        toneType.button.setAttribute('data-l10n-id', l10nID);
+      } else {
+        toneType.button.removeAttribute('data-l10n-id');
+        toneType.button.textContent = tonename;
+      }
     });
 
     // When the user clicks the button, we launch an activity that lets
@@ -292,8 +307,14 @@
             // a playable audio file. It would be very bad to set an corrupt
             // blob as a ringtone because then the phone wouldn't ring!
             function checkRingtone(result) {
-              var oldRingtoneName = toneType.button.textContent;
-              toneType.button.textContent = _('savingringtone');
+              var oldRingtoneName = null;
+
+              var l10nId = toneType.button.getAttribute('data-l10n-id');
+
+              if (!l10nId) {
+                oldRingtoneName = toneType.button.textContent;
+              }
+              toneType.button.setAttribute('data-l10n-id', 'savingringtone');
 
               var player = new Audio();
               player.preload = 'metadata';
@@ -304,7 +325,11 @@
               };
               player.onerror = function() {
                 release();
-                toneType.button.textContent = oldRingtoneName;
+                if (l10nId) {
+                  toneType.button.setAttribute('data-l10n-id', l10nId);
+                } else {
+                  toneType.button.textContent = oldRingtoneName;
+                }
                 alert(_('unplayable-ringtone'));
               };
 
@@ -335,8 +360,8 @@
     };
   });
 
-  var manageRingtones = document.getElementById('manage-ringtones-button');
-  manageRingtones.onclick = function() {
+  var manageTones = document.getElementById('manage-tones-button');
+  manageTones.onclick = function() {
     var activity = new MozActivity({
       name: 'configure',
       data: {

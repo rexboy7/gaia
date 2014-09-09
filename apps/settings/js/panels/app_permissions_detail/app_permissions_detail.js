@@ -23,6 +23,9 @@ define(function(require) {
     init: function pd_init(elements, permissionsTable) {
       this._elements = elements;
       this._permissionsTable = permissionsTable;
+
+      // only go back to previous when application is uninstalled
+      window.addEventListener('applicationuninstall', this.back);
     },
 
     /**
@@ -35,7 +38,9 @@ define(function(require) {
     /**
      * Show app detail page.
      */
-    showAppDetails: function pd_show_app_details(app) {
+    showAppDetails: function pd_show_app_details(app, verbose) {
+      this._isValidPerm = verbose ? this._isValidVerbosePerm
+                                  : this._isExplicitPerm;
       this._app = app;
       var table = this._permissionsTable;
       var elements = this._elements;
@@ -52,15 +57,12 @@ define(function(require) {
         elements.developerInfos.hidden = false;
         elements.developerHeader.hidden = false;
         if (!developer.url) {
-          delete elements.developerName.dataset.href;
           delete elements.developerLink.href;
-          elements.developerLink.hidden = true;
+          elements.developerUrl.hidden = true;
         } else {
-          elements.developerLink.hidden = false;
-          elements.developerName.dataset.href = developer.url;
+          elements.developerUrl.hidden = false;
           elements.developerLink.href = developer.url;
-          elements.developerLink.dataset.href = developer.url;
-          elements.developerLink.textContent = developer.url;
+          elements.developerUrl.textContent = developer.url;
         }
       }
       if (!mozPerms) {
@@ -74,7 +76,7 @@ define(function(require) {
       table.plainPermissions.forEach(function(perm) {
         var value = mozPerms.get(perm, app.manifestURL,
           app.origin, false);
-        if (this._isExplicitPerm(app, perm, value)) {
+        if (this._isValidPerm(app, perm, value)) {
           this._insertPermissionSelect(perm, value);
         }
       }, this);
@@ -85,7 +87,7 @@ define(function(require) {
           var composedPerm = perm + '-' + mode;
           value = mozPerms.get(composedPerm, app.manifestURL, app.origin,
             false);
-          if (this._isExplicitPerm(app, composedPerm, value)) {
+          if (this._isValidPerm(app, composedPerm, value)) {
             return true;
           }
           return false;
@@ -103,6 +105,12 @@ define(function(require) {
       var isExplicit = mozPerms.isExplicit(perm, app.manifestURL,
                                            app.origin, false);
       return (isExplicit && value !== 'unknown');
+    },
+
+    _isValidVerbosePerm: function pd_displayPermVerbose(app, perm, value) {
+      if (app.manifest.type !== 'certified') {
+        return (value !== 'unknown');
+      }
     },
 
     /**
@@ -151,12 +159,10 @@ define(function(require) {
      */
     _insertPermissionSelect:
       function pd__insert_permission_select(perm, value) {
-        var _ = window.navigator.mozL10n.get;
         var item = document.createElement('li');
         var content = document.createElement('p');
         var contentL10nId = 'perm-' + perm.replace(':', '-');
-        content.textContent = _(contentL10nId);
-        content.dataset.l10nId = contentL10nId;
+        content.setAttribute('data-l10n-id', contentL10nId);
 
         var fakeSelect = document.createElement('span');
         fakeSelect.classList.add('button', 'icon', 'icon-dialog');
@@ -166,17 +172,17 @@ define(function(require) {
 
         var askOpt = document.createElement('option');
         askOpt.value = 'prompt';
-        askOpt.text = _('ask');
+        askOpt.setAttribute('data-l10n-id', 'ask');
         select.add(askOpt);
 
         var denyOpt = document.createElement('option');
         denyOpt.value = 'deny';
-        denyOpt.text = _('deny');
+        denyOpt.setAttribute('data-l10n-id', 'deny');
         select.add(denyOpt);
 
         var allowOpt = document.createElement('option');
         allowOpt.value = 'allow';
-        allowOpt.text = _('allow');
+        allowOpt.setAttribute('data-l10n-id', 'allow');
         select.add(allowOpt);
 
         var opt = select.querySelector('[value="' + value + '"]');
@@ -200,13 +206,9 @@ define(function(require) {
      * Uninstall the choosed app.
      */
     uninstall: function pd_uninstall() {
-      var _ = window.navigator.mozL10n.get;
-      var name = new ManifestHelper(this._app.manifest).name;
-
-      if (confirm(_('uninstallConfirm', {app: name}))) {
-        mozApps.mgmt.uninstall(this._app);
+      mozApps.mgmt.uninstall(this._app).onsuccess = () => {
         this.back();
-      }
+      };
     }
   };
 

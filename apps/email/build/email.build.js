@@ -45,6 +45,8 @@
         'value_selector',
         'folder_depth_classes',
         'iframe_shims',
+        'mix',
+        'cards/editor_mixins',
 
         // Bundle most likely, frequently used cards
         'cards/message_list',
@@ -75,7 +77,7 @@
     }
   },
 
-  fileExclusionRegExp: /^\.|^test$|^build$/,
+  fileExclusionRegExp: /^\.|^test$|^build$|^ext$/,
 
   // Keeping build dir since Makefile cleans it up and
   // preps build dir with the shared directory

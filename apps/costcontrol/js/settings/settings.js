@@ -277,7 +277,7 @@ var Settings = (function() {
         var textReportsTitle = (mode === 'POSTPAID') ?
           'phone-and-internet-data-report' : 'internet-data-report';
 
-        reportsTitle.querySelector('h2').textContent = _(textReportsTitle);
+        reportsTitle.querySelector('span').textContent = _(textReportsTitle);
 
         balanceLowLimitView.disabled = (mode !== 'PREPAID');
         plantypeSelector.setAttribute('aria-hidden', hidePlantypeSelector);
@@ -323,10 +323,16 @@ var Settings = (function() {
     data = Formatting.roundData(datausage.wifi.total);
     wifiUsage.textContent = Formatting.formatData(data);
 
+    updateDataUsageTimestamp(lastCompleteDataReset, datausage.timestamp);
+  }
+
+  var dataUsagePeriod = { begin: null, end: null };
+  function updateDataUsageTimestamp(begin, end) {
+    dataUsagePeriod.begin = begin;
+    dataUsagePeriod.end = end;
     var timestamp = document.querySelector('#wifi-data-usage + .meta');
     timestamp.innerHTML = '';
-    timestamp.appendChild(Formatting.formatTimeHTML(lastCompleteDataReset,
-                                                    datausage.timestamp));
+    timestamp.appendChild(Formatting.formatTimeHTML(begin, end));
   }
 
   // Update balance view on settings
@@ -348,18 +354,28 @@ var Settings = (function() {
       value: activity.smscount,
       unit: 'SMS'
     });
+    updateTelephonyTimestamp(lastTelephonyReset, activity.timestamp);
+  }
+
+  var telephonyPeriod = { begin: null, end: null };
+  function updateTelephonyTimestamp(begin, end) {
+    telephonyPeriod.begin = begin;
+    telephonyPeriod.end = end;
     var timestamp = document.getElementById('telephony-timestamp');
     timestamp.innerHTML = '';
-    timestamp.appendChild(Formatting.formatTimeHTML(
-      lastTelephonyReset,
-      activity.timestamp
-    ));
+    timestamp.appendChild(Formatting.formatTimeHTML(begin, end));
   }
+
+  window.addEventListener('timeformatchange', function () {
+    updateTelephonyTimestamp(telephonyPeriod.begin, telephonyPeriod.end);
+    updateDataUsageTimestamp(dataUsagePeriod.begin, dataUsagePeriod.end);
+  });
 
   return {
     initialize: function() {
       var SCRIPTS_NEEDED = [
         'js/utils/toolkit.js',
+        'shared/js/date_time_helper.js',
         'js/utils/formatting.js',
         'js/views/BalanceLowLimitView.js',
         'js/settings/limitdialog.js',

@@ -31,14 +31,19 @@ var TMPL = function createTemplate(tmpls) {
 });
 
 function completeLocaleFormat(timestamp) {
-  return Utils.date.format.localeFormat(new Date(+timestamp),
-    navigator.mozL10n.get('report-dateTimeFormat')
+  return Utils.date.format.localeFormat(
+    new Date(+timestamp),
+    navigator.mozL10n.get(
+      navigator.mozHour12 ? 'report-dateTimeFormat12' :
+        'report-dateTimeFormat24'
+    )
   );
 }
 
 function l10nContainsDateSetup(element, timestamp) {
   element.dataset.l10nDate = timestamp;
-  element.dataset.l10nDateFormat = 'report-dateTimeFormat';
+  element.dataset.l10nDateFormat12 = 'report-dateTimeFormat12';
+  element.dataset.l10nDateFormat24 = 'report-dateTimeFormat24';
   element.textContent = completeLocaleFormat(timestamp);
 }
 
@@ -54,7 +59,9 @@ function createReportDiv(reports) {
     readClass: '',
     readL10n: '',
     readDateL10n: '',
-    readTimestamp: ''
+    readTimestamp: '',
+    messageL10nDateFormat12: 'report-dateTimeFormat12',
+    messageL10nDateFormat24: 'report-dateTimeFormat24'
   };
 
   switch (reports.deliveryStatus) {
@@ -99,16 +106,31 @@ function showSimInfo(element, iccId) {
     return;
   }
 
-  var info =[];
-  // TODO: we might need to re-localize Sim name manually when language changes
-  var simId = Settings.getSimNameByIccId(iccId);
+  var info = [];
+  var simId = Settings.getServiceIdByIccId(iccId);
   var operator = Settings.getOperatorByIccId(iccId);
   var number = iccManager.getIccById(iccId).iccInfo.msisdn;
-  info = [simId, operator, number].filter(function(value){
+  var data = {};
+  var l10nId;
+
+  info = [operator, number].filter(function(value) {
     return value;
   });
 
-  element.querySelector('.sim-detail').textContent = info.join(', ');
+  var detailString = info.join(', ');
+
+  if (simId !== null) {
+    l10nId = info.length ?  'sim-detail' : 'sim-id-label';
+    data = { id: simId + 1, detailString: detailString };
+    navigator.mozL10n.setAttributes(
+      element.querySelector('.sim-detail'),
+      l10nId,
+      data
+    );
+  } else {
+    element.querySelector('.sim-detail').textContent = detailString;
+  }
+
   element.classList.remove('hide');
 }
 
@@ -158,32 +180,51 @@ function createListWithMsgInfo(message) {
 var VIEWS = {
   group: {
     name: 'participants',
+
     render: function renderGroup() {
       var participants = Threads.get(this.id).participants;
       this.renderContactList(participants);
-      navigator.mozL10n.localize(ThreadUI.headerText, 'participant', {
+      navigator.mozL10n.setAttributes(ThreadUI.headerText, 'participant', {
         n: participants.length
       });
+      ThreadUI.setHeaderAction('back');
     },
+
+    setEventListener: function setEventListener() {
+      this.contactList.addEventListener('click', function onListClick(event) {
+        event.stopPropagation();
+        event.preventDefault();
+
+        var target = event.target;
+
+        ThreadUI.promptContact({
+          number: target.dataset.number
+        });
+      });
+    },
+
     elements: ['contact-list']
   },
   report: {
     name: 'report',
 
-    onDeliverySuccess: function report_onDeliverySuccess(message) {
-      if (Navigation.isCurrentPanel('report-view', { id: message.id })) {
-        this.refresh();
-      }
+    init: function() {
+      this.onDeliverySuccess = this.onDeliverySuccess.bind(this);
+      this.onReadSuccess = this.onReadSuccess.bind(this);
     },
 
-    onReadSuccess: function report_onReadSuccess(message) {
-      if (Navigation.isCurrentPanel('report-view', { id: message.id })) {
-        this.refresh();
-      }
+    beforeEnter: function() {
+      MessageManager.on('message-delivered', this.onDeliverySuccess);
+      MessageManager.on('message-read', this.onReadSuccess);
+    },
+
+    afterLeave: function() {
+      MessageManager.off('message-delivered', this.onDeliverySuccess);
+      MessageManager.off('message-read', this.onReadSuccess);
     },
 
     render: function renderReport() {
-      var localize = navigator.mozL10n.localize;
+      var setL10nAttributes = navigator.mozL10n.setAttributes;
       var request = MessageManager.getMessage(this.id);
 
       request.onsuccess = (function() {
@@ -197,10 +238,10 @@ var VIEWS = {
 
         // Fill in the description/status/size
         if (type === 'sms') {
-          localize(this.type, 'message-type-sms');
+          setL10nAttributes(this.type, 'message-type-sms');
           this.sizeBlock.classList.add('hide');
         } else { //mms
-          localize(this.type, 'message-type-mms');
+          setL10nAttributes(this.type, 'message-type-mms');
           // subject text content
           var subject = message.subject;
           if (subject) {
@@ -210,14 +251,14 @@ var VIEWS = {
           // Message total size show/hide
           if (message.attachments && message.attachments.length > 0) {
             var params = sizeL10nParam(message.attachments);
-            localize(this.size, params.l10nId, params.l10nArgs);
+            setL10nAttributes(this.size, params.l10nId, params.l10nArgs);
             this.sizeBlock.classList.remove('hide');
           } else {
             this.sizeBlock.classList.add('hide');
           }
         }
         this.status.dataset.type = message.delivery;
-        localize(this.status, 'message-status-' + message.delivery);
+        setL10nAttributes(this.status, 'message-status-' + message.delivery);
 
         // Set different layout/value for received and sent message
         this.container.classList.toggle('received', isIncoming);
@@ -229,7 +270,7 @@ var VIEWS = {
           isIncoming && !message.sentTimestamp
         );
 
-        localize(
+        setL10nAttributes(
           this.contactTitle,
           isIncoming ? 'report-from' : 'report-recipients'
         );
@@ -249,8 +290,22 @@ var VIEWS = {
         this.renderContactList(createListWithMsgInfo(message));
       }).bind(this);
 
-      localize(ThreadUI.headerText, 'message-report');
+      setL10nAttributes(ThreadUI.headerText, 'message-report');
+      ThreadUI.setHeaderAction('close');
     },
+
+    onDeliverySuccess: function report_onDeliverySuccess(e) {
+      if (Navigation.isCurrentPanel('report-view', { id: e.message.id })) {
+        this.refresh();
+      }
+    },
+
+    onReadSuccess: function report_onReadSuccess(e) {
+      if (Navigation.isCurrentPanel('report-view', { id: e.message.id })) {
+        this.refresh();
+      }
+    },
+
     elements: ['contact-list', 'status', 'size', 'size-block', 'sent-detail',
       'type', 'subject', 'datetime', 'contact-title', 'received-detail',
       'sent-timeStamp', 'received-timeStamp', 'sim-info']
@@ -260,6 +315,10 @@ var VIEWS = {
 var Information = function(type) {
   Utils.extend(this, VIEWS[type]);
 
+  if (this.init) {
+    this.init();
+  }
+
   var prefix = 'information-' + this.name;
   this.container = document.getElementById(prefix);
   this.parent = document.getElementById('thread-messages');
@@ -267,21 +326,8 @@ var Information = function(type) {
     this[Utils.camelCase(name)] = this.container.querySelector('.' + name);
   }, this);
 
+  this.setEventListener && this.setEventListener();
   this.reset();
-
-  if (this.contactList) {
-    this.contactList.addEventListener(
-      'click', function onListClick(event) {
-      event.stopPropagation();
-      event.preventDefault();
-
-      var target = event.target;
-
-      ThreadUI.promptContact({
-        number: target.dataset.number
-      });}
-    );
-  }
 };
 
 Information.prototype = {
@@ -362,7 +408,6 @@ Information.prototype = {
           var parentBlock = li.querySelector(selector);
           if (parentBlock && infoBlock) {
             parentBlock.appendChild(infoBlock);
-            navigator.mozL10n.translate(li);
           }
           ul.appendChild(li);
         }

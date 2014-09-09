@@ -15,6 +15,7 @@ module.exports = Music;
 Music.DEFAULT_ORIGIN = 'music.gaiamobile.org';
 
 Music.Selector = Object.freeze({
+  messageOverlay: '#overlay',
   firstTile: '.tile',
   songsTab: '#tabs-songs',
   firstSong: '.list-item',
@@ -23,12 +24,16 @@ Music.Selector = Object.freeze({
   shareButton: '#player-cover-share',
   shareMenu: 'form[data-z-index-level="action-menu"]',
   pickDoneButton: '#title-done',
-  backButton: '#title-back',
+  header: '#title',
   playerIcon: '#title-player'
 });
 
 Music.prototype = {
   client: null,
+
+  get messageOverlay() {
+    return this.client.findElement(Music.Selector.messageOverlay);
+  },
 
   get firstTile() {
     return this.client.findElement(Music.Selector.firstTile);
@@ -65,8 +70,8 @@ Music.prototype = {
     return this.client.findElement(Music.Selector.pickDoneButton);
   },
 
-  get backButton() {
-    return this.client.findElement(Music.Selector.backButton);
+  get header() {
+    return this.client.findElement(Music.Selector.header);
   },
 
   get playerIcon() {
@@ -109,6 +114,13 @@ Music.prototype = {
     this.client.helper.waitForElement(this.firstTile);
   },
 
+  waitForMessageOverlayShown: function(shouldBeShown) {
+    this.client.waitFor(function() {
+      var volumeShown = this.messageOverlay.displayed();
+      return volumeShown === shouldBeShown;
+    }.bind(this));
+  },
+
   // Because bug 862156 so we couldn't get the correct displayed value for the
   // player icon, instead we use the display property to check the visibility
   // of the player icon.
@@ -130,8 +142,8 @@ Music.prototype = {
     this.actions.tap(this.playButton).perform();
   },
 
-  tapBackButton: function() {
-    this.actions.tap(this.backButton).perform();
+  tapHeaderActionButton: function() {
+    this.header.tap(25, 25);
   },
 
   shareWith: function(appName) {

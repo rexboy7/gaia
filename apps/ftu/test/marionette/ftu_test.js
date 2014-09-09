@@ -1,9 +1,14 @@
+/* global require */
 'use strict';
+
+var assert = require('assert');
 
 marionette('First Time Use >', function() {
   var FTU = 'app://ftu.gaiamobile.org';
 
   var client = marionette.client();
+  var wifiPassword64 =
+    'e93FSJpMGMxRnWHs2vJYyMud5h6u7yEhSC445cz7RdHVxXrj2LCTZPAphzaYuyy2';
 
   var clickThruPanel = function(panel_id, button_id) {
     if (panel_id == '#wifi') {
@@ -38,6 +43,33 @@ marionette('First Time Use >', function() {
     clickThruPanel('#finish-screen', undefined);
   });
 
+  suite('FTU Languages', function() {
+    var quickly;
+
+    setup(function() {
+      // allow findElement to fail quickly
+      quickly = client.scope({ searchTimeout: 50 });
+      quickly.helper.client = quickly;
+    });
+
+    test('FTU Languages without pseudo localization', function() {
+      quickly.settings.set('devtools.qps.enabled', false);
+      quickly.apps.switchToApp(FTU);
+      quickly.helper.waitForElement('#languages');
+      // the input is hidden so we can't use waitForElement
+      quickly.findElement('input[value="en-US"]');
+      quickly.helper.waitForElementToDisappear('input[value="qps-ploc"]');
+    });
+
+    test('FTU Languages with pseudo localization', function() {
+      quickly.settings.set('devtools.qps.enabled', true);
+      quickly.apps.switchToApp(FTU);
+      quickly.helper.waitForElement('#languages');
+      quickly.findElement('input[value="en-US"]');
+      quickly.findElement('input[value="qps-ploc"]');
+    });
+  });
+
   test('FTU Wifi Scanning Tests', function() {
     client.apps.switchToApp(FTU);
     clickThruPanel('#languages', '#forward');
@@ -46,4 +78,16 @@ marionette('First Time Use >', function() {
     clickThruPanel('#wifi', undefined);
   });
 
+  test('Wi-Fi hidden network password 64 characters', function() {
+    client.apps.switchToApp(FTU);
+    clickThruPanel('#languages', '#forward');
+    clickThruPanel('#wifi', '#join-hidden-button');
+
+    var input = client.findElement('#hidden-wifi-password');
+    var password = input.getAttribute('value');
+    assert.equal(password.length, 0);
+    input.sendKeys(wifiPassword64);
+    password = input.getAttribute('value');
+    assert.equal(password.length, 63);
+  });
 });

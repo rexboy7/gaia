@@ -44,25 +44,13 @@ BrowserAppBuilder.prototype.initTopsitesJSON = function() {
                                                  this.distDirPath));
 };
 
-BrowserAppBuilder.prototype.generateManifest = function() {
-  var manifest =
-    utils.getJSON(utils.getFile(this.appDir.path, 'manifest.webapp'));
-  manifest.role = 'system';
-  delete manifest.activities;
-  // Write content to build_stage
-  utils.writeContent(utils.getFile(this.stageDir.path, 'manifest.webapp'),
-                     JSON.stringify(manifest));
-};
-
 BrowserAppBuilder.prototype.execute = function(options) {
   this.setOptions(options);
   this.initJSON();
   this.initTopsitesJSON();
-  if (options.HAIDA) {
-    this.generateManifest();
-  }
 };
 
 exports.execute = function(options) {
+  utils.copyToStage(options);
   (new BrowserAppBuilder()).execute(options);
 };

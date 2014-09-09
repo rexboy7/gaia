@@ -1,8 +1,10 @@
 /* global Tutorial, FinishScreen,
-          MocksHelper, MockL10n */
+          MocksHelper, MockL10n
+          MockNavigatorSettings */
 'use strict';
 
 require('/shared/test/unit/mocks/mock_navigator_moz_apps.js');
+require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
 requireApp('ftu/test/unit/mock_l10n.js');
 requireApp('ftu/test/unit/mock_screenlayout.js');
 requireApp('ftu/test/unit/mock_finish_screen.js');
@@ -36,7 +38,7 @@ suite('Tutorial >', function() {
     for (; stepCount; stepCount--) {
       steps.push({
         video: '/style/images/tutorial/VerticalScroll.mp4',
-        l10nKey: 'tutorial-vertical-scroll-tiny'
+        l10nKey: 'tutorial-vertical-scroll-v2-tiny'
       });
     }
     var config = {
@@ -49,6 +51,7 @@ suite('Tutorial >', function() {
 
   var realL10n;
   var realMozApps;
+  var realMozSettings;
   var realXHR;
 
   suiteSetup(function(done) {
@@ -57,6 +60,9 @@ suite('Tutorial >', function() {
 
     realMozApps = navigator.mozApps;
     navigator.mozApps = MockNavigatormozApps;
+
+    realMozSettings = navigator.mozSettings;
+    navigator.mozSettings = MockNavigatorSettings;
 
     loadBodyHTML('/index.html');
 
@@ -69,6 +75,7 @@ suite('Tutorial >', function() {
   suiteTeardown(function() {
     navigator.mozL10n = realL10n;
     navigator.mozApps = realMozApps;
+    navigator.mozSettings = realMozSettings;
     realL10n = null;
     window.XMLHttpRequest = realXHR;
     realXHR = null;
@@ -167,7 +174,7 @@ suite('Tutorial >', function() {
         'default': {
           steps: [{
             video: '/style/images/tutorial/NotThere.mp4',
-            l10nKey: 'tutorial-vertical-scroll-tiny'
+            l10nKey: 'tutorial-vertical-scroll-v2-tiny'
           }]
         }
       };
@@ -271,45 +278,38 @@ suite('Tutorial >', function() {
 
   });
 
-  suite(' progressbar', function() {
-    suiteSetup(function() {
-      Tutorial.reset();
-    });
-    teardown(function() {
-      Tutorial.reset();
-    });
-
-    test(' dont display with 3 steps', function(done) {
-      MockXMLHttpRequest.mResponse = mockConfig(3);
-      Tutorial.init();
-      Tutorial.start(function() {
-        assert.equal(Tutorial.config['default'].steps.length, 3);
-        var tutorialNode = document.getElementById('tutorial');
-        assert.ok(!tutorialNode.hasAttribute('data-progressbar'), '');
-        done();
-      });
-    });
-
-    test(' do display with 4 steps', function(done) {
-      MockXMLHttpRequest.mResponse = mockConfig(4);
-      Tutorial.init();
-      Tutorial.start(function() {
-        assert.equal(Tutorial.config['default'].steps.length, 4);
-        var tutorialNode = document.getElementById('tutorial');
-        assert.ok(tutorialNode.hasAttribute('data-progressbar'));
-        done();
-      });
-    });
-
-  });
-
   suite('IAC Message >', function() {
+    setup(function() {
+      Tutorial.reset();
+    });
 
-    test('will send message', function() {
-      Tutorial.init();
-      MockNavigatormozApps.mTriggerLastRequestSuccess();
-      assert.equal(MockNavigatormozApps.mLastConnectionKeyword,
-                   'migrate');
+    teardown(function() {
+      MockNavigatormozApps.mTeardown();
+    });
+
+    function setHomescreenManifest(url) {
+      var obj = {'homescreen.manifestURL': url};
+      MockNavigatorSettings.createLock().set(obj);
+    }
+
+    test('will send message', function(done) {
+      var url = 'app://verticalhome.gaiamobile.org/manifest.webapp';
+      setHomescreenManifest(url);
+      Tutorial.init(null, function() {
+        MockNavigatormozApps.mTriggerLastRequestSuccess();
+        assert.equal(MockNavigatormozApps.mLastConnectionKeyword,
+                     'migrate');
+        done();
+      });
+    });
+
+    test('will not send message', function(done) {
+      var url = 'app://homescreen.gaiamobile.org/manifest.webapp';
+      setHomescreenManifest(url);
+      Tutorial.init(null, function() {
+        assert.isNull(MockNavigatormozApps.mLastRequest);
+        done();
+      });
     });
   });
 });

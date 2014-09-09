@@ -3,8 +3,9 @@ Keyboards.fr = {
   shortLabel: 'Fr',
   menuLabel: 'Français',
   imEngine: 'latin',
-  types: ['text', 'url', 'email'],
+  types: ['text', 'url', 'email', 'password'],
   autoCorrectLanguage: 'fr',
+  autoCorrectPunctuation: false,
   alt: {
     a: 'àâæáãäåā',
     c: 'çćč',

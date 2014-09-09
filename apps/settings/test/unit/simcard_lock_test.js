@@ -72,7 +72,7 @@ suite('SimPinLock > ', function() {
 
   // we use dsds for testing by default for each test
   setup(function() {
-    this.sinon.stub(window.navigator.mozL10n, 'localize');
+    this.sinon.stub(window.navigator.mozL10n, 'setAttributes');
     this.sinon.stub(document, 'getElementById', function() {
       return document.createElement('div');
     });
@@ -89,7 +89,7 @@ suite('SimPinLock > ', function() {
       assert.isNotNull(SimPinLock.dialog);
       assert.isNotNull(SimPinLock.simPinTmpl);
       assert.isNotNull(SimPinLock.simPinContainer);
-      assert.isNotNull(SimPinLock.simPinBackButton);
+      assert.isNotNull(SimPinLock.simPinHeader);
       assert.isNotNull(SimPinLock.simSecurityDesc);
     });
   });
@@ -100,7 +100,7 @@ suite('SimPinLock > ', function() {
 
     setup(function(done) {
       this.sinon.stub(SimPinLock, 'setAllElements');
-      this.sinon.stub(SimPinLock, 'initSimPinBackButton');
+      this.sinon.stub(SimPinLock, 'initSimPinBack');
       this.sinon.stub(SimPinLock, 'initSimPinsUI');
       this.sinon.stub(SimPinLock, 'updateSimPinUI');
       this.sinon.stub(SimPinLock, 'updateSimPinsUI');
@@ -114,7 +114,7 @@ suite('SimPinLock > ', function() {
 
     test('all methods are called', function() {
       assert.ok(SimPinLock.setAllElements.called);
-      assert.ok(SimPinLock.initSimPinBackButton.called);
+      assert.ok(SimPinLock.initSimPinBack.called);
       assert.ok(SimPinLock.initSimPinsUI.called);
       assert.ok(SimPinLock.updateSimPinsUI.called);
       assert.ok(SimPinLock.addChangeEventOnIccs.called);
@@ -124,24 +124,24 @@ suite('SimPinLock > ', function() {
     });
   });
 
-  suite('initSimPinBackButton > ', function() {
+  suite('initSimPinBack > ', function() {
     suite('single sim > ', function() {
       setup(function() {
         initConns(1);
-        SimPinLock.initSimPinBackButton();
+        SimPinLock.initSimPinBack();
       });
       test('href is #root', function() {
-        var href = SimPinLock.simPinBackButton.getAttribute('href');
+        var href = SimPinLock.simPinHeader.dataset.href;
         assert.equal(href, '#root');
       });
     });
     suite('dual sim > ', function() {
       setup(function() {
         initConns(2);
-        SimPinLock.initSimPinBackButton();
+        SimPinLock.initSimPinBack();
       });
       test('href is #sim-manager', function() {
-        var href = SimPinLock.simPinBackButton.getAttribute('href');
+        var href = SimPinLock.simPinHeader.dataset.href;
         assert.equal(href, '#sim-manager');
       });
     });
@@ -595,8 +595,8 @@ suite('SimPinLock > ', function() {
         SimPinLock.updateSimSecurityDescUI(true);
       });
       test('is description with enabled wording', function() {
-        assert.equal(window.navigator.mozL10n.localize.args[0][1],
-          'enabled');
+        assert.equal(
+          SimPinLock.simSecurityDesc.getAttribute('data-l10n-id'), 'enabled');
       });
     });
     suite('disabled >', function() {
@@ -604,8 +604,8 @@ suite('SimPinLock > ', function() {
         SimPinLock.updateSimSecurityDescUI(false);
       });
       test('is description with disabled wording', function() {
-        assert.equal(window.navigator.mozL10n.localize.args[0][1],
-          'disabled');
+        assert.equal(
+          SimPinLock.simSecurityDesc.getAttribute('data-l10n-id'), 'disabled');
       });
     });
   });

@@ -15,7 +15,6 @@ var Connectivity = (function(window, document, undefined) {
   var _bluetooth_address = '';
   var _initialized = false;
   var _macAddress = '';
-  var _ = navigator.mozL10n.get;
   var SettingsCache = require('modules/settings_cache');
 
   // in desktop helper we fake these device interfaces if they don't exist.
@@ -77,7 +76,7 @@ var Connectivity = (function(window, document, undefined) {
     }
 
     var l10nId = bluetooth.enabled ? 'bt-status-nopaired' : 'bt-status-turnoff';
-    localize(bluetoothDesc, l10nId);
+    bluetoothDesc.setAttribute('data-l10n-id', l10nId);
 
     if (!bluetooth.enabled) {
       return;
@@ -89,7 +88,9 @@ var Connectivity = (function(window, document, undefined) {
     if (!_bluetooth_address && settings) {
       var req = settings.createLock().get('deviceinfo.bt_address');
       req.onsuccess = function btAddr_onsuccess() {
-        _bluetooth_address = req.result['deviceinfo.bt_address'];
+        if (req.result) {
+          _bluetooth_address = req.result['deviceinfo.bt_address'];
+        }
       };
     }
 
@@ -124,8 +125,8 @@ var Connectivity = (function(window, document, undefined) {
           return a.name > b.name;
         });
 
-        localize(bluetoothDesc, 'bt-status-paired',
-                 { name: paired[0].name, n: length - 1 });
+        navigator.mozL10n.setAttributes(bluetoothDesc, 'bt-status-paired',
+          { name: paired[0].name, n: length - 1 });
       };
     };
   }

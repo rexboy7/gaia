@@ -189,10 +189,13 @@
   position: absolute;
   top: 0;
   width: 4rem;
-  font-size: 2.1rem;
-  line-height: 4rem;
   text-align: center;
   color: #C7C7C7;
+}
+
+.mode-switch_bg-icon:before {
+  font-size: 2.1rem;
+  line-height: 4rem;
 }
 
 /**
@@ -220,7 +223,6 @@
   height: 3.6rem;
   border-radius: 50%;
   background: #EEE;
-  will-change: transform;
 }
 
 /**
@@ -242,23 +244,25 @@
   width: 100%;
   height: 100%;
   opacity: 0;
-  font-size: 2.1rem;
   line-height: 3.6rem;
   text-align: center;
-  will-change: opacity;
+}
+
+.mode-switch_current-icon:before {
+  font-size: 2.1rem;
 }
 
 /** Mode Switch Current Icon (camera)
  ---------------------------------------------------------*/
 
-.mode-switch_current-icon.icon-camera {
+.mode-switch_current-icon.camera {
   color: #00CAF2;
 }
 
 /** Mode Switch Current Icon (video)
  ---------------------------------------------------------*/
 
-.mode-switch_current-icon.icon-video {
+.mode-switch_current-icon.video {
   color: #D92E2E;
 }
 
@@ -302,17 +306,10 @@
 /** Inner Circle
  ---------------------------------------------------------*/
 
-/**
- * 1. bug/1045624: `will-change` seems to be
- *    impacting border-radius layer-masks
- *    when element is transformed/transitioned.
- */
-
 .capture-button .inner-circle {
   background-color: white;
   transform: scale(0.76);
   transition: transform 150ms ease-in;
-  /*will-change: transform;*/ /* 1 */
 }
 
 /**

@@ -3,7 +3,6 @@
 /* global ConfirmDialog */
 /* global contacts */
 /* global ContactsTag */
-/* global DatastoreMigration */
 /* global fb */
 /* global fbLoader */
 /* global LazyLoader */
@@ -12,6 +11,7 @@
 /* global SmsIntegration */
 /* global utils */
 /* global TAG_OPTIONS */
+/* global Migrator */
 
 /* exported COMMS_APP_ORIGIN */
 /* exported SCALE_RATIO */
@@ -42,7 +42,7 @@ var Contacts = (function() {
   var contactTag,
       settings,
       settingsButton,
-      cancelButton,
+      header,
       addButton,
       appTitleElement,
       editModeTitleElement,
@@ -60,7 +60,7 @@ var Contacts = (function() {
   var contactsDetails;
   var contactsForm;
 
-  var customTag, customTagReset, tagDone, tagCancel, lazyLoadedTagsDom = false;
+  var customTag, customTagReset, tagDone, tagHeader, lazyLoadedTagsDom = false;
 
   // Shows the edit form for the current contact being in an update activity
   // It receives an array of two elements with the facebook data && values
@@ -93,6 +93,12 @@ var Contacts = (function() {
           var id = params.id;
           cList.getContactById(id, function onSuccess(savedContact) {
             currentContact = savedContact;
+
+            // Enable NFC listening is available
+            if ('mozNfc' in navigator) {
+              contacts.NFC.startListening(currentContact);
+            }
+
             contactsDetails.render(currentContact);
             if (params.tel) {
 
@@ -201,7 +207,7 @@ var Contacts = (function() {
   var initContainers = function initContainers() {
     settings = document.getElementById('view-settings');
     settingsButton = document.getElementById('settings-button');
-    cancelButton = document.getElementById('cancel_activity');
+    header = document.getElementById('contacts-list-header');
     addButton = document.getElementById('add-contact-button');
     editModeTitleElement = document.getElementById('edit-title');
     appTitleElement = document.getElementById('app-title');
@@ -223,6 +229,11 @@ var Contacts = (function() {
     });
   };
 
+  var loadDeferredActions = function loadDeferredActions() {
+    window.removeEventListener('listRendered', loadDeferredActions);
+    LazyLoader.load('js/deferred_actions.js');
+  };
+
   var init = function init() {
     _ = navigator.mozL10n.get;
     initContainers();
@@ -230,15 +241,15 @@ var Contacts = (function() {
     utils.PerformanceHelper.chromeInteractive();
     window.addEventListener('hashchange', checkUrl);
 
-    // If the migration is not complete
+    window.addEventListener('listRendered', loadDeferredActions);
+
     var config = utils.cookie.load();
-    if (!config || !config.fbMigrated) {
-      LazyLoader.load('js/fb/datastore_migrator.js', function() {
-        new DatastoreMigration().start();
+
+    // If the migration is not complete
+    if (!config || !config.fbMigrated || !config.accessTokenMigrated) {
+      LazyLoader.load('js/migrator.js', function() {
+        Migrator.start(config);
       });
-    }
-    else {
-      window.console.info('FB Already migrated!!!');
     }
 
     // Tell audio channel manager that we want to adjust the notification
@@ -266,13 +277,15 @@ var Contacts = (function() {
     //       load time.  For more info see bug 725221.
     var text;
     if (ActivityHandler.currentlyHandling) {
-      cancelButton.classList.remove('hide');
-      addButton.classList.add('hide');
-      settingsButton.classList.add('hide');
+      header.setAttribute('action', 'close');
+      settingsButton.hidden = true;
+      addButton.hidden = true;
+      // Trigger the title to re-run font-fit/centering logic
+      appTitleElement.textContent = appTitleElement.textContent;
     } else {
-      cancelButton.classList.add('hide');
-      addButton.classList.remove('hide');
-      settingsButton.classList.remove('hide');
+      header.removeAttribute('action');
+      settingsButton.hidden = false;
+      addButton.hidden = false;
     }
 
     text = (contactsList && contactsList.isSelecting)?
@@ -414,9 +427,9 @@ var Contacts = (function() {
       tagDone = document.querySelector('#settings-done');
       tagDone.addEventListener('click', handleSelectTagDone);
     }
-    if (!tagCancel) {
-      tagCancel = document.querySelector('#settings-cancel');
-      tagCancel.addEventListener('click', handleBack);
+    if (!tagHeader) {
+      tagHeader = document.querySelector('#settings-header');
+      tagHeader.addEventListener('action', handleBack);
     }
 
     for (var i in options) {
@@ -562,7 +575,8 @@ var Contacts = (function() {
     } else {
       Contacts.view('Settings', function viewLoaded() {
         LazyLoader.load(['/contacts/js/utilities/sim_dom_generator.js',
-          '/contacts/js/utilities/icc_handler.js'], function() {
+          '/contacts/js/utilities/icc_handler.js',
+          '/shared/js/date_time_helper.js'], function() {
           settingsReady = true;
           contacts.Settings.init();
           callback();
@@ -577,7 +591,9 @@ var Contacts = (function() {
     } else {
       Contacts.view('Details', function viewLoaded() {
         var simPickerNode = document.getElementById('sim-picker');
-        LazyLoader.load([simPickerNode], function() {
+        LazyLoader.load(
+          [simPickerNode, '/shared/js/contacts/contacts_buttons.js'],
+        function() {
           navigator.mozL10n.translate(simPickerNode);
           detailsReady = true;
           contactsDetails = contacts.Details;
@@ -672,7 +688,12 @@ var Contacts = (function() {
   var initEventListeners = function initEventListener() {
     // Definition of elements and handlers
     utils.listeners.add({
-      '#cancel_activity': handleCancel, // Activity (any) cancellation
+      '#contacts-list-header': [
+        {
+          event: 'action',
+          handler: handleCancel // Activity (any) cancellation
+        }
+      ],
       '#add-contact-button': showAddContact,
       '#settings-button': showSettings, // Settings related
       '#search-start': [
@@ -711,11 +732,12 @@ var Contacts = (function() {
       '/contacts/js/utilities/normalizer.js',
       '/shared/js/text_normalizer.js',
       '/dialer/js/telephony_helper.js',
-      '/contacts/js/sms_integration.js',
+      '/shared/js/contacts/sms_integration.js',
       SHARED_UTILS_PATH + '/' + 'sdcard.js',
       SHARED_UTILS_PATH + '/' + 'vcard_parser.js',
       SHARED_UTILS_PATH + '/' + 'status.js',
-      '/shared/js/contacts/utilities/dom.js'
+      '/shared/js/contacts/utilities/dom.js',
+      '/shared/js/contacts/import/import_status_data.js'
     ];
 
     // Lazyload nfc.js if NFC is available
@@ -794,15 +816,14 @@ var Contacts = (function() {
                 contactsList.refresh(enrichedContact || currentContact,
                                      checkPendingChanges, event.reason);
               }
+              notifyContactChanged(event.contactID);
           });
         } else {
-          contactsList.refresh(event.contactID, checkPendingChanges,
-            event.reason);
+          refreshContactInList(event.contactID);
         }
         break;
       case 'create':
-        contactsList.refresh(event.contactID, checkPendingChanges,
-          event.reason);
+        refreshContactInList(event.contactID);
         break;
       case 'remove':
         if (currentContact != null && currentContact.id == event.contactID &&
@@ -813,9 +834,30 @@ var Contacts = (function() {
         contactsList.remove(event.contactID, event.reason);
         currentContact = {};
         checkPendingChanges(event.contactID);
+        notifyContactChanged(event.contactID);
         break;
     }
   };
+
+  // Refresh a contact in the list, and notifies of contact
+  // changed to possible listeners.
+  function refreshContactInList(id) {
+    contactsList.refresh(id, function() {
+      notifyContactChanged(id);
+      checkPendingChanges();
+    });
+  }
+
+  // Send a custom event when we know that a contact changed and
+  // the contact list was updated.
+  // Used internally in places where the contact list is a reference
+  function notifyContactChanged(id) {
+    document.dispatchEvent(new CustomEvent('contactChanged', {
+      detail: {
+        contactID: id
+      }
+    }));
+  }
 
   var close = function close() {
     window.removeEventListener('localized', initContacts);
@@ -877,7 +919,8 @@ var Contacts = (function() {
     settings: 'settings-wrapper',
     search: 'search-view',
     overlay: 'loading-overlay',
-    confirm: 'confirmation-message'
+    confirm: 'confirmation-message',
+    ice: 'ice-view'
   };
 
   function load(type, file, callback, path) {

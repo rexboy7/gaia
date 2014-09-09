@@ -24,7 +24,8 @@ requirejs.config({
     'view': '../bower_components/view/index',
     'evt': '../bower_components/evt/index',
     'drag': '../bower_components/drag/index',
-    'device-orientation': '../bower_components/device-orientation/index'
+    'device-orientation': '../bower_components/device-orientation/index',
+    'StopRecordingEvent': '../shared/js/stop_recording_event'
   },
 
   // If your package uses relative `require()` paths
@@ -34,6 +35,11 @@ requirejs.config({
     {
       name: 'gaia-header',
       location: '../bower_components/gaia-header',
+      main: 'script'
+    },
+    {
+      name: 'gaia-icons',
+      location: '../bower_components/gaia-icons',
       main: 'script'
     }
   ],
@@ -78,6 +84,9 @@ requirejs.config({
     },
     'CustomDialog': {
       exports: 'CustomDialog'
+    },
+    'StopRecordingEvent': {
+      exports: 'StopRecordingEvent'
     }
   }
 });

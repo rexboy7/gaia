@@ -1,4 +1,6 @@
-/* global MozActivity */
+/* global MozActivity, IconsHelper, LazyLoader */
+/* global applications */
+/* global BookmarksDatabase */
 
 (function(window) {
   'use strict';
@@ -104,10 +106,15 @@
       return;
     }
 
+    var items = this._listItems(detail);
+
+    if (!items.length) {
+      return;
+    }
+
     // Notify the embedder we are handling the context menu
     evt.preventDefault();
-
-    this.showMenu(this._listItems(detail));
+    this.showMenu(items);
   };
 
   BrowserContextMenu.prototype.showMenu = function(menu) {
@@ -217,21 +224,33 @@
     var data = {
       type: 'url',
       url: url,
-      name: name
+      name: name,
+      iconable: false
     };
     if (icon) {
       data.icon = icon;
     }
-    console.log(JSON.stringify(data));
     new MozActivity({
       name: 'save-bookmark',
       data: data
     });
   };
 
+  BrowserContextMenu.prototype.newWindow = function(manifest) {
+    var newTabApp = applications.getByManifestURL(manifest);
+    newTabApp.launch();
+  };
+
+  BrowserContextMenu.prototype.showWindows = function(manifest) {
+    window.dispatchEvent(
+      new CustomEvent('taskmanagershow',
+                      { detail: { filter: 'browser-only' }})
+    );
+  };
+
   BrowserContextMenu.prototype.generateSystemMenuItem = function(item) {
 
-    var nodeName = item.nodeName;
+    var nodeName = item.nodeName.toUpperCase();
     var uri = item.data.uri;
 
     switch (nodeName) {
@@ -285,17 +304,48 @@
     }
   };
 
-  BrowserContextMenu.prototype.showDefaultMenu = function() {
-    var config = this.app.config;
-    var icon = ('icons' in config && config.icons.length) ?
-      config.icons[0].href : null;
-    this.showMenu([{
-      label: _('add-to-home-screen'),
-      callback: this.bookmarkUrl.bind(this, config.url, this.app.title, icon)
-    }, {
-      label: _('share'),
-      callback: this.shareUrl.bind(this, config.url)
-    }]);
+  BrowserContextMenu.prototype.showDefaultMenu = function(manifest, name) {
+    return new Promise((resolve) => {
+      var favicons = this.app.favicons;
+      var config = this.app.config;
+      LazyLoader.load('shared/js/icons_helper.js', (function() {
+
+        var icon = IconsHelper.getBestIcon(favicons);
+        var menuData = [];
+
+        menuData.push({
+          id: 'new-window',
+          label: _('new-window'),
+          callback: this.newWindow.bind(this, manifest)
+        });
+
+        menuData.push({
+          id: 'show-windows',
+          label: _('show-windows'),
+          callback: this.showWindows.bind(this)
+        });
+
+        BookmarksDatabase.get(config.url).then((result) => {
+          if (!result) {
+            menuData.push({
+              id: 'add-to-homescreen',
+              label: _('add-to-home-screen'),
+              callback: this.bookmarkUrl.bind(this, config.url, name, icon)
+            });
+          }
+
+          menuData.push({
+            id: 'share',
+            label: _('share'),
+            callback: this.shareUrl.bind(this, config.url)
+          });
+
+          this.showMenu(menuData);
+          resolve();
+        });
+
+      }).bind(this));
+    });
   };
 
 }(this));

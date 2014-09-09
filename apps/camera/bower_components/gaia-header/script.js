@@ -5,6 +5,7 @@
  * Dependencies
  */
 
+var loadGaiaIcons = require('gaia-icons');
 var fontFit = require('./lib/font-fit');
 
 /**
@@ -13,6 +14,11 @@ var fontFit = require('./lib/font-fit');
 
 var baseComponents = window.COMPONENTS_BASE_URL || 'bower_components/';
 var base = window.GAIA_HEADER_BASE_URL || baseComponents + 'gaia-header/';
+
+// Load icons into document, we run some
+// to try to determine if the icons have
+// already been loaded elsewhere
+loadGaiaIcons(baseComponents);
 
 // Extend from the HTMLElement prototype
 var proto = Object.create(HTMLElement.prototype);
@@ -54,7 +60,9 @@ proto.createdCallback = function() {
 
   shadow.appendChild(tmpl);
   this.styleHack();
-  setTimeout(this.runFontFit.bind(this), 50);
+
+  // Font fit must be run only once the element is styled
+  this.addEventListener('styled', this.runFontFit.bind(this));
 };
 
 /**
@@ -129,13 +137,9 @@ proto.configureActionButton = function() {
   var old = this.els.actionButton.getAttribute('icon');
   var type = this.getAttribute('action');
   var supported = this.isSupportedAction(type);
-
-  this.els.inner.classList.toggle('supported-action', supported);
-  if (!supported) { return; }
-
-  this.els.actionButton.style.display = 'block';
   this.els.actionButton.classList.remove('icon-' + old);
-  this.els.actionButton.classList.add('icon-' + type);
+  this.els.inner.classList.toggle('supported-action', supported);
+  if (supported) { this.els.actionButton.classList.add('icon-' + type); }
 };
 
 /**
@@ -176,25 +180,17 @@ proto.onActionButtonClick = function(e) {
 var template = document.createElement('template');
 template.innerHTML = [
   '<div class="inner">',
-    '<button class="action-button"></button>',
-    '<content></content>',
+    '<button class="action-button">',
+      '<content select=".l10n-action"></content>',
+    '</button>',
+    '<content select="h1,h2,h3,h4,a,button"></content>',
   '</div>'
 ].join('');
 
-// Load the icon-font into the document <head>
-(function loadFont() {
-  var href = baseComponents + 'gaia-icons/style.css';
-  var existing = document.querySelector('link[href="' + href + '"]');
-  if (existing) { return; }
-  var link = document.createElement('link');
-  link.rel = 'stylesheet';
-  link.type = 'text/css';
-  link.href = href;
-  document.head.appendChild(link);
-})();
-
 // Register and return the constructor
+// and expose `protoype` (bug 1048339)
 module.exports = document.registerElement('gaia-header', { prototype: proto });
+module.exports.prototype = proto;
 
 });})((function(n,w){'use strict';return typeof define=='function'&&define.amd?
 define:typeof module=='object'?function(c){c(require,exports,module);}:

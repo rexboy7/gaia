@@ -153,6 +153,10 @@ suite('push-to-device.js', function() {
                 ' //system/b2g/webapps',
             '-c adb push "' + options.PROFILE_DIR + '/user.js"' +
               ' //data/local/user.js',
+            '-c adb push "shared/elements/gaia-icons/fonts/gaia-icons.ttf"' +
+              ' //system/fonts/hidden/gaia-icons.ttf',
+            '-c adb push "shared/style/keyboard_symbols/Keyboard-Symbols.ttf"' +
+              ' //system/fonts/hidden/Keyboard-Symbols.ttf',
             '-c adb shell start b2g']});
         done();
       });

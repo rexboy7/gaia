@@ -60,12 +60,16 @@ marionette('Vertical Home - App unrecoverable error', function() {
     var iconId = getIconId(icon);
     expectAppState(icon, 'unrecoverable');
 
+    // helps marionette finding the icon: Bug 1046706
+    subject.moveIconToIndex(icon, 0);
+
     // agree to uninstall the app
     launchIcon(icon);
+    client.switchToFrame();
     subject.confirmDialog('unrecoverable');
 
-
     // ensure the icon disappears
+    client.switchToFrame(system.getHomescreenIframe());
     client.helper.waitForElementToDisappear(icon);
     // verify that the app was uninstalled
     subject.restart();

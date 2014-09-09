@@ -753,12 +753,12 @@ var SimManager = (function() {
       }
     };
 
-    importer.onfinish = function sim_import_finish() {
+    importer.onfinish = function sim_import_finish(numDupsMerged, iccId) {
       window.setTimeout(function do_sim_import_finish() {
         UIManager.navBar.removeAttribute('aria-disabled');
         utils.overlay.hide();
         if (importedContacts > 0) {
-          utils.misc.setTimestamp('sim');
+          utils.misc.setTimestamp('sim-' + iccId);
         }
         if (!cancelled) {
           SimManager.alreadyImported = true;
@@ -780,13 +780,13 @@ var SimManager = (function() {
 
       // Showing error message allowing user to retry
       var cancel = {
-        title: _('cancel'),
+        title: 'cancel',
         callback: function() {
           ConfirmDialog.hide();
         }
       };
       var retry = {
-        title: _('retry'),
+        title: 'retry',
         isRecommend: true,
         callback: function() {
           ConfirmDialog.hide();
@@ -794,7 +794,7 @@ var SimManager = (function() {
           importButton.click();
         }
       };
-      ConfirmDialog.show(null, _('simContacts-error'), cancel, retry);
+      ConfirmDialog.show(null, 'simContacts-error', cancel, retry);
     }; // importer.onerror
 
     importer.start();

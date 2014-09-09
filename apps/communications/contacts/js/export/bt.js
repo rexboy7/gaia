@@ -60,9 +60,9 @@ var ContactsBTExport = function ContactsBTExport() {
     } else {
       var today = new Date();
       filename.push(
-        today.getDate(),
-        today.getMonth() + 1,
         today.getFullYear(),
+        today.getMonth() + 1,
+        today.getDate(),
         contacts.length
       );
     }
@@ -118,12 +118,12 @@ var ContactsBTExport = function ContactsBTExport() {
     }
 
     var checkError = function checkError(error) {
-      if (!error) {
+      if (error === null) {
         return false;
       }
       var reason = error;
       // numeric error means not enough space available
-      if (parseInt(error, 10) > 0) {
+      if (parseInt(error, 10) >= 0) {
         reason = 'noSpace';
       }
       finishCallback({ 'reason': reason }, 0, false);

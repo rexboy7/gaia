@@ -131,6 +131,10 @@ suite('webapp-optimize.js', function() {
       return file.path + '-dataURI';
     };
 
+    mockUtils.jsComparator = function() {
+      return true;
+    };
+
     mockConfig = {
       GAIA_DEFAULT_LOCALE: 'default-locale',
       GAIA_CONCAT_LOCALES: '1',
@@ -176,6 +180,7 @@ suite('webapp-optimize.js', function() {
       this.removeChild = function(dom) {
         removeDomChildren.push(dom);
       };
+      this.ownerDocument = mockDoc;
       this.hasAttribute = function(attr) {
         return hasAttributeFlag;
       };
@@ -443,15 +448,19 @@ suite('webapp-optimize.js', function() {
           'testkey': 'testContent'
         }
       };
-      htmlOptimizer.embed10nResources();
-      assert.equal(createdDOMs[2].query, 'document/script',
+      var originalHasAttributeFlag = hasAttributeFlag;
+      hasAttributeFlag = false;
+      htmlOptimizer.embedSubsetL10nResources();
+      hasAttributeFlag = originalHasAttributeFlag;
+
+      assert.equal(createdDOMs[3].query, 'document/script',
         'should modify document/script');
-      assert.equal(createdDOMs[2].innerHTML,
+      assert.equal(createdDOMs[3].innerHTML,
         '\n  ' + JSON.stringify(htmlOptimizer.subDict['test-lang']) + '\n',
         'should embed stringify l10ned object');
-      assert.equal(createdDOMs[2].lang, 'test-lang',
+      assert.equal(createdDOMs[3].lang, 'test-lang',
         'should modify script.lang');
-      assert.equal(createdDOMs[2].type, 'application/l10n',
+      assert.equal(createdDOMs[3].type, 'application/l10n',
         'should have application/l10n type');
     });
 

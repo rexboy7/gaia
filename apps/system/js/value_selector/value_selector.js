@@ -29,15 +29,16 @@
     app.element.addEventListener('_inputmethod-contextchange', this);
     app.element.addEventListener('_sheetstransitionstart', this);
     app.element.addEventListener('_localized', this);
+    window.addEventListener('timeformatchange', this);
   };
 
   ValueSelector.prototype = Object.create(BaseUI.prototype);
 
   ValueSelector.prototype.CLASS_NAME = 'ValueSelector';
 
-  ValueSelector.prototype.EVENT_PREFIX = 'value-selector-';
-
   ValueSelector.prototype.ELEMENT_PREFIX = 'value-selector-';
+
+  ValueSelector.prototype.EVENT_PREFIX = 'value-selector-';
 
   ValueSelector.prototype.customID = function vs_customID() {
     if (this.app) {
@@ -79,6 +80,12 @@
           this._datePicker.uninit();
           this._datePicker = null;
         }
+        if (this._timePicker) {
+          this._timePicker.uninit();
+          this._timePicker = null;
+        }
+        break;
+      case 'timeformatchange':
         if (this._timePicker) {
           this._timePicker.uninit();
           this._timePicker = null;
@@ -176,8 +183,7 @@
       return;
     }
 
-    this.publish('showing');
-
+    this.publish('shown');
     var min = detail.min;
     var max = detail.max;
 
@@ -226,12 +232,12 @@
     if (this.element.hidden) {
       return;
     }
-    this.publish('hiding');
     this.element.blur();
     this.element.hidden = true;
     if (this.app) {
       this.app.focus();
     }
+    this.publish('hidden');
   };
 
   ValueSelector.prototype.handleSelect = function vs_handleSelect(target) {
@@ -376,6 +382,7 @@
       return;
     }
 
+    var groupTemplate = new Template('value-selector-groupoption-template');
     var template = new Template('value-selector-option-template');
 
     // Add ARIA property to notify if this is a multi-select or not.
@@ -383,13 +390,20 @@
       this._currentPickerType !== 'select-one');
 
     options.forEach(function(option) {
-      this.elements.optionsContainer.insertAdjacentHTML('beforeend',
-        template.interpolate({
-          index: option.optionIndex.toString(10),
-          checked: option.selected.toString(),
-          for: 'gaia-option-' + option.optionIndex,
-          text: option.text
-        }));
+      if (option.group) {
+        this.elements.optionsContainer.insertAdjacentHTML('beforeend',
+          groupTemplate.interpolate({
+            text: option.text
+          }));
+      } else {
+        this.elements.optionsContainer.insertAdjacentHTML('beforeend',
+          template.interpolate({
+            index: option.optionIndex.toString(10),
+            checked: option.selected.toString(),
+            for: 'gaia-option-' + option.optionIndex,
+            text: option.text
+          }));
+      }
     }, this);
 
     // Apply different style when the options are more than 1 page
@@ -484,8 +498,9 @@
     this.element = element;
     this._fetchElements();
     var _ = navigator.mozL10n.get;
-    var localeTimeFormat = _('shortTimeFormat');
-    var is12hFormat = (localeTimeFormat.indexOf('%p') >= 0);
+    var is12hFormat = navigator.mozHour12;
+    var localeTimeFormat = is12hFormat ?
+      _('shortTimeFormat12') : _('shortTimeFormat24');
     var startHour = is12hFormat ? 1 : 0;
     var endHour = is12hFormat ? (startHour + 12) : (startHour + 12 * 2);
     var unitClassName = 'picker-unit';
@@ -577,7 +592,7 @@
     setTimePickerStyle: function tp_setTimePickerStyle() {
       var style = 'format24h';
       if (this.is12hFormat) {
-        var localeTimeFormat = navigator.mozL10n.get('shortTimeFormat');
+        var localeTimeFormat = navigator.mozL10n.get('shortTimeFormat12');
         var reversedPeriod =
           (localeTimeFormat.indexOf('%p') < localeTimeFormat.indexOf('%M'));
         style = (reversedPeriod) ? 'format12hrev' : 'format12h';

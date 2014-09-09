@@ -61,17 +61,18 @@ marionette('Vertical - Search', function() {
     client.helper.waitForElement(confirmSelector);
 
     // But not displayed if we clear them and type < 3 characters
+    var confirm = client.findElement(confirmSelector);
     client.switchToFrame();
     rocketbar.enterText('ab');
     search.goToResults();
-    assert.ok(!client.findElement(confirmSelector).displayed());
+    client.helper.waitForElementToDisappear(confirm);
 
     // Should not show notice if suggestions are disabled
     client.settings.set('search.suggestions.enabled', false);
     client.switchToFrame();
     rocketbar.enterText('abc');
     search.goToResults();
-    assert.ok(!client.findElement(confirmSelector).displayed());
+    client.helper.waitForElementToDisappear(confirm);
 
     // Notice should be dismissed if we press enter
     client.settings.set('search.suggestions.enabled', true);
@@ -103,7 +104,7 @@ marionette('Vertical - Search', function() {
     // Search for an app ane make sure it exists
     rocketbar.enterText('Phone');
     search.goToResults();
-    search.checkAppResult(phoneIdentifier, 'Phone');
+    search.checkResult(phoneIdentifier, 'Phone');
 
     // Press rocketbar close button, ensure the homescreen is
     // now displayed
@@ -130,7 +131,7 @@ marionette('Vertical - Search', function() {
     // previous result should be displayed
     home.focusRocketBar();
     search.goToResults();
-    search.checkAppResult(phoneIdentifier, 'Phone');
+    search.checkResult(phoneIdentifier, 'Phone');
 
     // Clear button should be visible when text entered
     client.switchToFrame();

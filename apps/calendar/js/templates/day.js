@@ -1,32 +1,27 @@
 (function(window) {
   'use strict';
 
+  var DateSpan = Calendar.Templates.DateSpan;
+
   var Day = Calendar.Template.create({
     hour: function() {
       var hour = this.h('hour');
-      var l10n = '';
-      var displayHour;
       var isAllDay = hour === Calendar.Calc.ALLDAY;
-
-      if (isAllDay) {
-        l10n = ' data-l10n-id="hour-allday" ';
-        displayHour = navigator.mozL10n.get('hour-allday');
-      } else {
-        displayHour = this.h('displayHour');
-      }
-
       var classes = [
         'hour',
         'hour-' + hour,
         this.h('classes')
       ].join(' ');
+      var timeSpan = DateSpan.hour.render({
+        hour: this.h('hour'),
+        format: 'hour-format',
+        className: 'display-hour'
+      });
 
       return '<section class="' + classes + '" data-hour="' + hour + '">' +
           '<div class="hour-header">' +
             (isAllDay ? '<i class="gaia-icon icon-calendar-allday"></i>' : '') +
-            '<span ' + l10n + 'class="display-hour">' +
-              displayHour +
-            '</span>' +
+            timeSpan +
           '</div>' +
           // we add a wrapper to allday events to improve the scroll
           // performance and avoid glitches

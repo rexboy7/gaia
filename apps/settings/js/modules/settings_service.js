@@ -133,16 +133,17 @@ define(function(require) {
     };
 
     var _navigate = function ss_navigate(panelId, options, callback) {
+      // Early return if the panel to be navigated is the same as the
+      // current one.
+      if (_currentNavigation && _currentNavigation.panelId === panelId) {
+        callback();
+        return;
+      }
+
       _loadPanel(panelId, function() {
         // We have to make sure l10n is ready before navigations
         navigator.mozL10n.once(function() {
           PanelCache.get(panelId, function(panel) {
-            // Check if there is any pending navigation.
-            if (_pendingNavigationRequest) {
-              callback();
-              return;
-            }
-
             var newPanelElement = document.getElementById(panelId);
             var currentPanelId =
                _currentNavigation && _currentNavigation.panelId;

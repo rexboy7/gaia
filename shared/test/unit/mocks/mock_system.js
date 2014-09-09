@@ -5,10 +5,13 @@ var MockSystem = {
   isBusyLoading: function() {
     return false;
   },
+  currentTime: function() {},
   slowTransition: false,
   publish: function(eventName, detail) {
     var evt = new CustomEvent(eventName, { detail: detail });
     window.dispatchEvent(evt);
   },
-  locked: false
+  locked: false,
+  runningFTU: false,
+  manifestURL: 'app://system.gaiamobile.org/manifest.webapp'
 };

@@ -4,9 +4,11 @@
   height: 4.6rem;
   left: 0;
   top: 0;
-  transition: transform 0.5s;
-  transform: scale(0.5);
-  transform-origin: left top;
+  display: block;
+  pointer-events: none;
+  opacity: 0;
+  transform: scale(1) translateY(3rem);
+  transition: opacity 0.25s linear;
 }
 
 /* RTL fixes being tracked in bug 1008013 */
@@ -15,16 +17,17 @@
 }
 
 #rocketbar.active {
-  transform: scale(1);
+  opacity: 1;
+  pointer-events: auto;
 }
 
 #screen.locked:not(.attention) #rocketbar {
   display: none;
 }
 
-#rocketbar-title, #rocketbar-form {
+#rocketbar-form {
   height: 3.4rem;
-  background: rgba(51, 51, 51, 0.5);
+  background: rgba(31, 31, 31, 1);
   border-radius: 1.7rem;
   padding: 0 1rem;
   margin: 0.3rem 0.5rem 0.6rem 0.5rem;
@@ -32,41 +35,19 @@
   white-space: nowrap;
 }
 
-#rocketbar-title {
-  width: calc(100% - 3.2rem);
-}
-
 #rocketbar-form {
   display: flex;
   flex-direction: row;
 }
 
-#rocketbar-title-content, #rocketbar-input {
+#rocketbar-input {
   background: none;
   display: block;
   width: 100%;
-  height: 3.4rem;
+  height: 2rem;
   color: #e7e7e7;
   padding: 0 0 0 0.5rem;
   text-overflow: ellipsis;
-}
-
-#rocketbar-title-content {
-  font-size: 1.8rem;
-  font-style: italic;
-  font-weight: 300;
-  transform: scale(1.33);
-  transform-origin: left center;
-  transition: transform 0.5s;
-  overflow: hidden;
-}
-
-*[dir=rtl] #rocketbar-title-content {
-  transform-origin: right center;
-}
-
-#rocketbar.expanded #rocketbar-title-content {
-  transform: scale(1);
 }
 
 #rocketbar-input {
@@ -104,9 +85,9 @@
 
 #rocketbar-clear {
   border: none;
-  background: url(actionicon_textfield_clear.png) no-repeat center center;
-  background-size: 2.5rem 2.5rem;
-  width: 4.5rem;
+  background: url(clear_dark.png) no-repeat center center;
+  background-size: 2.4rem 2.4rem;
+  width: 4rem;
 }
 
 #rocketbar-cancel {
@@ -117,7 +98,7 @@
   font-size: 1.4rem;
   font-style: italic;
   line-height: 1.8rem;
-  padding-left: 1.4rem;
+  padding: 0 .7rem 0 1.4rem;
 }
 
 #rocketbar-cancel::before {
@@ -128,10 +109,6 @@
   height: 2.4rem;
   width: .1rem;
   background-color: rgba(255, 255, 255, 0.08);
-}
-
-#rocketbar-title.hidden, #rocketbar-form.hidden {
-  display: none;
 }
 
 #rocketbar-results, #rocketbar-backdrop {
@@ -147,27 +124,16 @@
 
 #rocketbar-backdrop {
   top: 0;
-  height: 120%;
-  width: 120%;
-  margin-left: -10%;
-  margin-top: -10%;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: 50% 50%;
-
-  opacity: 1;
+  height: 100%;
+  width: 100%;
+  background-color: rgba(0, 0, 0, 0.95);
   transition: opacity 0.3s linear;
 }
 
-#rocketbar-backdrop-cover {
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.75);
-  pointer-events: none;
-}
-
+/* Rocketbar results is normally 7rem tall and should be adjusted by the
+   height of the SHB of 5rem when enabled */
 #screen.software-button-enabled #rocketbar-results {
-  height: calc(100% - 9.8rem);
+  height: calc(100% - 12rem);
 }
 
 #rocketbar-results.hidden, #rocketbar-results iframe.hidden,
@@ -176,71 +142,18 @@
   pointer-events: none;
 }
 
-#rocketbar-overflow-button {
-  display: none;
-  width: 4rem;
-  height: 4.8rem;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: transparent;
-  border: none;
-  opacity: 1;
-}
-
-#rocketbar-overflow-button {
-  background-image: url('overflow.png');
-}
-
 #rocketbar.navigation:not(.active) {
   display: flex;
   flex-direction: row;
 }
 
-#rocketbar.expanded.navigation:not(.active) #rocketbar-overflow-button {
-  display: block;
-}
+@media (orientation:landscape) {
+  #screen.software-button-enabled #rocketbar {
+    width: calc(100% - 5rem);
+  }
 
-#rocketbar.expanded.navigation:not(.active) #rocketbar-title {
-  position: relative;
-  flex: 1;
-  width: auto;
-  margin: 0.6rem 0;
-}
-
-/**
- * Style overrides for the HomeSearchbar
- */
-body.homesearch-enabled #rocketbar {
-  transition: opacity 0.25s linear;
-  display: block;
-  pointer-events: none;
-  opacity: 0;
-  transform: scale(1) translateY(3rem);
-}
-
-body.homesearch-enabled #rocketbar.active {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-body.homesearch-enabled #rocketbar-input {
-  height: 2rem;
-}
-
-body.homesearch-enabled #rocketbar-title-content {
-  margin-top: 0.7rem;
-  transform: scale(1);
-}
-
-/* Expand the rocketbar when it's active */
-body.homesearch-enabled #screen #rocketbar.active {
-  transform: scale(1) translateY(3rem);
-}
-body.homesearch-enabled #screen.active-statusbar #rocketbar.active {
-  transform: scale(1) translateY(4.0rem);
-}
-
-/* Do not expand the statusbar background on homescreen. We have our own markup in the homescreen. */
-body.homesearch-enabled #screen.rocketbar-expanded #statusbar-background {
-  transform: scaleY(0.5);
+  #screen.software-button-enabled #rocketbar-results {
+    height: calc(100% - 7rem);
+    width: calc(100% - 5rem);
+  }
 }

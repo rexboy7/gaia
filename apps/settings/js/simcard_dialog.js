@@ -12,7 +12,7 @@ function SimPinDialog(dialog) {
     return;
   }
 
-  var _localize = navigator.mozL10n.localize;
+  var _localize = navigator.mozL10n.setAttributes;
 
 
   /**
@@ -35,7 +35,7 @@ function SimPinDialog(dialog) {
    * User Interface constants
    */
 
-  var dialogTitle = dialog.querySelector('header h1');
+  var dialogTitle = dialog.querySelector('gaia-header h1');
   var dialogDone = dialog.querySelector('button[type="submit"]');
   var dialogClose = dialog.querySelector('button[type="reset"]');
   dialogDone.onclick = verify;
@@ -77,7 +77,7 @@ function SimPinDialog(dialog) {
       errorMsg.hidden = true;
       return;
     }
-    _localize(errorMsgHeader, headerL10nId);
+    errorMsgHeader.setAttribute('data-l10n-id', headerL10nId);
     _localize(errorMsgBody, bodyL10nId, args);
     errorMsg.hidden = false;
   }

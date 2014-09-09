@@ -13,13 +13,11 @@
   /* jshint -W104 */
 
   var DEBUG = false;
-  var requiresInlineLocale = false; // netError requires inline locale
 
   var L10n = navigator.mozL10n._getInternalAPI();
 
   navigator.mozL10n.bootstrap = function(callback, debug) {
     var ctx = navigator.mozL10n.ctx = new L10n.Context();
-    requiresInlineLocale = false;
 
     if (debug) {
       DEBUG = true;
@@ -61,7 +59,6 @@
     function onIniLoaded() {
       if (--iniLoads <= 0) {
         if (!containsFetchableLocale) {
-          requiresInlineLocale = true;
           document.documentElement.dataset.noCompleteBug = true;
         }
         callback();
@@ -144,7 +141,7 @@
 
   navigator.mozL10n.getDictionary = function getDictionary(fragment) {
     // don't do anything for pseudolocales
-    if (this.ctx.supportedLocales[0] in L10n.PSEUDO_STRATEGIES) {
+    if (this.ctx.supportedLocales[0] in this.qps) {
       return null;
     }
 

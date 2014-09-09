@@ -52,6 +52,7 @@ var FxaModuleEnterEmail = (function() {
     // Cache static HTML elements
     this.importElements(
       'fxa-email-input',
+      'fxa-logo',
       'fxa-notice'
     );
 
@@ -89,6 +90,18 @@ var FxaModuleEnterEmail = (function() {
         _enableNext(event.target);
       }
     );
+    this.fxaEmailInput.addEventListener(
+      'focus',
+      function onFocus() {
+        this.fxaLogo.setAttribute('hidden', true);
+      }.bind(this)
+    );
+    this.fxaEmailInput.addEventListener(
+      'blur',
+      function onBlur() {
+        this.fxaLogo.removeAttribute('hidden');
+      }.bind(this)
+    );
 
     this.fxaTerms.addEventListener('click', onExternalLinkClick.bind(this));
     this.fxaPrivacy.addEventListener('click', onExternalLinkClick.bind(this));
@@ -99,10 +112,11 @@ var FxaModuleEnterEmail = (function() {
       e.preventDefault();
       var url = e.target.href;
       if (this.entrySheet) {
+        this.entrySheet.close();
         this.entrySheet = null;
       }
       this.entrySheet = new EntrySheet(
-        window.top.document.getElementById('dialog-overlay'),
+        window.top.document.getElementById('screen'),
         url,
         new BrowserFrame({url: url})
       );
