@@ -16,7 +16,7 @@
 
         Connection.postMessage({
           'call': number,
-          'name': (contact && contact.name) ? contact.name : '[anonymous]',
+          'name': (contact && contact.name) ? contact.name[0] : null,
           'type': (message.type === 'sms') ? 'sms' : 'mms',
           'body': (message.type === 'sms') ? message.body : null
         });
