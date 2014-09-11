@@ -2,7 +2,7 @@
 (function(exports) {
   'use strict';
 
-  var RECEIVER_APP_URL = '/statics/secondary_page/index.html';
+  var RECEIVER_APP_URL = '/index.html';
 
   exports.Connection = {
     _events: {},
