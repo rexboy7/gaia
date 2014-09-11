@@ -1,0 +1,39 @@
+{
+  "name": "TV Notification Sender",
+  "description": "Sender app of Firefox OS notification to TV",
+  "launch_path": "/index.html",
+  "type": "certified",
+  "role": "system",
+  "developer": {
+    "name": "The Gaia Team",
+    "url": "https://github.com/mozilla-b2g/gaia"
+  },
+  "permissions": {
+    "sms":{},
+    "telephony":{},
+    "contacts":{ "access": "readonly" },
+    "phonenumberservice": {},
+    "systemXHR":{}
+  },
+  "locales": {
+    "en-US": {
+      "name": "TV Notification Sender",
+      "description": "Sender app of Firefox OS notification to TV"
+    }
+  },
+  "datastores-access": {
+    "Gaia_Facebook_Friends": {
+      "readonly": true,
+      "description": "Facebook Friends"
+    }
+  },
+  "messages": [
+     { "sms-received": "/index.html" },
+     { "telephony-new-call": "/index.html" },
+     { "telephony-call-end": "/index.html" }
+  ],
+  "default_locale": "en-US",
+  "icons": {
+    "128": "/style/icons/Blank.png"
+  }
+}
