@@ -490,3 +490,10 @@ shared/js/tag_visibility_monitor.js
 shared/js/visibility_monitor.js
 shared/pages/import/js/parameters.js
 shared/resources/apn/query.js
+shared/js/presentation/adapter.js
+shared/js/presentation/http_signal_peer.js
+shared/js/presentation/polyfill_presentation_session.js
+shared/js/presentation/polyfill_primary.js
+shared/js/presentation/polyfill_secondary_host.js
+shared/js/presentation/polyfill_secondary_page.js
+shared/js/presentation/server_config.js
