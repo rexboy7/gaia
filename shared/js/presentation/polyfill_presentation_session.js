@@ -1,3 +1,5 @@
+/* global RTCPeerConnection, RTCSessionDescription, pc_config, pc_constraints,
+          error */
 (function(exports) {
 'use strict';
 
@@ -44,11 +46,12 @@ PresentationSession.prototype = {
     this._onDataChannel({channel: this.pc.createDataChannel('present')});
     this.pc.createOffer(function(offer) {
       // Compability for both firefox/chrome
-      var offerData = offer.toJSON ? offer.toJSON() : JSON.parse(JSON.stringify(offer));
+      var offerData = offer.toJSON ? offer.toJSON() :
+                                     JSON.parse(JSON.stringify(offer));
 
       this.signaler.send('presentoffer', offerData, this.id);
       this.pc.setLocalDescription(offer);
-    }.bind(this)  , error);
+    }.bind(this), error);
   },
   _receiveAnswer: function ps_receiveAnswer(message) {
     this.pc.setRemoteDescription(new RTCSessionDescription(message.data));
@@ -58,12 +61,11 @@ PresentationSession.prototype = {
     this.dc.onmessage = this._onDataChannelReceive.bind(this);
     this.dc.onopen = this._onDataChannelOpened.bind(this);
     this.dc.onclose = this._onDataChannelClosed.bind(this);
-
-    this.currentstate = 'connected';
-    this._emit('statechange');
   },
   _onDataChannelOpened: function ps_onDataChannelOpened(evt) {
     this.signaler.onpresent({session: this});
+    this._currentstate = 'connected';
+    this._emit('statechange');
   },
   _onDataChannelClosed: function ps_onDataChannelClosed(evt) {
     this.signaler.onclose(evt, this.id);

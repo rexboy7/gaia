@@ -1,19 +1,18 @@
+/* global HTTPSignalPeer, PresentationSession, RTCIceCandidate, roomNum */
 (function(exports) {
 'use strict';
 
 var PolyFillPrimary = {
   channelPeer: new HTTPSignalPeer(),
   sessions: {},
-  peerList: document.getElementById('peerList'),
-  btnConnect: document.getElementById('btnConnect'),
+  peerList: [],
 
-  lblStatus: document.getElementById('lblStatus'),
   init: function() {
     this.channelPeer.init();
     this.channelPeer.ondatachannelopen = this.onDataChannelOpened.bind(this);
-    this.channelPeer.ondatachannelreceive = this.onDataChannelReceive.bind(this);
+    this.channelPeer.ondatachannelreceive =
+                                           this.onDataChannelReceive.bind(this);
     this.channelPeer.onsecondarychange = this.updateSecondaryList.bind(this);
-    this.btnConnect.onclick = this.connectPeer.bind(this);
   },
   onDataChannelOpened: function pr_onRemoteJoin() {
     this._emit('availablechange', {available: true});
@@ -44,14 +43,12 @@ var PolyFillPrimary = {
   },
   //////////////////////////////////////
   updateSecondaryList: function php_updateSecondaryList(screens) {
-    this.peerList.innerHTML = '';
-    screens.forEach(function(screen) {
-      this.peerList.options.add(new Option('screen ' + screen, screen));
-    }.bind(this));
+    this.peerList = [].concat(screens);
+    this._emit('secondaryupdate', screens);
   },
-  connectPeer: function php_connectPeer() {
-    this.log(this.peerList.options[this.peerList.selectedIndex].value);
-    var peerId = this.peerList.options[this.peerList.selectedIndex].value;
+  connectPeer: function php_connectPeer(idx) {
+    this.log(this.peerList[idx]);
+    var peerId = this.peerList[idx];
     this.channelPeer.sendOffer(peerId);
   },
   disconnect: function php_disconnect() {
