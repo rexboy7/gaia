@@ -7,30 +7,16 @@
   exports.Connection = {
     _events: {},
     _queued: [],
+    _availabled: false,
 
     init: function init(telephony) {
       var self = this;
-      navigator.presentation.connectPeer();
-      navigator.presentation.onavailablechange = function(e) {
-        console.log('onavailablechange!!');
-        self.session = navigator.presentation.requestSession(RECEIVER_APP_URL);
-        function flashQueue() {
-          var queued = self._queued;
-          self._queued = [];
-          for (var i = 0; i < queued.length; i++) {
-            self.session.postMessage(queued[i]);
-          }
+      navigator.presentation.onavailablechange = function(data) {
+        console.log('onavailablechange: ' + data.available);
+        self._availabled = data.available;
+        if (self._availabled && self._queued.length) {
+          self._requestSession();
         }
-        self.session.onstatechange = flashQueue;
-
-        if (self.session.state === 'connected') {
-          console.log('got a connected session');
-          flashQueue();
-        }
-
-        self.session.onmessage = function(msg) {
-          self._fire('message', msg);
-        };
       };
     },
 
@@ -60,11 +46,53 @@
     },
 
     postMessage: function post(msg) {
-      if (!this.session || this.session.state !== 'connected') {
+        if (!this._availabled || !this.session ||
+                 this.session.state !== 'connected') {
         this._queued[this._queued.length] = msg;
+        this._requestSession();
         return;
       }
       this.session.postMessage(msg);
+    },
+
+    _requestSession: function _requestSession() {
+      if (!this._availabled) {
+        // XXX: remove this after real Presentation API landed.
+        // if the presentation not available, we need to trigger connectPeer
+        // to make it available. This is a workaround of polyfill. If we use
+        // real Presentation API, we don't need this.
+        navigator.presentation.connectPeer();
+        return;
+      } else  if (this.session) {
+        // if we have session, we should wait for onstatechange fired.
+        console.log('not available or wait session ready: ' +
+                    this.session.state);
+        return;
+      }
+      var self = this;
+      this.session = navigator.presentation.requestSession(RECEIVER_APP_URL);
+      function flashQueue() {
+        if (self.session.state === 'connected') {
+          var queued = self._queued;
+          self._queued = [];
+          for (var i = 0; i < queued.length; i++) {
+            self.session.postMessage(queued[i]);
+          }  
+        } else {
+          console.log('session disconnected');
+          self.session = null;
+        }
+      }
+      this.session.onstatechange = flashQueue;
+
+      if (self.session.state === 'connected') {
+        console.log('got a connected session');
+        flashQueue();
+      }
+
+      this.session.onmessage = function(msg) {
+        self._fire('message', msg);
+      };
     },
 
     _fire: function _fire(type, data) {

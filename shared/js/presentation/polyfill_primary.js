@@ -13,6 +13,9 @@ var PolyFillPrimary = {
     this.channelPeer.ondatachannelreceive =
                                            this.onDataChannelReceive.bind(this);
     this.channelPeer.onsecondarychange = this.updateSecondaryList.bind(this);
+    this.channelPeer.ondatachannelclose = (function() {
+      this._emit('availablechange', {available: false});
+    }).bind(this);
   },
   onDataChannelOpened: function pr_onRemoteJoin() {
     this._emit('availablechange', {available: true});
