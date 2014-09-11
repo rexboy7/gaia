@@ -1,4 +1,4 @@
-/* global IACHandler */
+/* global IACHandler, NotificationHelper */
 'use strict';
 
 (function(exports) {
@@ -34,6 +34,13 @@
 
     onMessage: function(message) {
       console.log('Got message: ' + message);
+      // send notification anyhow
+      navigator.mozApps.getSelf().onsuccess = function (evt) {
+        var app = evt.target.result;
+        var iconURL = NotificationHelper.getIconURI(app);
+        new Notification(message, {body: message, icon: iconURL});
+      };
+
     }
   };
 
