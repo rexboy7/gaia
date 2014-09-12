@@ -2,6 +2,8 @@
 (function(exports) {
 'use strict';
 
+const DisableSignalingPanel = true;
+
 var PolyFillPrimary = {
   channelPeer: new HTTPSignalPeer(),
   sessions: {},
@@ -50,7 +52,6 @@ var PolyFillPrimary = {
     this._emit('secondaryupdate', screens);
   },
   connectPeer: function php_connectPeer(idx) {
-    this.log(this.peerList[idx]);
     var peerId = this.peerList[idx];
     this.channelPeer.sendOffer(peerId);
   },
@@ -67,6 +68,26 @@ var PolyFillPrimary = {
   onavailablechange: null,
   onpresent: null
 };
+var SignalingPanel = {
+  peerList: document.getElementById('peerList'),
+  btnConnect: document.getElementById('btnConnect'),
+  init: function sp_init() {
+    if (DisableSignalingPanel) {
+      return;
+    }
+    PolyFillPrimary.onsecondaryupdate = this.updateSecondaryListUI.bind(this);
+    this.btnConnect.onclick = this.connectPeer.bind(this);
+  },
+  updateSecondaryListUI: function sp_updateSecondaryListUI() {
+    this.peerList.innerHTML = '';
+    PolyFillPrimary.peerList.forEach(function(screen) {
+      this.peerList.options.add(new Option('screen ' + screen, screen));
+    }.bind(this));
+  },
+  connectPeer: function php_connectPeer() {
+    PolyFillPrimary.connectPeer(this.peerList.selectedIndex);
+  }
+}
 
 var PrimarySessionSignaler = {
   send: function pss_sendMessage(event, data, id) {
@@ -77,6 +98,7 @@ var PrimarySessionSignaler = {
 };
 
 PolyFillPrimary.init();
+SignalingPanel.init();
 
 exports.navigator.presentation = PolyFillPrimary;
 
