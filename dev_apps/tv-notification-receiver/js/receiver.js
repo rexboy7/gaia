@@ -22,6 +22,7 @@
       }
       if (this._session) {
         this._session.onmessage = undefined;
+        this._session.onstatechange = undefined;
       }
       this._session = undefined;
     },
@@ -30,6 +31,7 @@
       console.log('Got present event! ');
       this._session = evt.session;
       this._session.onmessage = this.onMessage.bind(this);
+      this._session.onstatechange = this.onStateChangeProxy;
     },
 
     onMessage: function(message) {
@@ -40,6 +42,16 @@
         var iconURL = NotificationHelper.getIconURI(app);
         new Notification(message, {body: message, icon: iconURL});
       };
+    },
+
+    onStateChangeProxy: function() {
+      if(exports.receiver) {
+        exports.receiver.onStateChange(this.state);
+      }
+    },
+
+    onStateChange: function(state) {
+      console.log('session state change to ' + state);
 
     }
   };
