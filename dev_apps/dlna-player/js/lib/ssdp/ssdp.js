@@ -6,16 +6,17 @@
 (function(global) {
   // Spec information:
   // http://upnp.org/specs/arch/UPnP-arch-DeviceArchitecture-v1.1.pdf
+
   const SSDP_PORT = 1900;
-  const SSDP_ADDRESS = '239.255.255.250';
+  const SSDP_ADDRESS = "239.255.255.250";
   const SSDP_DISCOVER_MX = 2;
 
   const SSDP_DISCOVER_PACKET =
-    'M-SEARCH * HTTP/1.1\r\n' +
-    'HOST: ' + SSDP_ADDRESS + ':' + SSDP_PORT + '\r\n' +
-    'MAN: \"ssdp:discover\"\r\n' +
-    'MX: ' + SSDP_DISCOVER_MX + '\r\n' +
-    'ST: %SEARCH_TARGET%\r\n\r\n';
+    "M-SEARCH * HTTP/1.1\r\n" +
+    "HOST: " + SSDP_ADDRESS + ":" + SSDP_PORT + "\r\n" +
+    "MAN: \"ssdp:discover\"\r\n" +
+    "MX: " + SSDP_DISCOVER_MX + "\r\n" +
+    "ST: %SEARCH_TARGET%\r\n\r\n";
 
   const SSDP_RESPONSE_HEADER = /HTTP\/\d{1}\.\d{1} \d+ .*/;
   const SSDP_HEADER = /^([^:]+):\s*(.*)$/;
@@ -23,6 +24,7 @@
   var SimpleServiceDiscovery = {
     _targets: [],
     _commands: {},
+    _searching: false,
     search: function _search(aInterval) {
       aInterval = aInterval || 0;
       if (aInterval > 0) {
@@ -42,52 +44,44 @@
     },
 
     // internal function
-    _usingLAN: function _usingLAN() {
-      // XXX need a way to check current network interface.
-      return true;
-    },
     _search: function _search() {
-      // We only search if on local network
-      if (!this._usingLAN()) {
-        return;
-      }
-
       // create socket if not exist
       if (!this._searchSocket) {
-        this._searchSocket = new UDPSocket({loopback: true});
+        this._searchSocket = new UDPSocket({loopback: true, localPort: SSDP_PORT});
         this._searchSocket.joinMulticastGroup(SSDP_ADDRESS);
         this._searchSocket.onmessage = this._onmessage.bind(this);
+        window.addEventListener('beforeunload', function(evt) {
+          this._searchSocket.close();
+        }.bind(this));
       }
 
       this._searchSocket.opened.then((function() {
         // Perform a UDP broadcast to search for SSDP devices
         this._searchTimeout = setTimeout(this._searchShutdown.bind(this), SSDP_DISCOVER_MX * 1000);
+        this._searching = true;
 
         var data = SSDP_DISCOVER_PACKET;
         this._targets.forEach((function(target) {
-          var msgData = data.replace('%SEARCH_TARGET%', target);
+          var msgData = data.replace("%SEARCH_TARGET%", target);
           var ok = this._searchSocket.send(msgData, SSDP_ADDRESS, SSDP_PORT);
         }).bind(this));
-      }).bind(this));
+      }).bind(this)).catch(function(evt) {
+      });
     },
     _searchShutdown: function _searchShutdown() {
-      if (this._searchSocket) {
-        // This will call onStopListening.
-        this._searchSocket.close();
-        delete this._searchSocket;
-      }
+      this._searching = false;
     },
     _onmessage: function _onmessage(e) {
       // Listen for responses from specific targets. There could be more than one
       // available.
 
       var msg = String.fromCharCode.apply(null, new Uint8Array(e.data));
-      var lines = msg.toString().split('\r\n');
+      var lines = msg.toString().split("\r\n");
       var firstLine = lines.shift();
       var method = SSDP_RESPONSE_HEADER.test(firstLine) ? 'RESPONSE'
                                                         : firstLine.split(' ')[0].toUpperCase();
       var headers = {};
-      lines.forEach(function(line) {
+      lines.forEach(function (line) {
         if (line.length) {
           var pairs = line.match(/^([^:]+):\s*(.*)$/);
           if (pairs) {
@@ -102,10 +96,10 @@
     _found: function _found(aService) {
       // Use the REST api to request more information about this service
       var xhr = new XMLHttpRequest({mozSystem: true});
-      xhr.open('GET', aService.location, true);
-      xhr.overrideMimeType('text/xml');
+      xhr.open("GET", aService.location, true);
+      xhr.overrideMimeType("text/xml");
 
-      xhr.addEventListener('load', (function() {
+      xhr.addEventListener("load", (function() {
         if (xhr.status == 200) {
           // walk through root device and all the embedded devices
           var devices = xhr.responseXML.querySelectorAll('device');
@@ -118,18 +112,18 @@
       xhr.send(null);
     },
     _parseDescriptor: function _parseDescriptor(device, refUrl) {
-      var udn = device.querySelector('UDN').innerHTML;
+      var udn = device.querySelector("UDN").innerHTML;
 
       var serviceList = device.querySelector('serviceList').querySelectorAll('service');
       for (var i = 0; i < serviceList.length; i++) {
         var service = serviceList[i];
-        var serviceId = service.querySelector('serviceId').innerHTML;
+        var serviceType = service.querySelector('serviceType').innerHTML;
         var eventsUrl = this._getAbsoluteURL(service.querySelector('eventSubURL'), refUrl);
         var options = {};
-        options.id = udn + '::' + serviceId;
+        options.id = udn + '::' + serviceType;
         options.deviceId = udn;
-        options.name = serviceId;
-        options.type = 'upnp:' + service.querySelector('serviceType').innerHTML;
+        options.name = service.querySelector('serviceId').innerHTML;
+        options.type = 'upnp:' + serviceType;
         options.url = this._getAbsoluteURL(service.querySelector('controlURL').innerHTML, refUrl);
         options.config = device.outerHTML;
         if (eventsUrl) {
@@ -150,14 +144,18 @@
   };
 
   SimpleServiceDiscovery._commands['RESPONSE'] = function _response(headers) {
-    if (headers.location && this._targets.indexOf(headers.st) >= 0) {
+    if (this._searching && headers.location && this._targets.indexOf(headers.st) >= 0) {
       this._found(headers);
     }
   };
   SimpleServiceDiscovery._commands['NOTIFY'] = function _notify(headers) {
-    switch (headers.nts) {
+    switch(headers.nts) {
       case 'ssdp:alive':
+        var old_searching = this._searching;
+        this._searching = true;
+        headers['st'] = headers.nt;
         this._commands['RESPONSE'].apply(this, [headers]);
+        this._searching = old_searching;
         break;
       case 'ssdp:byebye':
         serviceHelper.remove(new SSDPServiceRecord({id: headers.usn}));
@@ -182,7 +180,7 @@
     expiryTimestamp: '',
     update: function(options) {
       var self = this;
-      ['id', 'deviceId', 'name', 'type', 'url', 'config', 'expiryTimestamp'].forEach(function(option) {
+      ['id', 'deviceId', 'name', 'type', 'url',  'config', 'expiryTimestamp'].forEach(function(option) {
         self[option] = options[option];
       });
 
@@ -248,7 +246,7 @@
         }
       }
       return event.cancelable === false || event.defaultPrevented === false;
-    }
+    },
   };
 
   function NetworkServices(types, services) {
@@ -320,7 +318,7 @@
         }
       }
       return event.cancelable === false || event.defaultPrevented === false;
-    }
+    },
   };
 
   function _hasRequestedType(service, types) {
@@ -358,7 +356,7 @@
               service.dispatchEvent(new CustomEvent('available',
                                                     { bubbles: false,
                                                       cancelable: false,
-                                                      detail: {target: service}
+                                                      detail: {target: service},
                                                     }));
             }, 0);
           }
@@ -375,7 +373,7 @@
               manager.dispatchEvent(new CustomEvent('servicefound',
                                                     { bubbles: false,
                                                       cancelable: false,
-                                                      detail: {target: manager}
+                                                      detail: {target: manager},
                                                     }));
             }, 0);
           }
@@ -402,7 +400,7 @@
                 service.dispatchEvent(new CustomEvent('unavailable',
                                                       { bubbles: false,
                                                         cancelable: false,
-                                                        detail: {target: service}
+                                                        detail: {target: service},
                                                       }));
               }, 0);
             }
@@ -414,7 +412,7 @@
                 manager.dispatchEvent(new CustomEvent('servicelost',
                                                       { bubbles: false,
                                                         cancelable: false,
-                                                        detail: {target: manager}
+                                                        detail: {target: manager},
                                                       }));
               }, 0);
             }
@@ -428,7 +426,7 @@
           // remove from available service list
           availableServiceRecords.splice(index, 1);
         }
-      }
+      },
     };
   })();
 
@@ -442,14 +440,14 @@
       search: function() {
         SimpleServiceDiscovery.search();
       }
-    }
+    },
   };
 
   function getNetworkServices(type) {
     const UNKNOWN_TYPE_PREFIX_ERR = 'UnknownTypePrefixError';
     const PERMISSION_DENIED_ERR = 'PermissionDeniedError';
 
-    function _isValidServiceType(type) {
+    function _isValidServiceType (type) {
       return type && Object.keys(targetRegister).some(function(prefix) { return type.startsWith(prefix); });
     }
 

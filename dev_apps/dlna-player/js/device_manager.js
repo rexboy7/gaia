@@ -53,6 +53,14 @@
         return;
       }
       delete this.devices[deviceId][serviceId];
+      this.removeDeviceIfEmpty(deviceId);
+    },
+
+    removeDeviceIfEmpty: function dm_removeIfEmpty(deviceId) {
+      for (var prop in deviceId) {
+        return;
+      }
+      this.removeDevice(deviceId);
     },
 
     removeDevice: function dm_removeDevice(deviceId) {

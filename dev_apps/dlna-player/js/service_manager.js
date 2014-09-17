@@ -40,16 +40,27 @@
     },
 
     updateService: function sm_updateService(service) {
-      var mediaServer = new this.serviceConstructor(service, { debug: false });
-      this.appendMixinProperties(mediaServer);
-
       if (!this.savedServices[service.id]) {
+        var mediaServer =
+                        new this.serviceConstructor(service, { debug: false });
+        this.appendMixinProperties(mediaServer);
         this.savedServices[service.id] = mediaServer;
         deviceManager.addService(mediaServer);
 
         var serverItem = this.serverView(mediaServer);
         this.listElement.appendChild(serverItem);
         mediaServer.serverItem = serverItem;
+      }
+    },
+
+    removeService: function sm_removeService(service) {
+      for(var id in this.savedServices) {
+        if (service.id === id) {
+          var serverItem = this.savedServices[service.id].serverItem;
+          this.removeSiblingList(serverItem);
+          serverItem.parentElement.removeChild(serverItem);
+          delete this.savedServices[serviceId];
+        }
       }
     },
 
@@ -64,10 +75,19 @@
     },
 
     onServices: function sm_onServices(services) {
-      var idx = services.length;
       services.addEventListener('servicefound', function servicefound(e) {
-        this.updateService(services[idx]);
-        idx++;
+        for (var i = 0; i < services.length; i++)  {
+          if (services[i].online) {
+            this.updateService(services[i]);
+          }
+        }
+      }.bind(this));
+      services.addEventListener('servicelost', function servicelost(e) {
+        for (var i = 0; i < services.length; i++) {
+          if (!services[i].online) {
+            this.removeService(services[i]);
+          }
+        }
       }.bind(this));
 
       this.debugLog(services.length + ' service' +
@@ -98,12 +118,6 @@
       return deviceManager.getSelectedService(this.serviceName);
     },
 
-    remove: function sm_remove(serviceId) {
-      var serverItem = this.savedServices[serviceId].serverItem;
-      this.removeSiblingList(serverItem);
-      serverItem.parentElement.removeChild(serverItem);
-      delete this.savedServices[serviceId];
-    },
 
     removeSiblingList: function sm_remove(elem) {
       if (elem.nextElementSibling.classList.contains('sublist')) {

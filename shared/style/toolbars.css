@@ -36,3 +36,11 @@
 [role="toolbar"] [data-icon] {
   font-size: 0;
 }
+
+[role="toolbar"] [data-icon] {
+  font-size: 0;
+}
+
+section [role="toolbar"] {
+  background-color: #212121;
+}

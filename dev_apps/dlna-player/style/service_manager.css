@@ -58,10 +58,7 @@ li.folder.opened {
   height: calc(100% - 9rem);
   width: 100%;
 }
-#controlButtons {
-  bottom: 0px;
-  right: 20px;
-}
+
 li:hover {
   color: #003399;
 }

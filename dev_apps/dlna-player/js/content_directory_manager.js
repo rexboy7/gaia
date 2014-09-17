@@ -1,5 +1,8 @@
 /* globals plug, deviceManager */
 (function(exports) {
+  //
+  // TODO: Refactor to use ServiceManager as prototype.
+  //
   var DEBUG = false;
   'use strict';
 
@@ -215,13 +218,6 @@
     });
   }
 
-  function remove(serviceId) {
-    var serverItem = savedServices[serviceId].serverItem;
-    removeSiblingList(serverItem);
-    serverItem.parentElement.removeChild(serverItem);
-    delete savedServices[serviceId];
-  }
-
   function removeSiblingList(elem) {
     if (elem.nextElementSibling.classList.contains('sublist')) {
       elem.parentElement.removeChild(elem.nextElementSibling);
@@ -246,32 +242,24 @@
   }
 
   function onServices(services) {
-    var idx = services.length;
     services.addEventListener('servicefound', function servicefound(e) {
       for (var i = 0; i < services.length; i++) {
-        console.log(services[i].id);
+        if (services[i].online) {
+          updateService(services[i]);
+        }
       }
-      updateService(services[idx]);
-      idx++;
+    });
+    services.addEventListener('servicelost', function servicelost(e) {
+      for (var i = 0; i < services.length; i++) {
+        if (!services[i].online) {
+          removeService(services[i]);
+        }
+      }
     });
 
     debugLog(services.length + ' service' +
     (services.length !== 1 ? 's' : '') +
     ' found in the current network');
-
-    // Remove offline services
-    for (var savedServiceId in savedServices) {
-      var removed = true;
-      for (var i = 0; i < services.length; i++) {
-        if (services[i].id == savedServiceId) {
-          removed = false;
-          break;
-        }
-      }
-      if (removed) {
-        remove(savedServiceId);
-      }
-    }
 
     // Update services individually
     for (var j = 0; j < services.length; j++) {
@@ -279,11 +267,23 @@
     }
   }
 
-  function updateService(service) {
-    var mediaServer =
-      new Plug.UPnP_ContentDirectory(service, { debug: false });
+  function removeService(service) {
+    for (var savedServiceId in savedServices) {
+      if (service.id === savedServiceId) {
+        var serverItem = savedServices[service.id].serverItem;
+        removeSiblingList(serverItem);
+        serverItem.parentElement.removeChild(serverItem);
+        delete savedServices[service.id];
+        return;
+      }
+    }
+  }
 
+  function updateService(service) {
     if (!savedServices[service.id]) {
+      var mediaServer =
+        new Plug.UPnP_ContentDirectory(service, { debug: false });
+
       savedServices[service.id] = mediaServer;
 
       // Add server node

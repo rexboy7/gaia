@@ -64,5 +64,10 @@ section[role="region"] [role="toolbar"]{
 
 [role="toolbar"] button {
   font-size: 1.5rem;
-  color: #E7E7E7;
+  color: #919191;
+  font-style: normal;
+}
+[role="toolbar"] {
+  position: absolute;
+  bottom: 0px;
 }
