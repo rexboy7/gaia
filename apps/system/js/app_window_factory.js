@@ -1,6 +1,6 @@
 'use strict';
 /* global applications, BrowserConfigHelper, AppWindowManager,
-          homescreenLauncher, AppWindow */
+          homescreenLauncher, AppWindow, WrapperFactory */
 /* jshint nonew: false */
 
 (function(exports) {
@@ -50,6 +50,7 @@
       window.addEventListener('webapps-close', this.preHandleEvent);
       window.addEventListener('open-app', this.preHandleEvent);
       window.addEventListener('appopenwindow', this.preHandleEvent);
+      window.addEventListener('mozChromeEvent', this.preHandleEvent);
       window.addEventListener('applicationready', (function appReady(e) {
         window.removeEventListener('applicationready', appReady);
         this._handlePendingEvents();
@@ -96,9 +97,62 @@
       }
     },
 
+    handlePresentation: function awf_handlePresentation(detail) {
+      var parseUrl = detail.url.split('/');
+      var protocol = parseUrl[0].toUpperCase();
+      var manifestURL;
+
+      parseUrl.length = 3;
+      if (protocol == 'APP:') {
+        manifestURL = parseUrl.join('/') + '/manifest.webapp';
+      } else {
+        manifestURL = null;
+      }
+      var config = new BrowserConfigHelper(detail.url, manifestURL);
+
+      var cb = function(receivedapp) {
+        var evt = new CustomEvent('mozContentEvent', {
+          bubbles: true,
+          cancelable: false,
+          detail: {
+            type: 'presentation-launch-result',
+            frame: receivedapp.iframe
+          }
+        });
+        window.dispatchEvent(evt);
+      };
+      var app = AppWindowManager.getApp(config.origin, config.manifestURL);
+      if (app) {
+        cb(app);
+      } else {
+        window.addEventListener('appcreated', function awf_appcreated(evt) {
+          app = evt.detail;
+
+          if (app.config.url == config.url) {
+            window.removeEventListener('appcreated', awf_appcreated);
+            cb(app);
+          }
+        });
+        config.timestamp = detail.timestamp;
+        if (protocol == 'APP:') {
+          this.launch(config);
+        } else {
+          WrapperFactory.launchWrapper(config);
+        }
+
+      }
+    },
+
     handleEvent: function awf_handleEvent(evt) {
       var detail = evt.detail;
       var manifestURL = detail.manifestURL;
+
+      if (evt.type == 'mozChromeEvent' &&
+        detail.type == 'presentation-launch') {
+        this.handlePresentation(evt.detail);
+        return;
+      }
+
       if (!manifestURL) {
         return;
       }
@@ -214,3 +268,32 @@
 
   exports.AppWindowFactory = AppWindowFactory;
 }(window));
+
+/*
+setTimeout(function() {
+  window.addEventListener('mozContentEvent', function appopentest(evt) {
+    if (evt.detail.type == 'presentation-launch-result') {
+      window.removeEventListener('mozContentEvent', appopentest);
+      console.log("successful");
+      console.log(evt.detail.frame);
+    }
+  });
+  window.dispatchEvent(new CustomEvent('mozChromeEvent', {detail: {
+    type: 'presentation-launch',
+    url: 'app://clock.gaiamobile.org/index.html'
+  }}));
+}, 20000);
+
+setTimeout(function() {
+  window.addEventListener('mozContentEvent', function webpageopentest(evt) {
+    if (evt.detail.type == 'presentation-launch-result') {
+      window.removeEventListener('mozContentEvent', webpageopentest);
+      console.log("successful");
+      console.log(evt.detail.frame);
+    }
+  });
+  window.dispatchEvent(new CustomEvent('mozChromeEvent', {detail: {
+    type: 'presentation-launch',
+    url: 'http://www.google.com/'
+  }}));
+}, 30000); */
