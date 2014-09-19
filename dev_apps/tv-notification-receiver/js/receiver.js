@@ -84,10 +84,9 @@
     //
     // Currently http://webscreens.github.io/presentation-api/ did not define
     // the type of first arguement of onmessage(Should it be string or object?).
-    // But we treat it as string for now.
-    onMessage: function(rawMessage) {
+    // But we treat it as object for now.
+    onMessage: function(message) {
       var that = this;
-      var message = JSON.parse(rawMessage);
       var type = message.type;
       var title;
       var body;
