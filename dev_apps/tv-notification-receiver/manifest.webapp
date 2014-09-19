@@ -25,12 +25,5 @@
   "permissions": {
     "systemXHR":{},
     "desktop-notification":{}
-  },
-  "connections": {
-    "tv-notification-bringup": {
-      "description": "Communication with presentation polyfil in system apps for receiving notifcation",
-      "handler_path": "/message_handler.html",
-      "rules": {}
-    }
   }
 }

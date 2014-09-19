@@ -427,21 +427,6 @@ var CallHandler = (function callHandler() {
     if (MmiManager.isMMI(number, cardIndex)) {
       if (number === '*#06#') {
         MmiManager.showImei();
-        // XXX: A hack to bringup tv-notification-receiver
-        // remember to remove this when system app is ready
-      } else if (number === '*#4636#') {
-        console.log('fire tv-notification-bringup IAC message');
-        navigator.mozApps.getSelf().onsuccess = function(evt) {
-          var app = evt.target.result;
-          app.connect('tv-notification-bringup').then(function(ports) {
-            // send messages
-            ports.forEach(function(port) {
-              port.postMessage('get up!');
-            });
-          }, function(reason) {
-            // error handling
-          });
-        };
       } else {
         MmiManager.send(number, cardIndex);
       }
