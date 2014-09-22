@@ -34,3 +34,4 @@ dev_apps/contacts-ds-provider2
 dev_apps/demo-hci-event
 dev_apps/test-l10n-optimize
 dev_apps/tv-notification-receiver
+dev_apps/tv-notification-sender

@@ -2,7 +2,7 @@
 (function(exports) {
   'use strict';
 
-  var RECEIVER_APP_URL = '/index.html';
+  var RECEIVER_APP_URL = 'app://tv-notification-receiver.gaiamobile.org/index.html';
 
   exports.Connection = {
     _events: {},
@@ -56,22 +56,17 @@
     },
 
     _requestSession: function _requestSession() {
-      if (!this._availabled) {
-        // XXX: remove this after real Presentation API landed.
-        // if the presentation not available, we need to trigger connectPeer
-        // to make it available. This is a workaround of polyfill. If we use
-        // real Presentation API, we don't need this.
-        navigator.presentation.connectPeer();
-        return;
-      } else  if (this.session) {
+      if (!this._availabled || this.session) {
         // if we have session, we should wait for onstatechange fired.
         console.log('not available or wait session ready: ' +
-                    this.session.state);
+                    this._availabled);
         return;
       }
       var self = this;
       this.session = navigator.presentation.requestSession(RECEIVER_APP_URL);
+      console.log('initial session state: ' + this.session.state);
       function flashQueue() {
+        console.log('session state changed: ' + self.session.state);
         if (self.session.state === 'connected') {
           var queued = self._queued;
           self._queued = [];
