@@ -135,11 +135,11 @@
         });
         config.timestamp = detail.timestamp;
         if (protocol == 'APP:') {
+          config.stayBackground = true;
           this.launch(config);
         } else {
           WrapperFactory.launchWrapper(config);
         }
-
       }
     },
 
