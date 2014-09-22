@@ -114,8 +114,8 @@
         var evt = new CustomEvent('mozContentEvent', {
           bubbles: true,
           cancelable: false,
-          reuse: reuseFrame,
           detail: {
+            reuse: reuseFrame,
             type: 'presentation-launch-result',
             frame: receivedapp.iframe
           }
