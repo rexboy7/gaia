@@ -110,10 +110,11 @@
       }
       var config = new BrowserConfigHelper(detail.url, manifestURL);
 
-      var cb = function(receivedapp) {
+      var cb = function(receivedapp, reuseFrame) {
         var evt = new CustomEvent('mozContentEvent', {
           bubbles: true,
           cancelable: false,
+          reuse: reuseFrame,
           detail: {
             type: 'presentation-launch-result',
             frame: receivedapp.iframe
@@ -123,14 +124,14 @@
       };
       var app = AppWindowManager.getApp(config.origin, config.manifestURL);
       if (app) {
-        cb(app);
+        cb(app, true);
       } else {
         window.addEventListener('appcreated', function awf_appcreated(evt) {
           app = evt.detail;
 
           if (app.config.url == config.url) {
             window.removeEventListener('appcreated', awf_appcreated);
-            cb(app);
+            cb(app, false);
           }
         });
         config.timestamp = detail.timestamp;
