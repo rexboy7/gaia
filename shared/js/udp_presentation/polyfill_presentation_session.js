@@ -7,6 +7,20 @@ function log(msg) {
 
 function PresentationSession() {
   this._currentstate = 'disconnected';
+  window.addEventListener('message', (function sessionClose(evt) {
+    var msg = evt.data;
+    if (!msg.type || msg.type !== 'sessionClose' || msg.channelId !== this._remoteId) {
+      return;
+    }
+
+    log('recv sessionClose');
+    if (this.state === 'connected') {
+      this._currentstate = 'disconnected';
+      this._channelId = null;
+      this._remoteId = null;
+      this._emit('statechange');
+    }
+  }).bind(this));
 }
 
 PresentationSession.prototype = {
@@ -21,9 +35,13 @@ PresentationSession.prototype = {
   },
   close: function ps_close() {
     log('close session');
-    this._currentstate = 'disconnected';
-    this._channelId = null;
-    this._emit('statechange');
+    if (this.state === 'connected') {
+      navigator.sessionClose(this._channelId, this._remoteId);
+      this._currentstate = 'disconnected';
+      this._channelId = null;
+      this._remoteId = null;
+      this._emit('statechange');
+    }
   },
 
   // procedure for primary screen
@@ -45,7 +63,7 @@ PresentationSession.prototype = {
       if (!msg.type || msg.type !== 'requestSession:Return') {
         return;
       }
-log('receive requestSession:Return');
+      log('receive requestSession:Return');
       window.removeEventListener('message', requestSession_Return);
       self._remoteId = msg.answer;
       window.addEventListener('message', self._onData.bind(self));
@@ -83,7 +101,7 @@ log('receive requestSession:Return');
   _emit: function ps_emit(eventname, data) {
     var cbname = 'on' + eventname;
     if (typeof this[cbname] == 'function' ) {
-      this[cbname](data);
+      setTimeout(this[cbname].bind(null, data), 0);
     }
   },
 };
