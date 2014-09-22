@@ -5,6 +5,8 @@ function log(message) {
   console.log('Presentation: ' + message);
 }
 
+var deviceAvailable = false;
+
 var PolyFillPrimary = {
   sessions: {},
 
@@ -19,7 +21,11 @@ var PolyFillPrimary = {
 
       switch (msg.type) {
         case 'device-available':
-          this._fireEvent('availablechange', {available: msg.available});
+          if (deviceAvailable !== msg.available) {
+            deviceAvailable = msg.available;
+	    this._fireEvent('availablechange', {available: deviceAvailable});
+          }
+          setTimeout(navigator.peekDevice, 5000);
           break;
         case 'requestSession':
           var session = new PresentationSession();
@@ -28,7 +34,7 @@ var PolyFillPrimary = {
           break;
       }
     }).bind(this));
-    navigator.peekDevice();
+    setTimeout(navigator.peekDevice, 0);
   },
 
   requestSession: function pr_requestSession(url) {
@@ -48,7 +54,7 @@ var PolyFillPrimary = {
     log('fire event (' + type + '): ' + JSON.stringify(data));
     var cbname = 'on' + type;
     if (typeof this[cbname] == 'function' ) {
-      this[cbname](data);
+      setTimeout(this[cbname].bind(null, data));
     }
   },
 
