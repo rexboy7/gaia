@@ -254,8 +254,7 @@ var icc_worker = {
       icc.responseSTKCommand(message, {
         resultCode: icc._iccManager.STK_RESULT_OK
       });
-      icc.confirm(message, options.text, timeout,
-        null);
+      icc.confirm(message, options.text, timeout, null);
     } else {
       icc.confirm(message, options.text, timeout,
         function(userCleared) {
@@ -320,10 +319,17 @@ var icc_worker = {
           });
         } else {
           DUMP('STK_CMD_GET_INPUT: Response = ', value);
-          icc.responseSTKCommand(message, {
-            resultCode: icc._iccManager.STK_RESULT_OK,
-            input: value
-          });
+          if (typeof value === 'boolean') {
+            icc.responseSTKCommand(message, {
+              resultCode: icc._iccManager.STK_RESULT_OK,
+              isYesNo: value
+            });
+          } else {
+            icc.responseSTKCommand(message, {
+              resultCode: icc._iccManager.STK_RESULT_OK,
+              input: value
+            });
+          }
         }
       });
   },

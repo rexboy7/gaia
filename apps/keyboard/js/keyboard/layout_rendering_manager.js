@@ -7,6 +7,11 @@
 var LayoutRenderingManager = function(app) {
   this.app = app;
 
+  // Reference of the layoutManager.currentPage that is
+  // currently being rendered. Only updates when updateLayoutRendering()
+  // is called.
+  this._currentRenderingPage = null;
+
   this._resizeListenerTimer = undefined;
 };
 
@@ -33,15 +38,66 @@ LayoutRenderingManager.prototype.stop = function() {
 LayoutRenderingManager.prototype.handleEvent = function() {
   this.app.console.log('LayoutRenderingManager.handleEvent()');
   if (document.hidden) {
+    this.app.console.log(
+      'LayoutRenderingManager: Ignore resizing call since ' +
+      'document is hidden.');
+
     return;
   }
 
-  IMERender.resizeUI(this.app.layoutManager.currentModifiedLayout);
+  if (this._currentRenderingPage !== this.app.layoutManager.currentPage) {
+    this.app.console.log(
+      'LayoutRenderingManager: Ignore resizing call since ' +
+      'layout is not ready yet.');
+
+    return;
+  }
+
+  IMERender.resizeUI(this.app.layoutManager.currentPage);
   this._updateHeight();
 
   // TODO: need to check how to handle orientation change case to
   // show current word suggestions
   this._updateLayoutParams();
+};
+
+LayoutRenderingManager.prototype.updateCandidatesRendering = function() {
+  if (this._currentRenderingPage !== this.app.layoutManager.currentPage) {
+    this.app.console.log(
+      'LayoutRenderingManager: Ignore updateCandidatesRendering() call since ' +
+      'layout is not ready yet.');
+
+    return;
+  }
+
+  IMERender.showCandidates(this.app.candidatePanelManager.currentCandidates);
+};
+
+LayoutRenderingManager.prototype.updateUpperCaseRendering = function() {
+  this.app.console.log('LayoutRenderingManager.updateUpperCaseRendering()');
+  if (this._currentRenderingPage !== this.app.layoutManager.currentPage) {
+    this.app.console.log(
+      'LayoutRenderingManager: Ignore updateUpperCaseRendering() call since ' +
+      'layout is not ready yet.');
+
+    return;
+  }
+
+  // When we have secondLayout, we need to force re-render on uppercase switch
+  if (this.app.layoutManager.currentPage.secondLayout) {
+    this.updateLayoutRendering();
+
+    return;
+  }
+
+  // Otherwise we can just update only the keys we need...
+  // Try to block the event loop as little as possible
+  window.requestAnimationFrame(function() {
+    this.app.console.log(
+      'LayoutRenderingManager.updateUpperCaseRendering()::' +
+      'requestAnimationFrame');
+    IMERender.setUpperCaseLock(this.app.upperCaseStateManager);
+  }.bind(this));
 };
 
 // This function asks render.js to create an HTML layout for the keyboard.
@@ -52,33 +108,36 @@ LayoutRenderingManager.prototype.updateLayoutRendering = function() {
   this.app.console.log('LayoutRenderingManager.updateLayoutRendering()');
   this.app.console.time('LayoutRenderingManager.updateLayoutRendering()');
 
-  var currentLayout = this.app.layoutManager.currentLayout;
-  var currentModifiedLayout = this.app.layoutManager.currentModifiedLayout;
+  var currentPage = this._currentRenderingPage =
+    this.app.layoutManager.currentPage;
   var currentIMEngine = this.app.inputMethodManager.currentIMEngine;
 
   // Determine if the candidate panel for word suggestion is needed
   var needsCandidatePanel = !!(
-    (currentLayout.autoCorrectLanguage || currentLayout.needsCandidatePanel) &&
+    (currentPage.autoCorrectLanguage || currentPage.needsCandidatePanel) &&
     ((typeof currentIMEngine.displaysCandidates !== 'function') ||
       currentIMEngine.displaysCandidates()));
 
   // Rule of thumb: always render uppercase, unless secondLayout has been
   // specified (for e.g. arabic, then depending on shift key)
-  var needsUpperCase = currentModifiedLayout.secondLayout ?
+  var needsUpperCase = currentPage.secondLayout ?
       this.app.upperCaseStateManager.isUpperCase : true;
 
   var p = new Promise(function(resolve) {
-    IMERender.draw(currentModifiedLayout, {
+    IMERender.draw(currentPage, {
       uppercase: needsUpperCase,
       inputType: this.app.getBasicInputType(),
       showCandidatePanel: needsCandidatePanel
     }, resolve);
   }.bind(this)).then(this._afterRenderDrew.bind(this));
 
+  // Make sure JS error is not sliently ignored.
+  p.catch(function(e) { console.error(e); });
+
   // Tell the renderer what input method we're using. This will set a CSS
   // classname that can be used to style the keyboards differently
   IMERender.setInputMethodName(
-    this.app.layoutManager.currentModifiedLayout.imEngine || 'default');
+    this.app.layoutManager.currentPage.imEngine || 'default');
 
   this.app.console.timeEnd('LayoutRenderingManager.updateLayoutRendering()');
 
@@ -91,7 +150,11 @@ LayoutRenderingManager.prototype._afterRenderDrew = function() {
   this.app.console.log('LayoutRenderingManager._afterRenderDrew()');
   this.app.console.time('LayoutRenderingManager._afterRenderDrew()');
 
+  // Reflect the current upper case state on the newly rendered layout.
   IMERender.setUpperCaseLock(this.app.upperCaseStateManager);
+
+  // Reflect the current candidates on the current layout.
+  IMERender.showCandidates(this.app.candidatePanelManager.currentCandidates);
 
   // Tell the input method about the new keyboard layout
   this._updateLayoutParams();
@@ -99,7 +162,6 @@ LayoutRenderingManager.prototype._afterRenderDrew = function() {
   // Show the keyboard or update to the current height.
   this._updateHeight();
 
-  this.app.candidatePanelManager.showCandidates();
   this.app.console.timeEnd('LayoutRenderingManager._afterRenderDrew()');
 };
 
@@ -115,7 +177,7 @@ LayoutRenderingManager.prototype._updateLayoutParams = function() {
   var layoutManager = this.app.layoutManager;
 
   if ((typeof currentIMEngine.setLayoutParams !== 'function') ||
-      layoutManager.currentLayoutPage !== layoutManager.LAYOUT_PAGE_DEFAULT) {
+      layoutManager.currentPageIndex !== layoutManager.PAGE_INDEX_DEFAULT) {
     return;
   }
 

@@ -245,11 +245,14 @@ var icc = {
 
   setupView: function icc_setupView(viewId) {
     viewId.style.marginTop = StatusBar.height + 'px';
-    this.keyboardChangedEvent(viewId);
-    window.addEventListener('keyboardchange',
-      this.keyboardChangedEvent.bind(undefined, viewId, false));
-    window.addEventListener('keyboardhide',
-      this.keyboardChangedEvent.bind(undefined, viewId, true));
+    // If the view has a form, we should be care of the keyboard changes
+    if (viewId.getElementsByTagName('form').length > 0) {
+      this.keyboardChangedEvent(viewId);
+      window.addEventListener('keyboardchange',
+        this.keyboardChangedEvent.bind(undefined, viewId, false));
+      window.addEventListener('keyboardhide',
+        this.keyboardChangedEvent.bind(undefined, viewId, true));
+    }
   },
 
   keyboardChangedEvent: function(viewId, hidden) {
@@ -507,7 +510,7 @@ var icc = {
     // Help
     this.icc_input_btn_help.disabled = !options.isHelpAvailable;
 
-    if (!options.isYesNoRequired && !options.isYesNoRequested) {
+    if (!options.isYesNoRequested) {
       this.icc_input.classList.remove('yesnomode');
 
       // Workaround. See bug #818270. Followup: #895314
@@ -551,12 +554,12 @@ var icc = {
       this.icc_input_btn_yes.onclick = function(event) {
         clearInputTimeout();
         self.hideViews();
-        callback(true, 1);
+        callback(true, true);
       };
       this.icc_input_btn_no.onclick = function(event) {
         clearInputTimeout();
         self.hideViews();
-        callback(true, 0);
+        callback(true, false);
       };
     }
 

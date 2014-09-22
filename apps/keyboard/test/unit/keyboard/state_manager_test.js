@@ -102,7 +102,7 @@ suite('StateManager', function() {
       var switchCurrentIMEnginePromise = Promise.resolve();
       var updateLayoutRenderingPromise = Promise.resolve();
 
-      app.layoutManager.currentModifiedLayout = {
+      app.layoutManager.currentPage = {
         imEngine: 'bar'
       };
 
@@ -140,6 +140,7 @@ suite('StateManager', function() {
       var p = switchCurrentLayoutPromise;
       var pReturn = p.mFulfillToValue();
       assert.isTrue(app.upperCaseStateManager.reset.calledOnce);
+      assert.isTrue(app.candidatePanelManager.reset.calledOnce);
       assert.isTrue(
         app.inputMethodManager.switchCurrentIMEngine.calledWith('bar'));
       assert.isTrue(app.upperCaseStateManager.reset.calledBefore(
@@ -173,7 +174,7 @@ suite('StateManager', function() {
       var switchCurrentIMEnginePromise = Promise.resolve();
       var updateLayoutRenderingPromise = Promise.resolve();
 
-      app.layoutManager.currentModifiedLayout = {
+      app.layoutManager.currentPage = {
         imEngine: 'bar2'
       };
 
@@ -416,7 +417,7 @@ suite('StateManager', function() {
         switchCurrentIMEnginePromise = Promise.resolve();
         updateLayoutRenderingPromise = Promise.resolve();
 
-        app.layoutManager.currentModifiedLayout = {
+        app.layoutManager.currentPage = {
           imEngine: 'bar'
         };
 

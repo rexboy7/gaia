@@ -1,4 +1,5 @@
 /* global MockAudio,
+  MockL10n,
   MockNavigatorMozChromeNotifications,
   MockNavigatorSettings,
   MocksHelper,
@@ -6,7 +7,8 @@
   ScreenManager,
   MockNavigatorMozTelephony,
   MockCall,
-  MockVersionHelper
+  MockVersionHelper,
+  UtilityTray
  */
 
 'use strict';
@@ -18,6 +20,7 @@ require('/test/unit/mock_utility_tray.js');
 require('/test/unit/mock_navigator_moz_chromenotifications.js');
 require('/test/unit/mock_version_helper.js');
 require('/shared/test/unit/mocks/mock_gesture_detector.js');
+require('/shared/test/unit/mocks/mock_l10n.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_settings.js');
 require('/shared/test/unit/mocks/mock_navigator_moz_telephony.js');
 require('/shared/test/unit/mocks/dialer/mock_call.js');
@@ -46,7 +49,7 @@ suite('system/NotificationScreen >', function() {
     fakeToasterDetail, fakeSomeNotifications, fakeAmbientIndicator,
     fakeNotifContainer;
   var fakePriorityNotifContainer, fakeOtherNotifContainer;
-  var realVersionHelper;
+  var realVersionHelper, realMozL10n;
 
   function sendChromeNotificationEvent(detail) {
     var event = new CustomEvent('mozChromeNotificationEvent', {
@@ -71,7 +74,7 @@ suite('system/NotificationScreen >', function() {
 
   function incrementNotications(number) {
     for (var i = 0; i <= number - 1; i++) {
-      NotificationScreen.incExternalNotifications();
+      NotificationScreen.addUnreadNotification(i);
     }
   }
 
@@ -99,7 +102,7 @@ suite('system/NotificationScreen >', function() {
     fakeSomeNotifications = createFakeElement('span', 'notification-some');
     fakeNoNotifications = createFakeElement('span', 'notification-none');
     fakeButton = createFakeElement('button', 'notification-clear');
-    fakeAmbientIndicator = createFakeElement('span', 'notifications-indicator');
+    fakeAmbientIndicator = createFakeElement('div', 'ambient-indicator');
     fakeToasterIcon = createFakeElement('img', 'toaster-icon');
     fakeToasterTitle = createFakeElement('div', 'toaster-title');
     fakeToasterDetail = createFakeElement('div', 'toaster-detail');
@@ -120,6 +123,23 @@ suite('system/NotificationScreen >', function() {
     realVersionHelper = window.VersionHelper;
     window.VersionHelper = MockVersionHelper(false);
 
+    realMozL10n = navigator.mozL10n;
+    MockL10n.DateTimeFormat = function() {
+      return {
+        fromNow: function(time, compact) {
+          var retval;
+          var delta = new Date().getTime() - time.getTime();
+          if (delta >= 0 && delta < 60 * 1000) {
+            retval = 'now';
+          } else if (delta >= 60 * 1000) {
+            retval = '1m ago';
+          }
+          return retval;
+        }
+      };
+    };
+    navigator.mozL10n = MockL10n;
+
     this.sinon.useFakeTimers();
     NotificationScreen.init();
   });
@@ -129,6 +149,8 @@ suite('system/NotificationScreen >', function() {
     fakeLockScreenContainer.parentNode.removeChild(fakeLockScreenContainer);
     fakeToaster.parentNode.removeChild(fakeToaster);
     fakeButton.parentNode.removeChild(fakeButton);
+
+    navigator.mozL10n = realMozL10n;
   });
 
   suite('chrome events >', function() {
@@ -184,6 +206,11 @@ suite('system/NotificationScreen >', function() {
       navigator.mozTelephony = realMozTelephony;
     });
 
+    setup(function() {
+      MockNavigatorMozTelephony.calls = [];
+      MockNavigatorMozTelephony.conferenceGroup.state = null;
+    });
+
     test('it should play it by default on notification channel', function() {
       var playSpy = this.sinon.spy(MockAudio.prototype, 'play');
       sendNotification();
@@ -202,44 +229,120 @@ suite('system/NotificationScreen >', function() {
       assert.ok(playSpy.calledOnce);
     });
 
+    test('if active multicall it should use telephony channel', function() {
+      var playSpy = this.sinon.spy(MockAudio.prototype, 'play');
+      MockNavigatorMozTelephony.conferenceGroup.state = 'connected';
+      sendNotification();
+      var mockAudio = MockAudio.instances[0];
+      assert.equal(mockAudio.mozAudioChannelType, 'telephony');
+      assert.ok(playSpy.calledOnce);
+    });
+
   });
 
   suite('updateNotificationIndicator >', function() {
     setup(function() {
-      NotificationScreen.updateNotificationIndicator(true);
+      NotificationScreen.updateNotificationIndicator();
     });
+
+    function localizeAmbientIndicatorLabel(n) {
+      return 'statusbarNotifications-unread' + JSON.stringify({n: n});
+    }
 
     test('should clear unread notifications after open tray', function() {
       incrementNotications(2);
-      assert.equal(NotificationScreen.unreadNotifications, 2);
+      assert.equal(NotificationScreen.unreadNotifications.length, 2);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(2));
       var event = new CustomEvent('utilitytrayshow');
       window.dispatchEvent(event);
       assert.equal(document.body.getElementsByClassName('unread').length, 0);
-      assert.equal(NotificationScreen.unreadNotifications, 0);
+      assert.equal(NotificationScreen.unreadNotifications.length, 0);
+      assert.isNull(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'));
     });
 
     test('should show a small ambient indicator', function() {
       incrementNotications(2);
       assert.equal(document.body.getElementsByClassName('small').length, 1);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(2));
     });
 
     test('should show a medium ambient indicator', function() {
       incrementNotications(4);
       assert.equal(document.body.getElementsByClassName('medium').length, 1);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(4));
     });
 
     test('should show a big ambient indicator', function() {
       incrementNotications(6);
       assert.equal(document.body.getElementsByClassName('big').length, 1);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(6));
     });
 
     test('should show a full ambient indicator', function() {
       incrementNotications(7);
       assert.equal(document.body.getElementsByClassName('full').length, 1);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(7));
     });
 
     test('should change the read status', function() {
+      incrementNotications(1);
       assert.equal(document.body.getElementsByClassName('unread').length, 1);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(1));
+    });
+
+    test('should not increment if the tray is open', function() {
+      UtilityTray.shown = true;
+      incrementNotications(1);
+      assert.equal(document.body.getElementsByClassName('unread').length, 0);
+      assert.isNull(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'));
+      UtilityTray.shown = false;
+    });
+
+    test('should not clear the ambient after decrement unread', function() {
+      var imgpath = 'http://example.com/test.png';
+      var detail = {
+        id: 'my-id',
+        icon: imgpath,
+        title: 'title',
+        detail: 'detail'
+      };
+      NotificationScreen.addNotification(detail);
+      assert.equal(NotificationScreen.unreadNotifications.length, 1);
+      assert.isNull(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'));
+      NotificationScreen.removeUnreadNotification('other-id');
+      assert.equal(NotificationScreen.unreadNotifications.length, 1);
+      assert.equal(NotificationScreen.ambientIndicator.getAttribute(
+        'aria-label'), localizeAmbientIndicatorLabel(1));
+    });
+
+  });
+
+  suite('addUnreadNotification', function() {
+    setup(function() {
+      sinon.spy(NotificationScreen, 'updateNotificationIndicator');
+    });
+
+    teardown(function() {
+      NotificationScreen.updateNotificationIndicator.restore();
+    });
+
+    test('should update the notifications indicator', function() {
+      NotificationScreen.addUnreadNotification();
+      assert.isTrue(NotificationScreen.updateNotificationIndicator.called);
+    });
+
+    test('shouldnt update the notif indicator when skipping', function() {
+      NotificationScreen.addUnreadNotification('other-id', true);
+      assert.isFalse(NotificationScreen.updateNotificationIndicator.called);
     });
   });
 
@@ -254,6 +357,15 @@ suite('system/NotificationScreen >', function() {
       delete detail.icon;
       NotificationScreen.addNotification(detail);
       assert.isTrue(toasterIcon.hidden);
+    });
+
+    test('doesnt update the ambient indicator', function() {
+      sinon.spy(NotificationScreen, 'updateNotificationIndicator');
+      var imgpath = 'http://example.com/test.png';
+      var detail = {icon: imgpath, title: 'title', detail: 'detail'};
+      NotificationScreen.addNotification(detail);
+      assert.isFalse(NotificationScreen.updateNotificationIndicator.called);
+      NotificationScreen.updateNotificationIndicator.restore();
     });
 
     function testNotificationWithDirection(dir) {
@@ -426,32 +538,6 @@ suite('system/NotificationScreen >', function() {
   });
 
   suite('prettyDate() behavior >', function() {
-    var realMozL10n;
-    setup(function() {
-      var mozL10nStub = {
-        DateTimeFormat: function() {
-          return {
-            fromNow: function(time, compact) {
-              var retval;
-              var delta = new Date().getTime() - time.getTime();
-              if (delta >= 0 && delta < 60 * 1000) {
-                retval = 'now';
-              } else if (delta >= 60 * 1000) {
-                retval = '1m ago';
-              }
-              return retval;
-            }
-          };
-        }
-      };
-      realMozL10n = navigator.mozL10n;
-      navigator.mozL10n = mozL10nStub;
-    });
-
-    teardown(function() {
-      navigator.mozL10n = realMozL10n;
-    });
-
     test('converts timestamp to string', function() {
       var timestamp = new Date();
       var date = NotificationScreen.prettyDate(timestamp);

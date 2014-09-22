@@ -2391,9 +2391,17 @@ FolderStorage.prototype = {
     // mutex.
     slice.setStatus('synchronizing', false, true, false,
                     SYNC_START_MINIMUM_PROGRESS);
-    this.runMutexed(
-      'sync',
-      this._sliceOpenMostRecent.bind(this, slice, forceRefresh));
+
+    var sliceFn = this._sliceOpenMostRecent.bind(this, slice, forceRefresh);
+
+    // Local-only folders don't have a real sync process, so we don't
+    // need to hold the mutex when syncing; all mutating operations
+    // run in job-ops.
+    if (this.isLocalOnly) {
+      sliceFn(function fakeReleaseMutex() { /* nothing to do */ });
+    } else {
+      this.runMutexed('sync', sliceFn);
+    }
   },
   _sliceOpenMostRecent: function fs__sliceOpenMostRecent(slice, forceRefresh,
                                                          releaseMutex) {
@@ -2802,9 +2810,18 @@ FolderStorage.prototype = {
     // being processed, even though it might take a little bit to acquire the
     // mutex.
     slice.setStatus('synchronizing', false, true, false, 0.0);
-    this.runMutexed(
-      'refresh',
-      this._refreshSlice.bind(this, slice, false));
+
+    var refreshFn = this._refreshSlice.bind(this, slice, false);
+
+    // Local-only folders don't have a real sync process, so we don't
+    // need to hold the mutex when syncing; all mutating operations
+    // run in job-ops.
+    if (this.isLocalOnly) {
+      refreshFn(function fakeReleaseMutex() { /* nothing to do */ });
+    } else {
+      this.runMutexed('refresh', refreshFn);
+    }
+
   },
   _refreshSlice: function fs__refreshSlice(slice, checkOpenRecency,
                                            releaseMutex) {
@@ -3597,6 +3614,7 @@ FolderStorage.prototype = {
     /*lastSyncedAt depends on current timestamp of the client device
      should not be added timezone offset*/
     this.folderMeta.lastSyncedAt = NOW();
+    this._dirty = true;
   },
 
   /**
@@ -3617,6 +3635,11 @@ FolderStorage.prototype = {
     // (If aranges is the empty list, there are deep invariant problems and
     // the exception is desired.)
     aranges[aranges.length - 1].startTS = $sync.OLDEST_SYNC_DATE;
+
+    /*lastSyncedAt depends on current timestamp of the client device
+     should not be added timezone offset*/
+    this.folderMeta.lastSyncedAt = NOW();
+    this._dirty = true;
   },
 
   /**

@@ -18,7 +18,7 @@
 /*global TouchForwarder, FtuLauncher */
 /*global MobileOperator, SIMSlotManager, System */
 /*global Bluetooth */
-/*global UtilityTray */
+/*global UtilityTray, nfcManager */
 
 'use strict';
 
@@ -201,6 +201,9 @@ var StatusBar = {
     window.addEventListener('attentionopened', this);
     window.addEventListener('attentionclosed', this);
 
+    window.addEventListener('cardviewshown', this);
+    window.addEventListener('cardviewclosed', this);
+
     // Listen to 'screenchange' from screen_manager.js
     window.addEventListener('screenchange', this);
 
@@ -232,11 +235,11 @@ var StatusBar = {
     // Listen to 'timeformatchange'
     window.addEventListener('timeformatchange', this);
 
-    // Listen to 'lockscreen-appopened', 'lockscreen-appclosed', and
+    // Listen to 'lockscreen-appopened', 'lockscreen-appclosing', and
     // 'lockpanelchange' in order to correctly set the visibility of
     // the statusbar clock depending on the active lockscreen panel
     window.addEventListener('lockscreen-appopened', this);
-    window.addEventListener('lockscreen-appclosed', this);
+    window.addEventListener('lockscreen-appclosing', this);
     window.addEventListener('lockpanelchange', this);
 
     window.addEventListener('simpinshow', this);
@@ -244,6 +247,14 @@ var StatusBar = {
 
     // Listen to orientation change.
     window.addEventListener('resize', this);
+
+    window.addEventListener('appopening', this);
+    window.addEventListener('appopened', this);
+    window.addEventListener('homescreenopening', this);
+    window.addEventListener('homescreenopened', this);
+    window.addEventListener('sheetstransitionstart', this);
+    window.addEventListener('apptitlestatechanged', this);
+    window.addEventListener('stackchanged', this);
 
     // We need to preventDefault on mouse events until
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1005815 lands
@@ -275,12 +286,14 @@ var StatusBar = {
         // or we have some bugs.
         this.toggleTimeLabel(false);
         this._updateIconVisibility();
+        this.setAppearance(evt.detail);
         break;
 
-      case 'lockscreen-appclosed':
+      case 'lockscreen-appclosing':
         // Display the clock in the statusbar when screen is unlocked
         this.toggleTimeLabel(true);
         this._updateIconVisibility();
+        this.setAppearance(AppWindowManager.getActiveApp());
         break;
 
       case 'attentionopened':
@@ -290,6 +303,14 @@ var StatusBar = {
       case 'attentionclosed':
         // Hide the clock in the statusbar when screen is locked
         this.toggleTimeLabel(!this.isLocked());
+        break;
+
+      case 'cardviewshown':
+        this.pauseUpdate();
+        break;
+
+      case 'cardviewclosed':
+        this.resumeUpdate();
         break;
 
       case 'lockpanelchange':
@@ -368,8 +389,7 @@ var StatusBar = {
         break;
 
       case 'nfc-state-changed':
-        this.nfcActive = evt.detail.active;
-        this.update.nfc.call(this);
+        this.setActiveNfc(evt.detail.active);
         break;
 
       case 'mozChromeEvent':
@@ -390,7 +410,11 @@ var StatusBar = {
             break;
 
           case 'audio-channel-changed':
-            this.playingActive = (evt.detail.channel === 'content');
+            var active = evt.detail.channel === 'content';
+            if (this.playingActive === active) {
+              break;
+            }
+            this.playingActive = active;
             this.update.playing.call(this);
             break;
         }
@@ -441,7 +465,35 @@ var StatusBar = {
         // Reprioritize icons when orientation changes.
         this._updateIconVisibility();
         break;
+
+      case 'homescreenopening':
+      case 'appopening':
+      case 'sheetstransitionstart':
+        this.element.classList.add('hidden');
+        break;
+
+      case 'stackchanged':
+        this.setAppearance(AppWindowManager.getActiveApp());
+        this.element.classList.remove('hidden');
+        break;
+
+      case 'apptitlestatechanged':
+      case 'appopened':
+      case 'homescreenopened':
+        this.setAppearance(evt.detail);
+        this.element.classList.remove('hidden');
+        break;
     }
+  },
+
+  setAppearance: function(app) {
+    this.element.classList.toggle('light',
+      !!(app.appChrome && app.appChrome.useLightTheming())
+    );
+
+    this.element.classList.toggle('maximized', app.isHomescreen ||
+      !!(app.appChrome && app.appChrome.isMaximized())
+    );
   },
 
   _startX: null,
@@ -467,7 +519,20 @@ var StatusBar = {
     return window.innerWidth - window.innerWidth * 0.6521 + 80 * 0.6521 - 5 - 3;
   },
 
+  pauseUpdate: function sb_pauseUpdate() {
+    this._paused = true;
+  },
+
+  resumeUpdate: function sb_resumeUpdate() {
+    this._paused = false;
+    this._updateIconVisibility();
+  },
+
   _updateIconVisibility: function sb_updateIconVisibility() {
+    if (this._paused) {
+      return;
+    }
+
     // Let's refresh the minimized clone.
     this.cloneStatusbar();
 
@@ -636,11 +701,15 @@ var StatusBar = {
     titleBar.style.transform = '';
     titleBar.style.transition = '';
 
+    this.screen.classList.remove('minimized-tray');
+
     clearTimeout(this._releaseTimeout);
     this._releaseTimeout = null;
   },
 
   _releaseAfterTimeout: function sb_releaseAfterTimeout(titleBar) {
+    this.screen.classList.add('minimized-tray');
+
     var chromeBar = titleBar.parentNode.querySelector('.chrome');
 
     var self = this;
@@ -700,6 +769,7 @@ var StatusBar = {
     this.setActiveBattery(active);
 
     if (active) {
+      this.setActiveNfc(nfcManager.isActive());
       conns = window.navigator.mozMobileConnections;
       if (conns) {
         Array.prototype.slice.call(conns).forEach(function(conn) {
@@ -771,6 +841,11 @@ var StatusBar = {
 
       this.update.wifi.call(this);
     }
+  },
+
+  setActiveNfc: function sb_setActiveNfc(active) {
+    this.nfcActive = active;
+    this.update.nfc.call(this);
   },
 
   update: {
@@ -861,11 +936,6 @@ var StatusBar = {
     },
 
     networkActivity: function sb_updateNetworkActivity() {
-      // XXX: Allow network activity icon to be disabled through a setting.
-      // This should be removed once bug 1054220 is fixed.
-      if (this.settingValues['statusbar.network-activity.disabled']) {
-        return;
-      }
       // Each time we receive an update, make network activity indicator
       // show up for 500ms.
 
@@ -918,12 +988,15 @@ var StatusBar = {
         }
 
         icon.hidden = false;
+        icon.dataset.inactive = false;
 
         if (simslot.isAbsent()) {
           // no SIM
           delete icon.dataset.level;
           delete icon.dataset.searching;
           roaming.hidden = true;
+          icon.hidden = true;
+          icon.dataset.inactive = true;
 
           icon.setAttribute('aria-label', _('noSimCard'));
         } else if (data && data.connected && data.type.startsWith('evdo')) {
@@ -1240,8 +1313,8 @@ var StatusBar = {
   },
 
   updateConnectionsVisibility: function sb_updateConnectionsVisibility() {
-    // Iterate through connections children and show the container if at least
-    // one of them is visible.
+    // Iterate through connections children and only show one icon
+    // in case no SIM card is inserted
     var conns = window.navigator.mozMobileConnections;
 
     if (!conns) {
@@ -1249,13 +1322,18 @@ var StatusBar = {
     }
 
     var icons = this.icons;
+    icons.connections.hidden = false;
+    icons.connections.dataset.multiple = (conns.length > 1);
+
     for (var index = 0; index < conns.length; index++) {
-      if (!icons.signals[index].hidden || !icons.data[index].hidden) {
-        icons.connections.hidden = false;
+      if (icons.signals[index].dataset.inactive === 'false') {
         return;
       }
     }
-    icons.connections.hidden = true;
+
+    // No SIM cards inserted
+    icons.connections.dataset.multiple = false;
+    icons.signals[0].hidden = false;
   },
 
   updateCallForwardingsVisibility: function sb_updateCallFwdingsVisibility() {
@@ -1489,8 +1567,10 @@ var StatusBar = {
 
   cloneStatusbar: function() {
     this.statusbarIcons.removeChild(this.statusbarIconsMin);
-    this.statusbarIconsMin = this.statusbarIconsMax.cloneNode(true);
-    this.statusbarIconsMin.setAttribute('id', 'statusbar-minimized');
+    this.statusbarIconsMin = this.statusbarIconsMax.parentNode.cloneNode(true);
+    this.statusbarIconsMin.setAttribute('id', 'statusbar-minimized-wrapper');
+    this.statusbarIconsMin.firstElementChild.setAttribute('id',
+      'statusbar-minimized');
     this.statusbarIcons.appendChild(this.statusbarIconsMin);
   },
 

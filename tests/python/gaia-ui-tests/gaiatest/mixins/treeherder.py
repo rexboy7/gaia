@@ -2,14 +2,17 @@
 # License, v. 2.0. If a copy of the MPL was not distributed with this
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
+import gzip
 import hashlib
 import os
 import socket
+import tempfile
 import time
 from urlparse import urljoin, urlparse
 import uuid
 
 import boto
+from mozdevice import ADBDevice
 from mozlog.structured.handlers import StreamHandler
 import mozversion
 import requests
@@ -165,6 +168,24 @@ class TreeherderTestRunnerMixin(object):
                 'content_type': 'link',
                 'title': 'CI build:'})
 
+        # Attach logcat
+        adb_device = ADBDevice(self.device_serial)
+        with tempfile.NamedTemporaryFile(suffix='logcat.txt') as f:
+            f.writelines(adb_device.get_logcat())
+            self.logger.debug('Logcat stored in: %s' % f.name)
+            try:
+                url = self.upload_to_s3(f.name)
+                job_details.append({
+                    'url': url,
+                    'value': 'logcat.txt',
+                    'content_type': 'link',
+                    'title': 'Log:'})
+            except S3UploadError:
+                job_details.append({
+                    'value': 'Failed to upload logcat.txt',
+                    'content_type': 'text',
+                    'title': 'Error:'})
+
         # Attach log files
         handlers = [handler for handler in self.logger.handlers
                     if isinstance(handler, StreamHandler) and
@@ -257,10 +278,21 @@ class TreeherderTestRunnerMixin(object):
         if not key:
             self.logger.debug('Creating key: %s' % _key)
             key = self._s3_bucket.new_key(_key)
-        if os.path.splitext(path)[-1] == '.log':
+        ext = os.path.splitext(path)[-1]
+        if ext == '.log':
             key.set_metadata('Content-Type', 'text/plain')
-        self.logger.debug('Setting key contents from: %s' % path)
-        key.set_contents_from_filename(path)
+
+        with tempfile.NamedTemporaryFile('w+b', suffix=ext) as tf:
+            self.logger.debug('Compressing: %s' % path)
+            with gzip.GzipFile(path, 'wb', fileobj=tf) as gz:
+                with open(path, 'rb') as f:
+                    gz.writelines(f)
+            tf.flush()
+            tf.seek(0)
+            key.set_metadata('Content-Encoding', 'gzip')
+            self.logger.debug('Setting key contents from: %s' % tf.name)
+            key.set_contents_from_filename(tf.name)
+
         key.set_acl('public-read')
         blob_url = key.generate_url(expires_in=0,
                                     query_auth=False)

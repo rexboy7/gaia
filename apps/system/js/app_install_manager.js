@@ -123,6 +123,13 @@ var AppInstallManager = {
 
     window.addEventListener('applicationready',
         this.handleApplicationReady);
+
+    window.addEventListener('home', this.handleHomeButtonPressed.bind(this));
+  },
+
+  handleHomeButtonPressed: function ai_handleHomeButtonPressed(e) {
+    this.dialog.classList.remove('visible');
+    this.handleInstallCancel();
   },
 
   handleApplicationReady: function ai_handleApplicationReady(e) {
@@ -523,7 +530,7 @@ var AppInstallManager = {
     }
 
     appInfo.installNotification = newNode;
-    NotificationScreen.incExternalNotifications();
+    NotificationScreen.addUnreadNotification(manifestURL);
   },
 
   getNotificationProgressNode: function ai_getNotificationProgressNode(app) {
@@ -575,7 +582,7 @@ var AppInstallManager = {
 
     node.parentNode.removeChild(node);
     delete appInfo.installNotification;
-    NotificationScreen.decExternalNotifications();
+    NotificationScreen.removeUnreadNotification(manifestURL);
   },
 
   requestWifiLock: function ai_requestWifiLock(app) {

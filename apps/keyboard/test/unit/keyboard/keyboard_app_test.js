@@ -4,7 +4,7 @@
           SettingsPromiseManager, L10nLoader, TargetHandlersManager,
           FeedbackManager, VisualHighlightManager, CandidatePanelManager,
           UpperCaseStateManager, LayoutRenderingManager, StateManager,
-          MockInputMethodManager, IMERender */
+          MockInputMethodManager */
 
 require('/js/keyboard/console.js');
 require('/js/keyboard/input_method_manager.js');
@@ -274,12 +274,12 @@ suite('KeyboardApp', function() {
     app.inputMethodManager.currentIMEngine = {
       setLayoutPage: this.sinon.stub()
     };
-    app.layoutManager.currentLayoutPage = 42;
+    app.layoutManager.currentPageIndex = 42;
 
-    app.setLayoutPage('foo');
+    app.setLayoutPage(12);
 
     assert.isTrue(
-      app.layoutManager.updateLayoutPage.calledWith('foo'));
+      app.layoutManager.updateLayoutPage.calledWith(12));
     assert.isTrue(
       app.layoutRenderingManager.updateLayoutRendering.calledOnce);
     assert.isTrue(
@@ -292,32 +292,5 @@ suite('KeyboardApp', function() {
 
     var result = app.getNumberOfCandidatesPerRow();
     assert.equal(result, 42);
-  });
-
-  suite('app.upperCaseStateManager.onstatechange', function() {
-    test('w/o secondLayout', function() {
-      app.layoutManager.currentModifiedLayout = {
-      };
-
-      app.upperCaseStateManager.onstatechange();
-
-      window.requestAnimationFrame.getCall(0).args[0].call(window);
-
-      assert.isTrue(
-        IMERender.setUpperCaseLock.calledWith(app.upperCaseStateManager));
-      assert.isTrue(
-        app.candidatePanelManager.showCandidates.calledOnce);
-    });
-
-    test('w secondLayout', function() {
-      app.layoutManager.currentModifiedLayout = {
-        secondLayout: true
-      };
-
-      app.upperCaseStateManager.onstatechange();
-
-      assert.isTrue(
-        app.layoutRenderingManager.updateLayoutRendering.calledOnce);
-    });
   });
 });

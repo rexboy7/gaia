@@ -183,12 +183,18 @@
      */
     handleEvent: function(e) {
       switch(e.type) {
+        case 'launchapp':
+          // Do not close the search app if something opened in the background.
+          var detail = e.detail;
+          if (detail && detail.stayBackground) {
+            return;
+          }
+          /* falls through */
         case 'attentionopening':
         case 'attentionopened':
         case 'apploading':
         case 'appforeground':
         case 'appopened':
-        case 'launchapp':
         case 'open-app':
           this.hideResults();
           this.deactivate();
@@ -320,6 +326,13 @@
      */
     clear: function() {
       this.setInput('');
+
+      // Send a message to the search app to clear results
+      if (this._port) {
+        this._port.postMessage({
+          action: 'clear'
+        });
+      }
     },
 
     /**

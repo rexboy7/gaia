@@ -182,10 +182,12 @@ StateManager.prototype._switchCurrentIMEngine = function() {
     return Promise.reject();
   }
 
-  var layout = this.app.layoutManager.currentModifiedLayout;
-  var imEngineName = layout.imEngine || 'default';
+  var page = this.app.layoutManager.currentPage;
+  var imEngineName = page.imEngine || 'default';
 
   this.app.upperCaseStateManager.reset();
+  this.app.candidatePanelManager.reset();
+
   var p = this.app.inputMethodManager.switchCurrentIMEngine(imEngineName);
 
   return p;
@@ -200,7 +202,7 @@ StateManager.prototype._updateLayoutRendering = function() {
   // everything.me uses this setting to improve searches,
   // but they really shouldn't.
   this.app.settingsPromiseManager.set({
-    'keyboard.current': this.app.layoutManager.currentLayoutName
+    'keyboard.current': this.app.layoutManager.currentPage.layoutName
   });
 
   var p = this.app.layoutRenderingManager.updateLayoutRendering();
