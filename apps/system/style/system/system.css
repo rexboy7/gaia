@@ -364,7 +364,3 @@ body {
     background: url(../themes/default/images/ui/menu_bg.png) no-repeat;
   }
 }
-
-#presentation-device {
-  opacity: 0;
-}

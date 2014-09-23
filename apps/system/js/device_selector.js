@@ -1,4 +1,4 @@
-/* globals DeviceSelector */
+/* globals DeviceSelector, SettingsHelper */
 'use strict';
 
 (function(exports) {
@@ -7,22 +7,9 @@
   DeviceSelector.prototype = {
     start: function ds_start() {
       window.addEventListener('mozChromeEvent', this);
-      this.selectorElement =
-        document.getElementById('presentation-device-selector');
-      this.selectorElement.hidden = true;
-
-      this.selectorElement.addEventListener('blur',
-        this.sendSelectedDevice.bind(this));
-      this.selectorElement.addEventListener('blur', function() {
-        this.selectorElement.hidden = true;
-      }.bind(this));
-
     },
 
-    sendSelectedDevice: function ds_sendSelectedDevice() {
-      var deviceInfo = JSON.parse(
-        this.selectorElement.options[this.selectorElement.selectedIndex].value);
-
+    sendSelectedDevice: function ds_sendSelectedDevice(deviceInfo) {
       var event = document.createEvent('CustomEvent');
       event.initCustomEvent('mozContentEvent', true, true, {
         type: 'select-device-result',
@@ -36,18 +23,23 @@
       if (!detail) {
         return;
       }
+      var devices = detail.devices;
       switch (detail.type) {
         case 'select-device':
-          this.selectorElement.hidden = false;
-          this.selectorElement.innerHTML = '';
-          var devices = evt.detail.devices;
-          for(var i = 0; i < devices.length; i++) {
-            var option = document.createElement('option');
-            option.value = JSON.stringify(devices[i]);
-            option.textContent = devices[i].name;
-            this.selectorElement.appendChild(option);
-          }
-          this.selectorElement.focus();
+          SettingsHelper('presentation.sender.selecteddevice').get(
+          function(selectedDevice) {
+            for(var i = 0; i < devices.length; i++) {
+              if (devices[i].name == selectedDevice) {
+                this.sendSelectedDevice(devices[i]);
+              }
+            }
+            if (i == devices.length) {
+              console.warn(
+                'Unable to find a receiver device for Presentation. ' +
+                'Pick one randomly.');
+              this.sendSelectedDevice(devices[0]);
+            }
+          }.bind(this));
       }
     }
   };
