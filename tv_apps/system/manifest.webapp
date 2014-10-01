@@ -1,8 +1,8 @@
 {
-  "name": "System",
+  "name": "MySystem",
   "type": "certified",
   "role": "system",
-  "description": "Main System",
+  "description": "My Main System",
   "launch_path": "/index.html",
   "developer": {
     "name": "The Gaia Team",

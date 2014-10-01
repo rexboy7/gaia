@@ -1,6 +1,6 @@
 tv_apps/system
+tv_apps/home
 apps/settings
-apps/homescreen
 apps/bluetooth
 apps/browser
 apps/calendar
