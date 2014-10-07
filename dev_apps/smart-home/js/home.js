@@ -1,5 +1,5 @@
 'use strict';
-/* global CardNavigator, KeyEvent, SelectionBorder */
+/* global CardNavigator, KeyEvent, SelectionBorder, XScrollable */
 
 (function(exports) {
 
@@ -12,6 +12,7 @@
   Home.prototype = {
     navigableIds: ['search-input'],
     navigableClasses: ['card-thumbnail', 'filter-tab', 'command-button'],
+    cardScrollable: new XScrollable('card-list-frame', 'card-list'),
 
     init: function() {
       var collection = this.getNavigateElements();
@@ -78,7 +79,12 @@
 
     handleSelection: function(elem) {
       if (elem.nodeName) {
-        this.selectionBorder.select(elem);
+        if (elem.classList.contains('card-thumbnail')) {
+          this.cardScrollable.scrollTo(elem);
+          this.selectionBorder.select(elem, this.cardScrollable);
+        } else {
+          this.selectionBorder.select(elem);
+        }
       } else {
         this.selectionBorder.selectRect(elem);
       }
