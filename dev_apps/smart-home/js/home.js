@@ -11,8 +11,11 @@
 
   Home.prototype = {
     navigableIds: ['search-input'],
-    navigableClasses: ['card-thumbnail', 'filter-tab', 'command-button'],
+    navigableClasses: ['card-thumbnail', 'filter-tab', 'command-button',
+                       'folder-card-thumbnail'],
     cardScrollable: new XScrollable('card-list-frame', 'card-list'),
+    folderScrollable: new XScrollable('folder-list-frame', 'folder-list'),
+
 
     init: function() {
       var collection = this.getNavigateElements();
@@ -82,6 +85,9 @@
         if (elem.classList.contains('card-thumbnail')) {
           this.cardScrollable.scrollTo(elem);
           this.selectionBorder.select(elem, this.cardScrollable);
+        } else if (elem.classList.contains('folder-card-thumbnail')) {
+          this.folderScrollable.scrollTo(elem);
+          this.selectionBorder.select(elem, this.folderScrollable);
         } else {
           this.selectionBorder.select(elem);
         }
