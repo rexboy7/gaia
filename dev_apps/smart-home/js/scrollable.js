@@ -1,17 +1,28 @@
 'use strict';
 
+/* global evt, CardNavigator */
 (function(exports) {
 
-  function XScrollable(frameElem, listElem) {
+  function XScrollable(frameElem, listElem, items) {
     this.translateX = 0;
     this.scrollEdgeOffset = 20;
     this.frameElem = (typeof frameElem == 'string') ?
                           document.getElementById(frameElem) : frameElem;
     this.listElem = (typeof listElem == 'string') ?
                           document.getElementById(listElem) : frameElem;
+    this.items = Array.prototype.slice.call(
+        (typeof items == 'string') ? document.getElementsByClassName(items) :
+                                     Array.prototype.slice.call(items));
+
+    var defaultItem = this.listElem.dataset.defaultItem;
+    this.cardNavigator = new CardNavigator(this.items);
+    this.cardNavigator.focus(
+              this.items.length > defaultItem ? this.items[defaultItem] : null);
+    this.cardNavigator.on('focus', this.handleSelection.bind(this));
   }
 
-  XScrollable.prototype = {
+  XScrollable.prototype = evt({
+    CLASS_NAME: 'XScrollable',
     getItemRect: function(elem) {
       var frameRect = this.frameElem.getBoundingClientRect();
       return {
@@ -20,6 +31,10 @@
         width: elem.offsetWidth,
         height: elem.offsetHeight
       };
+    },
+
+    getBoundingClientRect: function() {
+      return this.frameElem.getBoundingClientRect();
     },
 
     scrollTo: function(elem) {
@@ -51,7 +66,7 @@
       }
     },
 
-    getNextItem: function(elem) {
+  getNextItem: function(elem) {
       var iter = elem;
       while (iter.parentElement != this.listElem) {
         iter = iter.parentElement;
@@ -69,7 +84,12 @@
       return iter.previousElementSibling ?
         iter.previousElementSibling.getElementsByClassName(elem.className)[0] :
         null;
+    },
+
+    handleSelection: function(elem) {
+      this.scrollTo(elem);
+      this.fire('focus', this, elem);
     }
-  };
+  });
   exports.XScrollable = XScrollable;
 })(window);
