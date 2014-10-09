@@ -113,3 +113,15 @@
 
 window.home = new Home();
 window.home.init();
+
+var addedItems = [];
+setInterval(function() {
+  var added = home.cardScrollable.getItemView();
+  added.querySelector('.card-description').textContent = addedItems.length;
+  addedItems.push(added);
+  console.log(home.cardScrollable.addItem(added));
+}, 1000);
+
+setInterval(function() {
+  console.log(home.cardScrollable.removeItem(addedItems.splice(0, 1)[0]));
+}, 5000);

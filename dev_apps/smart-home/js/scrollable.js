@@ -3,21 +3,24 @@
 /* global evt, CardNavigator */
 (function(exports) {
 
-  function XScrollable(frameElem, listElem, items) {
+  function XScrollable(frameElem, listElem, selections) {
     this.translateX = 0;
     this.scrollEdgeOffset = 20;
     this.frameElem = (typeof frameElem == 'string') ?
                           document.getElementById(frameElem) : frameElem;
     this.listElem = (typeof listElem == 'string') ?
                           document.getElementById(listElem) : frameElem;
-    this.items = Array.prototype.slice.call(
-        (typeof items == 'string') ? document.getElementsByClassName(items) :
-                                     Array.prototype.slice.call(items));
+    this.selections = Array.prototype.slice.call(
+      (typeof selections == 'string') ?
+                              document.getElementsByClassName(selections) :
+                              Array.prototype.slice.call(selections));
+    this.selectionClass =
+            (typeof selections == 'string') ? selections : 'card-thumbnail';
 
     var defaultItem = this.listElem.dataset.defaultItem;
-    this.cardNavigator = new CardNavigator(this.items);
-    this.cardNavigator.focus(
-              this.items.length > defaultItem ? this.items[defaultItem] : null);
+    this.cardNavigator = new CardNavigator(this.selections);
+    this.cardNavigator.focus(this.selections.length > defaultItem ?
+                                        this.selections[defaultItem] : null);
     this.cardNavigator.on('focus', this.handleSelection.bind(this));
   }
 
@@ -48,14 +51,14 @@
       var offsetRight = elem.offsetLeft + elem.offsetWidth;
       var frameWidth = this.frameElem.offsetWidth;
       if (elem.offsetLeft + this.translateX <= 0) {
-        sibling = this.getPrevItem(elem);
+        sibling = this.getPrevSelection(elem);
         if (sibling) {
           return -(sibling.offsetLeft + 0.5 * sibling.offsetWidth);
         } else {
           return -(elem.offsetLeft - this.scrollEdgeOffset);
         }
       } else if (offsetRight > (frameWidth - this.translateX)) {
-        sibling = this.getNextItem(elem);
+        sibling = this.getNextSelection(elem);
         if (sibling) {
           return frameWidth - (sibling.offsetLeft + 0.5 * sibling.offsetWidth);
         } else {
@@ -66,24 +69,64 @@
       }
     },
 
-  getNextItem: function(elem) {
-      var iter = elem;
+    getNextSelection: function(selection) {
+      var iter = selection;
       while (iter.parentElement != this.listElem) {
         iter = iter.parentElement;
       }
       return iter.nextElementSibling ?
-        iter.nextElementSibling.getElementsByClassName(elem.className)[0] :
+        iter.nextElementSibling.getElementsByClassName(selection.className)[0] :
         null;
     },
 
-    getPrevItem: function(elem) {
-      var iter = elem;
+    getPrevSelection: function(selection) {
+      var iter = selection;
       while (iter.parentElement != this.listElem) {
         iter = iter.parentElement;
       }
       return iter.previousElementSibling ?
-        iter.previousElementSibling.getElementsByClassName(elem.className)[0] :
+        iter.previousElementSibling.
+        getElementsByClassName(selection.className)[0] :
         null;
+    },
+
+    addItem: function(elem) {
+      var selections = elem.getElementsByClassName(this.selectionClass);
+      return (selections.length == 1) &&
+             this.cardNavigator.add(selections[0]) &&
+             !!this.listElem.appendChild(elem);
+    },
+
+    /* Override if needed */
+    getItemView: function() {
+      var card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = '<div class="' + this.selectionClass + '"></div>' +
+                       '<div class="card-description">This is a card</div>';
+      return card;
+    },
+
+    removeItem: function(elem) {
+      var selections = elem.getElementsByClassName(this.selectionClass);
+      var focus = this.cardNavigator.getFocusedElement();
+      // TODO: select nearest item if focused item is removed.
+      if (selections.length != 1) {
+        return false;
+      }
+      var selection = selections[0];
+
+      var newfocus = (focus == selection) ?
+          this.getNextSelection(focus) || this.getPrevSelection(focus):
+          focus;
+      var success = this.cardNavigator.remove(selection) &&
+          !!this.listElem.removeChild(elem);
+      this.cardNavigator.focus(newfocus);
+        return success;
+
+    },
+
+    insertItem: function(elem, index) {
+
     },
 
     handleSelection: function(elem) {
