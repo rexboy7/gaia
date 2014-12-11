@@ -22,11 +22,19 @@
 
     cardFilter: undefined,
 
+    mainSection: document.getElementById('main-section'),
     cardListElem: document.getElementById('card-list'),
     cardManager: undefined,
     settingGroup: document.getElementById('settings-group'),
     editButton: document.getElementById('edit-button'),
     settingsButton: document.getElementById('settings-button'),
+    doneButton: document.getElementById('done-button'),
+    searchButton: document.getElementById('search-button'),
+    addNewFolderButton: document.getElementById('add-new-folder-button'),
+
+    regularNavElements: undefined,
+    editNavElements: undefined,
+
 
     init: function() {
       var that = this;
@@ -35,6 +43,11 @@
 
       this.cardManager = new CardManager();
       this.cardManager.init();
+
+      this.regularNavElements = [this.searchButton, this.settingsButton,
+                                                              this.editButton];
+      this.editNavElements = [this.doneButton, this.addNewFolderButton];
+
       this.cardManager.getCardList().then(function(cardList) {
         that._createCardList(cardList);
         that.cardScrollable = new XScrollable({
@@ -52,6 +65,7 @@
 
         that.cardManager.on('card-inserted', that.onCardInserted.bind(that));
         that.cardManager.on('card-removed', that.onCardRemoved.bind(that));
+        that.cardManager.on('card-swapped', that.onCardSwapped.bind(that));
 
         that.spatialNavigator.on('focus', that.handleFocus.bind(that));
         var handleScrollableItemFocusBound =
@@ -178,17 +192,30 @@
       SharedUtils.readColorCode(blob, 0.5, 0, checkColor);
     },
 
+    onCardSwapped: function(card1, card2, idx1, idx2) {
+      this.cardScrollable.swap(idx1, idx2);
+    },
+
     onFilterChanged: function(name) {
       console.log('filter changed to: ' + name);
     },
 
     _createCardNode: function(card) {
-
       var cardButton = document.createElement('smart-button');
+
       cardButton.setAttribute('type', 'app-button');
       cardButton.setAttribute('label', card.name);
       cardButton.dataset.cardId = card.cardId;
       cardButton.classList.add('card');
+      cardButton.appendChild(renameButton);
+      cardButton.appendChild(deleteButton);
+
+      var renameButton = document.createElement('smart-button');
+      var deleteButton = document.createElement('smart-button');
+      renameButton.textContent = 'edit';
+      deleteButton.textContent = 'delete';
+      renameButton.classList.add('renameBtn');
+      deleteButton.classList.add('deleteBtn');
 
       // XXX: will support Folder and other type of Card in the future
       // for now, we only create card element for Application and Deck
@@ -212,7 +239,20 @@
     onMove: function(key) {
       var focus = this.spatialNavigator.getFocusedElement();
       if (focus.CLASS_NAME == 'XScrollable') {
-        if (focus.spatialNavigator.move(key)) {
+        if (this.mode != 'arrange') {
+          if (focus.move(key)) {
+            return;
+          }
+        } else {
+          // TODO: considering folder case
+          var targetItem = focus.getTargetItem(key);
+          if (targetItem) {
+            this.cardManager.swapCard(
+              this.cardManager.findCardFromCardList(
+                                      {cardId: this.focusElem.dataset.cardId}),
+              this.cardManager.findCardFromCardList(
+                                      {cardId: targetItem.dataset.cardId}));
+          }
           return;
         }
       }
@@ -220,13 +260,24 @@
     },
 
     onEnter: function() {
-      if (this.focusElem === this.settingsButton) {
+      var focusElem = this.focusElem;
+      if (focusElem === this.settingsButton) {
         this.openSettings();
+      } else if (focusElem === this.editButton ||
+                 focusElem === this.doneButton) {
+        this.toggleEditMode();
+      } else if (focusElem === this.addNewFolderButton) {
+        this.addNewFolder();
       } else {
-        var cardId = this.focusElem.dataset.cardId;
-        var card = this.cardManager.findCardFromCardList({cardId: cardId});
-        if (card) {
-          card.launch();
+        // We are focusing a card.
+        if (this.mode === 'edit' || this.mode == 'arrange') {
+          this.toggleArrangeMode();
+        } else {
+          var cardId = this.focusElem.dataset.cardId;
+          var card = this.cardManager.findCardFromCardList({cardId: cardId});
+          if (card) {
+            card.launch();
+          }
         }
       }
     },
@@ -253,7 +304,7 @@
     handleFocus: function(elem) {
       if (elem.CLASS_NAME == 'XScrollable') {
         this._focusScrollable = elem;
-        elem.spatialNavigator.focus(elem.spatialNavigator.getFocusedElement());
+        elem.catchFocus();
         this.checkFocusedGroup();
       } else if (elem.nodeName) {
         if (this._focus) {
@@ -280,13 +331,17 @@
       if (!this._focusedGroup) {
         return;
       }
+      // We'd keep settings group opened while we're in edit mode.
+      if (this._focusedGroup === this.settingGroup &&
+          this.mode == 'edit') {
+        return;
+      }
       // close the focused group when we move focus out of this group.
       if (!elem || !this._focusedGroup.contains(elem)) {
         this._focusedGroup.close();
         this._focusedGroup = null;
       }
     },
-
     handleFocusMenuGroup: function(menuGroup) {
       var self = this;
       menuGroup.once('opened', function() {
@@ -365,12 +420,54 @@
       }).bind(this));
     },
 
+    /* Edit mode */
+
+    toggleEditMode: function() {
+      if (this.mainSection.dataset.mode == 'edit') {
+        this.mainSection.dataset.mode = '';
+        this.spatialNavigator.multiAdd(this.regularNavElements);
+        this.spatialNavigator.multiRemove(this.editNavElements);
+        this.spatialNavigator.focus(this.editButton);
+      } else {
+        this.mainSection.dataset.mode = 'edit';
+        this.spatialNavigator.multiRemove(this.regularNavElements);
+        this.spatialNavigator.multiAdd(this.editNavElements);
+        this.spatialNavigator.focus(this.cardScrollable);
+      }
+    },
+    // Note:
+    // Avoid complex case: We should forbid pin to card/delete card
+    // while in arrange mode.
+    toggleArrangeMode: function() {
+      if (this.mainSection.dataset.mode == 'edit') {
+        this.mainSection.dataset.mode = 'arrange';
+      } else if (this.mainSection.dataset.mode == 'arrange') {
+        this.mainSection.dataset.mode = 'edit';
+      }
+    },
+
+    addNewFolder: function() {
+
+    },
+
+    swapFolder: function() {
+
+    },
+
     get focusElem() {
       return this._focus;
     },
 
     get focusScrollable() {
       return this._focusScrollable;
+    },
+
+    get mode() {
+      return this.mainSection.dataset.mode;
+    },
+
+    set mode(mode) {
+     this.mainSection.dataset.mode = mode;
     }
   };
 

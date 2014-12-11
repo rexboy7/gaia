@@ -11,7 +11,7 @@ html, body {
   overflow: hidden;
   margin: 0;
   padding: 0;
-  background-color: transparent;
+  background-color: #FF7755;
 }
 
 #main-section {
@@ -49,6 +49,10 @@ section {
   overflow: hidden;
 }
 
+#main-section[data-mode="edit"] #card-list-frame {
+}
+
+
 #card-list {
   position: relative;
 /* XXX: set width to 1000% for now to verify whether user
@@ -61,6 +65,22 @@ section {
 .card {
   top: 32.41%;
   margin: 0 1.6rem 0 1.6rem;
+  left: 0;
+  top: 0;
+  position: absolute;
+  transition: transform 0.3s ease;
+}
+
+.renameBtn {
+  position: relative;
+  top: -3rem;
+  left: 0rem;
+}
+
+.deleteBtn {
+  position: relative;
+  top: -3rem;
+  right: 0rem;
 }
 
 .card.focused {
@@ -106,3 +126,37 @@ section {
   bottom: 0;
   background: linear-gradient(0deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0));
 }
+
+#edit-menu {
+  position: absolute;
+  top: 4rem;
+  right: 6rem;
+}
+
+/**
+ * nav bars
+ */
+nav {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  transition: transform 0.4s cubic-bezier(0.165, 0.840, 0.440, 1.000);
+}
+
+nav header {
+  padding-left: 13rem;
+  padding-top: 9.2rem;
+
+  font-size: 5.4rem;
+  font-style: italic;
+  color: white;
+}
+
+#main-section[data-mode="edit"] #nav-regular,
+#main-section[data-mode="arrange"] #nav-regular,
+#main-section:not([data-mode="edit"]) #nav-edit-title,
+#main-section:not([data-mode="edit"]) #nav-edit {
+  transform: translateY(-16rem);
+}
+
