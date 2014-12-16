@@ -8,6 +8,7 @@
   const DEFAULT_ICON = 'url("/style/images/appic_developer.png")';
   const DEFAULT_BGCOLOR = 'rgba(0, 0, 0, 0.5)';
   const DEFAULT_BGCOLOR_ARRAY = [0, 0, 0, 0.5];
+  const EDIT_MODE_SCALE = 0.536;
 
   function Home() {}
 
@@ -439,38 +440,32 @@
       }).bind(this));
     },
 
-    /* Edit mode */
-
+    /**
+     * State of home looks like this:
+     * (normal state)<-->Edit mode<-->Arrange mode
+     */
     toggleEditMode: function() {
       if (this.mainSection.dataset.mode == 'edit') {
         this.mainSection.dataset.mode = '';
         this.spatialNavigator.multiAdd(this.regularNavElements);
         this.spatialNavigator.multiRemove(this.editNavElements);
         this.spatialNavigator.focus(this.editButton);
+        this.cardScrollable.setScale();
       } else {
         this.mainSection.dataset.mode = 'edit';
         this.spatialNavigator.multiRemove(this.regularNavElements);
         this.spatialNavigator.multiAdd(this.editNavElements);
         this.spatialNavigator.focus(this.cardScrollable);
+        this.cardScrollable.setScale(EDIT_MODE_SCALE);
       }
     },
-    // Note:
-    // Avoid complex case: We should forbid pin to card/delete card
-    // while in arrange mode.
+
     toggleArrangeMode: function() {
       if (this.mainSection.dataset.mode == 'edit') {
         this.mainSection.dataset.mode = 'arrange';
       } else if (this.mainSection.dataset.mode == 'arrange') {
         this.mainSection.dataset.mode = 'edit';
       }
-    },
-
-    addNewFolder: function() {
-
-    },
-
-    swapFolder: function() {
-
     },
 
     get focusElem() {

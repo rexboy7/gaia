@@ -7,12 +7,12 @@
   var ELEM_PADDING = 2;
   function XScrollable(param) {
     this.translateX = 0;
+
     this.frameElem = (typeof param.frameElem === 'string') ?
                     document.getElementById(param.frameElem) : param.frameElem;
     this.listElem = (typeof param.listElem === 'string') ?
                     document.getElementById(param.listElem) : param.listElem;
     this.nodes = Array.prototype.slice.call(this.listElem.children);
-    this.scale = 1;
 
     this.itemClassName = param.itemClassName;
     var items = Array.prototype.slice.call(
@@ -25,20 +25,24 @@
     this.spatialNavigator.focus(
               items.length > defaultItem ? items[defaultItem] : null);
     this.spatialNavigator.on('focus', this.handleSelection.bind(this));
+
+    this.setScale();
+
   }
 
   XScrollable.prototype = evt({
     CLASS_NAME: 'XScrollable',
+    // This function calculates item position without affecting of
     getItemRect: function(elem) {
       var frameRect = this.frameElem.getBoundingClientRect();
       var node = this.getNodeFromItem(elem);
       return {
-        left: frameRect.left + ELEM_PADDING * 10 +
-              (node.offsetWidth + ELEM_PADDING * 10) * parseInt(node.dataset.idx, 10) +
-              this.translateX,
-        top: frameRect.top + elem.offsetTop,
-        width: elem.offsetWidth,
-        height: elem.offsetHeight
+        left: (frameRect.left + ELEM_PADDING * 10 +
+              (node.offsetWidth + ELEM_PADDING * 10) * parseInt(node.dataset.idx, 10))
+              * this.scale + this.translateX,
+        top: (frameRect.top + elem.offsetTop) * this.scale,
+        width: (elem.offsetWidth) * this.scale,
+        height: (elem.offsetHeight) * this.scale
       };
     },
 
@@ -48,34 +52,35 @@
 
     scrollTo: function(itemElem) {
       this.translateX = this._getScrollOffset(itemElem);
-      this.listElem.style.transform =
-                          'translateX(' + this.translateX + 'px)';
+      this.listElem.style.transform = 'translateX(' + this.translateX + 'px) ' +
+                                      'scale(' + this.scale + ')';
+    },
+
+    setScale: function(scale) {
+      scale = scale ? scale : 1;
+      this.scale = scale;
+      this.translateX = 0;
+      this.scrollTo(this.currentItem);
     },
 
     _getScrollOffset: function(itemElem) {
       var sibling;
       var node = this.getNodeFromItem(itemElem);
       var idx = parseInt(node.dataset.idx, 10);
-      var unitLength = (node.offsetWidth + ELEM_PADDING * 10);
+      var unitLength = (node.offsetWidth + ELEM_PADDING * 10) * this.scale;
       var right = unitLength * (idx + 1);
       var left = unitLength * idx;
       var previousLeft = unitLength * (idx - 1);
-      //debugger;
       var frameWidth = this.frameElem.offsetWidth;
-      if (left + this.translateX <= 0) {
+      if (left + this.translateX < 0) {
         sibling = this.getPrevItem(itemElem);
         if (sibling) {
           return -(previousLeft + 0.5 * unitLength);
         } else {
-          return -(left - ELEM_PADDING * 10);
+          return 0;
         }
       } else if (right > (frameWidth - this.translateX)) {
-        sibling = this.getNextItem(itemElem);
-        if (sibling) {
-          return frameWidth - (right + 0.5 * unitLength);
-        } else {
-          return frameWidth - right;
-        }
+        return frameWidth - (right + 0.5 * unitLength);
       } else {
         return this.translateX;
       }
