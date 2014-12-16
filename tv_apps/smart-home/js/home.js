@@ -204,8 +204,10 @@
       // card element would be created like this:
       // <div class="card">
       //   <smart-button>/* Card button */</smart-button>
-      //   <smart-button>/* Rename button */</smart-button>
-      //   <smart-button>/* Delete button */</smart-button>
+      //   <section class="card-panel">
+      //     <smart-button>/* Rename button */</smart-button>
+      //     <smart-button>/* Delete button */</smart-button>
+      //   </section>
       // </div>
       // and return DOM element
       var cardNode = document.createElement('div');
@@ -217,17 +219,22 @@
       cardButton.setAttribute('label', card.name);
       cardButton.dataset.cardId = card.cardId;
 
+      var cardPanel = document.createElement('section');
+      cardPanel.className = 'card-panel';
+
       var renameButton = document.createElement('smart-button');
-      renameButton.textContent = 'edit';
+      renameButton.dataset.icon = 'rename';
       renameButton.classList.add('renameBtn');
 
       var deleteButton = document.createElement('smart-button');
-      deleteButton.textContent = 'delete';
+      deleteButton.dataset.icon = 'delete';
       deleteButton.classList.add('deleteBtn');
 
+      cardPanel.appendChild(renameButton);
+      cardPanel.appendChild(deleteButton);
+
       cardNode.appendChild(cardButton);
-      cardNode.appendChild(renameButton);
-      cardNode.appendChild(deleteButton);
+      cardNode.appendChild(cardPanel);
 
       // XXX: will support Folder and other type of Card in the future
       // for now, we only create card element for Application and Deck

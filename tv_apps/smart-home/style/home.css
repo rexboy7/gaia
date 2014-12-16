@@ -70,16 +70,17 @@ section {
   transition: transform 0.3s ease;
 }
 
-.renameBtn {
-  position: relative;
-  top: -3rem;
-  left: 0rem;
+.card-panel {
+  position: absolute;
+  top: -12rem;
+  width: 100%;
+  height: 8rem;
+  display: none;
 }
 
-.deleteBtn {
+.card-panel smart-button {
   position: relative;
-  top: -3rem;
-  right: 0rem;
+  margin-left: calc(50% - 12rem);
 }
 
 .card.focused {

@@ -12,6 +12,7 @@
     this.listElem = (typeof param.listElem === 'string') ?
                     document.getElementById(param.listElem) : param.listElem;
     this.nodes = Array.prototype.slice.call(this.listElem.children);
+    this.scale = 1;
 
     this.itemClassName = param.itemClassName;
     var items = Array.prototype.slice.call(
@@ -239,6 +240,7 @@
       this.nodes[idx2] = node1;
       this._setNodePosition(idx1);
       this._setNodePosition(idx2);
+      this.catchFocus();
 
       // TODO: handle cases that one of the swapped nodes is focused.
       // ... should we really need to handle this case?
