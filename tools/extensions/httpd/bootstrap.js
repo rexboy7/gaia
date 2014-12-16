@@ -143,6 +143,7 @@ function startup(data, reason) {
       '/common/', new LocalFile(baseDir + '/dev_apps/test-agent/common')
     );
     server.registerDirectory('/shared/', new LocalFile(baseDir + '/shared'));
+    server.registerDirectory('/tv_shared/', new LocalFile(baseDir + '/tv_apps/tv_shared'));
 
     let brandingLocalFile = new LocalFile(
       baseDir + '/shared/resources/branding/' + (GAIA_OFFICIAL ? 'official' : 'unofficial')

@@ -11,7 +11,7 @@ html, body {
   overflow: hidden;
   margin: 0;
   padding: 0;
-  background-color: #FF7755;
+  background-color: transparent;
 }
 
 #main-section {
@@ -66,7 +66,6 @@ section {
   top: 32.41%;
   margin: 0 1.6rem 0 1.6rem;
   left: 0;
-  top: 0;
   position: absolute;
   transition: transform 0.3s ease;
 }

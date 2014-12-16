@@ -128,7 +128,7 @@ smart-button[type="simple-text"].pressed {
  * underlined text button
  */
 smart-button[type="underlined-text"] {
-  position:relative;
+  position: relative;
   color: white;
   font-size: 2.4rem;
   padding-left: 4.6rem;
@@ -168,7 +168,6 @@ smart-button[type="underlined-text"].pressed {
 /**
  * App Icons
 **/
-
 smart-button[type="app-button"] {
   width: 33.6rem;
   height: 33.6rem;

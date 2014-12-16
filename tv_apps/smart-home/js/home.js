@@ -53,7 +53,7 @@
         that.cardScrollable = new XScrollable({
                 frameElem: 'card-list-frame',
                 listElem: 'card-list',
-                itemClassName: 'card'}),
+                itemClassName: 'app-button'}),
         that.navigableScrollable = [that.cardScrollable];
         var collection = that.getNavigateElements();
 
@@ -201,21 +201,33 @@
     },
 
     _createCardNode: function(card) {
-      var cardButton = document.createElement('smart-button');
+      // card element would be created like this:
+      // <div class="card">
+      //   <smart-button>/* Card button */</smart-button>
+      //   <smart-button>/* Rename button */</smart-button>
+      //   <smart-button>/* Delete button */</smart-button>
+      // </div>
+      // and return DOM element
+      var cardNode = document.createElement('div');
+      cardNode.classList.add('card');
 
+      var cardButton = document.createElement('smart-button');
       cardButton.setAttribute('type', 'app-button');
+      cardButton.className = 'app-button';
       cardButton.setAttribute('label', card.name);
       cardButton.dataset.cardId = card.cardId;
-      cardButton.classList.add('card');
-      cardButton.appendChild(renameButton);
-      cardButton.appendChild(deleteButton);
 
       var renameButton = document.createElement('smart-button');
-      var deleteButton = document.createElement('smart-button');
       renameButton.textContent = 'edit';
-      deleteButton.textContent = 'delete';
       renameButton.classList.add('renameBtn');
+
+      var deleteButton = document.createElement('smart-button');
+      deleteButton.textContent = 'delete';
       deleteButton.classList.add('deleteBtn');
+
+      cardNode.appendChild(cardButton);
+      cardNode.appendChild(renameButton);
+      cardNode.appendChild(deleteButton);
 
       // XXX: will support Folder and other type of Card in the future
       // for now, we only create card element for Application and Deck
@@ -227,7 +239,7 @@
         this._fillCardIcon(cardButton, card);
       }
 
-      return cardButton;
+      return cardNode;
     },
 
     _createCardList: function(cardList) {

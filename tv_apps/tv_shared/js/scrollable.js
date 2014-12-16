@@ -100,6 +100,9 @@
     },
 
     getItemFromNode: function(nodeElem) {
+      if (!nodeElem) {
+        return null;
+      }
       if (nodeElem.classList.contains(this.itemClassName)) {
         return nodeElem;
       } else {
@@ -108,21 +111,11 @@
     },
 
     getNextItem: function(itemElem) {
-      var next = this.getNodeFromItem(itemElem).nextElementSibling;
-      if (!next) {
-        return null;
-      } else {
-        return this.getItemFromNode(next);
-      }
+      return this.getItemFromNode(this._getNextNode(itemElem));
     },
 
     getPrevItem: function(itemElem) {
-      var prev = this.getNodeFromItem(itemElem).previousElementSibling;
-      if (!prev) {
-        return null;
-      } else {
-          return this.getItemFromNode(prev);
-      }
+      return this.getItemFromNode(this._getPrevNode(itemElem));
     },
 
     _getNextNode: function(itemElem) {
