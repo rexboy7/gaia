@@ -19,6 +19,9 @@ define(function(require) {
           homegesture: panel.querySelector('.homegesture')
         };
         developer.init(elements);
+      },
+      onBeforeShow: function() {
+        navigator.mozPresentationDeviceInfo.forceDiscovery();
       }
     });
   };
