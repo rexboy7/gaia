@@ -48,7 +48,8 @@
     "downloads":{},
     "systemXHR":{},
     "feature-detection": {},
-    "before-after-keyboard-event": {}
+    "before-after-keyboard-event": {},
+    "presentation-device-manage": {}
   },
   "locales": {
     "ar": {

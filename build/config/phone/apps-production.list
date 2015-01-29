@@ -34,3 +34,5 @@ apps/wallpaper
 apps/wappush
 outoftree_apps/*
 apps/privacy-panel
+tv_apps/fling-sender
+tv_apps/notification-sender

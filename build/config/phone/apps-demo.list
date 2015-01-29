@@ -2,3 +2,5 @@ apps/*
 outoftree_apps/*
 dev_apps/crystalskull
 dev_apps/cubevid
+tv_apps/fling-sender
+tv_apps/notification-sender

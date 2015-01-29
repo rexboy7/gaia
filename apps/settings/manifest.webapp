@@ -36,7 +36,8 @@
     "downloads":{},
     "nfc":{},
     "sms":{},
-    "firefox-accounts": {}
+    "firefox-accounts": {},
+    "presentation-device-manage": {}
   },
   "activities": {
     "configure": {

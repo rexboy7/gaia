@@ -39,3 +39,5 @@ dev_apps/theme-test-3
 dev_apps/nfc-api-test
 dev_apps/addon1
 dev_apps/addon2
+tv_apps/fling-sender
+tv_apps/notification-sender
