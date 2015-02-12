@@ -30,17 +30,29 @@
     }.bind(this));
   };
 
+  proto.handleMsg = function fs_handleMsg(data) {
+    switch(data.type) {
+      case 'ack':
+        this.handleMessage($('ack-result'), data);
+        break;
+      case 'status':
+        this.handleMessage($('status-result'), data);
+        break;
+    }
+  };
+
   proto.handleEvent = function fs_handleEvent(evt) {
     switch(evt.type) {
       case 'message':
-        var data = JSON.parse(evt.data);
-        switch(data.type) {
-          case 'ack':
-            this.handleMessage($('ack-result'), data);
-            break;
-          case 'status':
-            this.handleMessage($('status-result'), data);
-            break;
+        var data = evt.data;
+        if (data.indexOf('}{')) {
+          data = '[' + data.replace('}{', '},{') + ']';
+          var aList = JSON.parse(data);
+          for (var i = 0; i < aList.length; i++) {
+            this.handleMsg(aList[i]);
+          }
+        } else {
+          this.handleMsg(JSON.parse(data));
         }
         break;
       case 'click':
