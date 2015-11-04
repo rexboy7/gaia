@@ -1,6 +1,7 @@
 'use strict';
 
 (function(exports) {
+
   exports.Utils = {
     holdFocusForAnimation: function utils_holdFocusForAnimation() {
       // we have to move focus to another element to prevent user press enter
