@@ -3,9 +3,10 @@
 (function(exports) {
   'use strict';
 
-  var CardStore = function(mode, manifestURL) {
+  var CardStore = function(name, mode, manifestURL) {
     var that = this;
     this._mode = mode || 'readwrite';
+    this._name = name;
     if (manifestURL) {
       this._manifestURL = manifestURL;
       this._getStore();
@@ -19,8 +20,6 @@
   };
 
   CardStore.prototype = evt({
-    STORE_NAME: 'home_cards',
-
     _dataStore: undefined,
 
     _appRevisionId: undefined,
@@ -50,7 +49,7 @@
           resolve(that._dataStore);
           return;
         }
-        navigator.getDataStores(that.STORE_NAME).then(
+        navigator.getDataStores(that._name).then(
         function(stores) {
           stores.forEach(function(store) {
             if (store.owner === that._manifestURL) {
@@ -103,6 +102,41 @@
           // because we are in readonly mode
           resolve();
         }
+      });
+    },
+
+    iterateData: function cs_listData(cb) {
+      this._getStore().then(store => {
+        return store.sync();
+      }).then(function iterateTask(cursor) {
+        cursor.next().then(task => {
+          if (task.operation == 'add') {
+            cb(task.data);
+            iterateTask(cursor);
+          } else if (task.operation == 'clear') {
+            iterateTask(cursor);
+          } else if (task.operation == 'done') {
+            cursor.close();
+          }
+        });
+      });
+    },
+
+    addData: function cs_addData(data) {
+      return this._getStore().then(store => {
+        return store.add(data);
+      });
+    },
+
+    removeData: function cs_removeData(id) {
+      return this._getStore().then(store => {
+        return store.remove(id);
+      });
+    },
+
+    getLength: function cs_getLength() {
+      return this._getStore().then(store => {
+        return store.getLength();
       });
     }
   });

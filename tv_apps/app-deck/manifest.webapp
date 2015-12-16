@@ -23,12 +23,18 @@
   "permissions": {
     "webapps-manage": {},
     "systemXHR": {},
-    "moz-extremely-unstable-and-will-change-webcomponents":{}
+    "moz-extremely-unstable-and-will-change-webcomponents": {}
   },
   "datastores-access": {
     "home_cards": {
       "access": "readonly",
       "description": "Read card list"
+    }
+  },
+  "datastores-owned": {
+    "appdeck_bookmarks": {
+      "access": "readwrite",
+      "description": "Saves bookmarks from marketplace"
     }
   }
 }

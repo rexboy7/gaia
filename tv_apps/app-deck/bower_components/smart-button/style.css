@@ -248,6 +248,10 @@ smart-button[type="app-button"][app-type="device"]:after {
   background-color: #4a82ea;
 }
 
+smart-button[type="app-button"][app-type="bookmark"]:after {
+  background-color: rgba(0, 0, 255, 0.4);
+}
+
 smart-button[type="app-button"][app-type="folder"] {
   background-color: #595959;
 }

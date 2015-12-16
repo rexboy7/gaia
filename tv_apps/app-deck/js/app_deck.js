@@ -1,5 +1,6 @@
 /* global SpatialNavigator, SharedUtils, Applications, URL, evt, XScrollable,
-  KeyNavigationAdapter, ContextMenu, CardManager, PromotionList */
+  KeyNavigationAdapter, ContextMenu, CardManager, PromotionList, MozActivity,
+  bookmarkManager */
 
 (function(exports) {
   'use strict';
@@ -63,6 +64,9 @@
                              that.onCardListChanged.bind(that));
       });
 
+      this._bookmarkManager = bookmarkManager;
+      this._bookmarkManager.init(null, 'readwrite');
+
       // Because module Applications use manifest helper to get localized app
       // name. We cannot initialize Applications until l10n is ready.
       // See bug 1170083.
@@ -71,6 +75,13 @@
         var appGridElements = apps.map(that._createAppGridElement.bind(that));
         appGridElements.forEach(function(appGridElem) {
           that._appDeckGridViewElem.appendChild(appGridElem);
+        });
+
+        that._bookmarkManager.iterate(function(bookmark) {
+          var elem = that._createBookmarkGridElement(bookmark);
+          that._appDeckGridViewElem.appendChild(elem);
+          // .iterate runs asyncronously, so we need to add it manually here.
+          that._spatialNavigator.add(elem);
         });
 
         // promotion list must be created before XScrollable because it creates
@@ -160,6 +171,20 @@
       appButton.setAttribute('label', app.name);
       this._fillAppButtonIcon(app, appButton);
       return appButton;
+    },
+
+    _createBookmarkGridElement: function ad_createBookmarkElement(bookmark) {
+      var bookmarkButton = document.createElement('smart-button');
+      bookmarkButton.dataset.url = bookmark.url;
+      bookmarkButton.dataset.name = bookmark.name;
+      bookmarkButton.dataset.removable = true;
+      bookmarkButton.setAttribute('type', 'app-button');
+      bookmarkButton.setAttribute('app-type', 'bookmark');
+      bookmarkButton.classList.add('app-button');
+      bookmarkButton.classList.add('navigable');
+      bookmarkButton.setAttribute('label', bookmark.name);
+      bookmarkButton.style.backgroundImage = 'url("' + bookmark.icon + '")';
+      return bookmarkButton;
     },
 
     onCardListChanged: function ad_onCardListChanged() {
@@ -276,6 +301,15 @@
       if (focused && focused.dataset && focused.dataset.manifestURL) {
         Applications.launch(
           focused.dataset.manifestURL, focused.dataset.entryPoint);
+      } else if (focused && focused.dataset && focused.dataset.url) {
+        /* jshint nonew: false */
+        new MozActivity ({
+          name: 'view',
+          data: {
+            type: 'url',
+            url: focused.dataset.url
+          }
+        });
       }
     },
 
