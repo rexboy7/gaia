@@ -66,6 +66,7 @@
 
       this._bookmarkManager = bookmarkManager;
       this._bookmarkManager.init(null, 'readwrite');
+      this._bookmarkManager.on('change', that.onBookmarkChanged.bind(that));
 
       // Because module Applications use manifest helper to get localized app
       // name. We cannot initialize Applications until l10n is ready.
@@ -77,11 +78,18 @@
           that._appDeckGridViewElem.appendChild(appGridElem);
         });
 
+        // Add Bookmarks
+        var bookmarkArr = [];
         that._bookmarkManager.iterate(function(bookmark) {
-          var elem = that._createBookmarkGridElement(bookmark);
-          that._appDeckGridViewElem.appendChild(elem);
-          // .iterate runs asyncronously, so we need to add it manually here.
-          that._spatialNavigator.add(elem);
+          bookmarkArr.push(bookmark);
+
+        }).then(function() {
+          bookmarkArr.sort((a, b) => a.date - b.date);
+          bookmarkArr.forEach(bookmark => {
+            var elem = that._createBookmarkGridElement(bookmark);
+            that._appDeckGridViewElem.appendChild(elem);
+            that._spatialNavigator.add(elem);
+          });
         });
 
         // promotion list must be created before XScrollable because it creates
@@ -190,6 +198,31 @@
     onCardListChanged: function ad_onCardListChanged() {
       if (this._focusElem) {
         this.fireFocusEvent(this._focusElem);
+      }
+    },
+
+    onBookmarkChanged: function ad_onBookmarkChanged(evt) {
+      var targetElem;
+      switch (evt.operation) {
+        case 'added':
+          this._bookmarkManager.get(evt.id).then(bookmark => {
+            targetElem = this._createBookmarkGridElement(bookmark);
+            this._appDeckGridViewElem.appendChild(targetElem);
+            this._spatialNavigator.add(targetElem);
+          });
+        break;
+        case 'removed':
+          targetElem = this._appDeckGridViewElem.querySelector(
+                                    'smart-button[data-url="' + evt.id +'"]');
+          // Move focus to next or previous element of `elem`, because
+          // we are going to remove `elem` from DOM tree
+          var nextFocus = targetElem.nextElementSibling ||
+                          targetElem.previousElementSibling;
+          this._spatialNavigator.focus(nextFocus);
+
+          this._appDeckGridViewElem.removeChild(targetElem);
+          this._spatialNavigator.remove(targetElem);
+          break;
       }
     },
 
@@ -337,8 +370,11 @@
     onAppInstalled: function ad_onAppInstalled(apps) {
       var that = this;
       var appGridElements = apps.map(this._createAppGridElement.bind(this));
+      var firstBookmarkElem = this._appDeckGridViewElem.querySelector(
+        'smart-button[app-type="bookmark"]');
+
       appGridElements.forEach(function(elem) {
-        that._appDeckGridViewElem.appendChild(elem);
+        that._appDeckGridViewElem.insertBefore(elem, firstBookmarkElem);
         that._spatialNavigator.add(elem);
       });
     },

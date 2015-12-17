@@ -783,7 +783,7 @@
     }
   });
 
-  SharedUtils.addMixin(CardManager, new PipedPromise());
+  SharedUtils.addMixin(CardManager, PipedPromise);
 
   exports.CardManager = CardManager;
 }(window));

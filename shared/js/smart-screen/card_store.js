@@ -106,25 +106,30 @@
     },
 
     iterateData: function cs_listData(cb) {
-      this._getStore().then(store => {
-        return store.sync();
-      }).then(function iterateTask(cursor) {
-        cursor.next().then(task => {
-          if (task.operation == 'add') {
-            cb(task.data);
-            iterateTask(cursor);
-          } else if (task.operation == 'clear') {
-            iterateTask(cursor);
-          } else if (task.operation == 'done') {
-            cursor.close();
-          }
+      return new Promise((resolve, reject) => {
+
+        this._getStore().then(store => {
+          return store.sync();
+
+        }).then(function iterateTask(cursor) {
+          cursor.next().then(task => {
+            if (task.operation == 'add') {
+              cb(task.data, task.id);
+              iterateTask(cursor);
+            } else if (task.operation == 'clear') {
+              iterateTask(cursor);
+            } else if (task.operation == 'done') {
+              cursor.close();
+              resolve();
+            }
+          });
         });
       });
     },
 
-    addData: function cs_addData(data) {
+    addData: function cs_addData(data, id) {
       return this._getStore().then(store => {
-        return store.add(data);
+        return store.add(data, id);
       });
     },
 
@@ -141,7 +146,7 @@
     }
   });
 
-  SharedUtils.addMixin(CardStore, new PipedPromise());
+  SharedUtils.addMixin(CardStore, PipedPromise);
 
   exports.CardStore = CardStore;
 }(window));

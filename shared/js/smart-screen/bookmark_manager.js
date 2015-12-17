@@ -10,41 +10,28 @@
       this._mode = mode;
       this._store = new CardStore(this.TABLE_NAME, mode, ownerURL);
       this._store.on('change', this.fire.bind(this, 'change'));
-
-      /* For Testing only */
-      this.getLength().then(length => {
-        if (length <= 0) {
-          this.add({
-            name: 'google',
-            url: 'http://www.google.com',
-            iconUrl: 'https://www.google.com.tw/images/branding/googlelogo' +
-            '/1x/googlelogo_color_272x92dp.png'
-          });
-          this.add({
-            name: 'youtube',
-            url: 'http://www.youtube.com',
-            iconUrl: 'https://www.google.com.tw/images/branding/googlelogo' +
-            '/1x/googlelogo_color_272x92dp.png'
-          });
-        }
-      });
     },
 
-    iterate: function bm_foreach(cb) {
-      this._store.iterateData(cb);
+    iterate: function bm_iterate(cb) {
+      return this._store.iterateData(cb);
     },
 
-    add: function bm_add(entry) {
+    add: function bm_add(entry, id) {
+      if (!id) {
+        id = entry.url;
+      }
+
+      entry.date = new Date();
       if (entry.iconUrl) {
         return this.fetchIcon(entry.iconUrl).then(iconData => {
           entry.icon = iconData;
           delete entry.iconUrl;
-          this._store.addData(entry);
+          this._store.addData(entry, id);
         }).catch(() => {
-          this._store.addData(entry);
+          this._store.addData(entry, id);
         });
       } else {
-        return this._store.addData(entry);
+        return this._store.addData(entry, id);
       }
     },
 
@@ -57,6 +44,7 @@
     },
 
     set: function bm_set(id, entry) {
+      entry.date = new Date();
       if (entry.iconUrl) {
         return this.fetchIcon(entry.iconUrl).then(iconData => {
           entry.icon = iconData;
