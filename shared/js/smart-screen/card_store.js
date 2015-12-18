@@ -110,7 +110,6 @@
 
         this._getStore().then(store => {
           return store.sync();
-
         }).then(function iterateTask(cursor) {
           cursor.next().then(task => {
             if (task.operation == 'add') {
@@ -121,6 +120,8 @@
             } else if (task.operation == 'done') {
               cursor.close();
               resolve();
+            } else {
+              iterateTask(cursor);
             }
           });
         });

@@ -1,6 +1,6 @@
 /* global SpatialNavigator, SharedUtils, Applications, URL, evt, XScrollable,
-  KeyNavigationAdapter, ContextMenu, CardManager, PromotionList, MozActivity,
-  bookmarkManager */
+  KeyNavigationAdapter, ContextMenu, CardManager, PromotionList,
+  BookmarkManager */
 
 (function(exports) {
   'use strict';
@@ -64,7 +64,7 @@
                              that.onCardListChanged.bind(that));
       });
 
-      this._bookmarkManager = bookmarkManager;
+      this._bookmarkManager = BookmarkManager;
       this._bookmarkManager.init(null, 'readwrite');
       this._bookmarkManager.on('change', that.onBookmarkChanged.bind(that));
 
@@ -82,7 +82,6 @@
         var bookmarkArr = [];
         that._bookmarkManager.iterate(function(bookmark) {
           bookmarkArr.push(bookmark);
-
         }).then(function() {
           bookmarkArr.sort((a, b) => a.date - b.date);
           bookmarkArr.forEach(bookmark => {
@@ -191,7 +190,8 @@
       bookmarkButton.classList.add('app-button');
       bookmarkButton.classList.add('navigable');
       bookmarkButton.setAttribute('label', bookmark.name);
-      bookmarkButton.style.backgroundImage = 'url("' + bookmark.icon + '")';
+      bookmark.icon &&
+        (bookmarkButton.style.backgroundImage = 'url("' + bookmark.icon + '")');
       return bookmarkButton;
     },
 
@@ -210,7 +210,7 @@
             this._appDeckGridViewElem.appendChild(targetElem);
             this._spatialNavigator.add(targetElem);
           });
-        break;
+          break;
         case 'removed':
           targetElem = this._appDeckGridViewElem.querySelector(
                                     'smart-button[data-url="' + evt.id +'"]');
@@ -335,14 +335,7 @@
         Applications.launch(
           focused.dataset.manifestURL, focused.dataset.entryPoint);
       } else if (focused && focused.dataset && focused.dataset.url) {
-        /* jshint nonew: false */
-        new MozActivity ({
-          name: 'view',
-          data: {
-            type: 'url',
-            url: focused.dataset.url
-          }
-        });
+        window.open(focused.dataset.url, '_blank', 'remote=true');
       }
     },
 

@@ -23,6 +23,7 @@
   "permissions": {
     "webapps-manage": {},
     "systemXHR": {},
+    "open-remote-window": {},
     "moz-extremely-unstable-and-will-change-webcomponents": {}
   },
   "datastores-access": {

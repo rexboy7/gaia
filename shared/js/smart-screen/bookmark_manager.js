@@ -3,11 +3,10 @@
 (function(exports) {
   'use strict';
 
-  var bookmarkManager = evt({
+  var BookmarkManager = evt({
     TABLE_NAME: 'appdeck_bookmarks',
 
     init: function bm_init(ownerURL, mode) {
-      this._mode = mode;
       this._store = new CardStore(this.TABLE_NAME, mode, ownerURL);
       this._store.on('change', this.fire.bind(this, 'change'));
     },
@@ -26,9 +25,9 @@
         return this.fetchIcon(entry.iconUrl).then(iconData => {
           entry.icon = iconData;
           delete entry.iconUrl;
-          this._store.addData(entry, id);
+          return this._store.addData(entry, id);
         }).catch(() => {
-          this._store.addData(entry, id);
+          return this._store.addData(entry, id);
         });
       } else {
         return this._store.addData(entry, id);
@@ -49,9 +48,9 @@
         return this.fetchIcon(entry.iconUrl).then(iconData => {
           entry.icon = iconData;
           delete entry.iconUrl;
-          this._store.saveData(id, entry);
+          return this._store.saveData(id, entry);
         }).catch(() => {
-          this._store.saveData(id, entry);
+          return this._store.saveData(id, entry);
         });
       } else {
         return this._store.saveData(id, entry);
@@ -86,6 +85,6 @@
     }
   });
 
-  exports.bookmarkManager = bookmarkManager;
+  exports.BookmarkManager = BookmarkManager;
 }(window));
 
