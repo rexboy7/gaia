@@ -22,10 +22,10 @@
   Home.prototype = {
     navigableIds:
         ['search-button', 'search-input', 'edit-button', 'settings-button',
-            'filter-tab-group'],
+            'add-folder-button', 'filter-tab-group'],
 
     topElementIds: ['search-button', 'search-input', 'edit-button',
-            'settings-button'],
+            'settings-button', 'add-folder-button'],
 
     bottomElementIds: ['filter-tab-group', 'filter-all-button',
         'filter-tv-button', 'filter-device-button', 'filter-app-button',
@@ -49,6 +49,7 @@
     cardManager: undefined,
     editButton: document.getElementById('edit-button'),
     settingsButton: document.getElementById('settings-button'),
+    addFolderButton: document.getElementById('add-folder-button'),
     searchButton: document.getElementById('search-button'),
     timeElem: document.getElementById('time'),
     fteElem: document.getElementById('fte'),
@@ -174,6 +175,13 @@
             that.isNavigable = true;
           }
         });
+
+        that._cardPicker = new CardPicker({
+          onfinish: () => {
+            that.spatialNavigator.focus(that.cardScrollable);
+          }
+        });
+        that._cardPicker.init();
       });
     },
 
@@ -528,6 +536,8 @@
 
       if (focusElem === this.settingsButton) {
         this.openSettings();
+      } else if (focusElem === this.addFolderButton) {
+        this.openAddFolder();
       } else if (focusElem === this.editButton) {
         this.cleanFolderScrollable();
         this.edit.toggleEditMode();
@@ -790,6 +800,11 @@
         name: 'configure',
         data: {}
       });
+    },
+
+    openAddFolder: function() {
+      this._cardPicker.show();
+      this._cardPicker.focus();
     },
 
     updateClock: function() {
