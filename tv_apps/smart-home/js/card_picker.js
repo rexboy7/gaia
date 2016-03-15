@@ -51,7 +51,12 @@
     onUnfocus: function(elem) {
     },
 
-    onEnter: function(elem) {
+    onEnter: function() {
+      var elem = this._spatialNavigator.getFocusedElement();
+      if (elem.classList.contains('app-button')) {
+        elem.classList.toggle('selected');
+      }
+
     },
 
     _scrollTo: function ad_scrollTo(elem) {
@@ -121,6 +126,10 @@
 
     get isShown() {
       return !this.container.classList.contains('hidden');
+    },
+
+    get selectedElements() {
+      return this.gridView.getElementsByClassName('selected');
     }
   });
 
