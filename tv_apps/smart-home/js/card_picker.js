@@ -1,11 +1,10 @@
-/* global Home, evt */
+/* global evt, KeyNavigationAdapter, SpatialNavigator, Folder, Deck,
+          CardUtil */
 
 (function(exports) {
   'use strict';
 
-  function CardPicker() {};
-
-  var fakeData;
+  function CardPicker() {}
 
   CardPicker.prototype = evt({
     container: document.getElementById('folder-editor'),
@@ -15,21 +14,17 @@
 
     init: function(options) {
       this.appButtons = [];
-      // debugger;
+
       this._onfinish = options && options.onfinish;
+      this._cardManager = options.cardManager;
 
       this.navigableElements = [
         CardPicker.prototype.hideCardpickerButton
       ];
 
-      fakeData.forEach(card => {
-        var appButton = this._createCardElement(card);
-        this.gridView.appendChild(appButton);
-        this.appButtons.push(appButton);
-      });
+      this.container.addEventListener('click', this.focus.bind(this));
 
-      this._spatialNavigator = new SpatialNavigator(
-                              this.appButtons.concat(this.navigableElements));
+      this._spatialNavigator = new SpatialNavigator(this.navigableElements);
       this._spatialNavigator.on('focus', this.onFocus.bind(this));
       this._spatialNavigator.on('unfocus', this.onUnfocus.bind(this));
       this._spatialNavigator.focus();
@@ -43,18 +38,20 @@
       });
       this._keyNavigationAdapter.on('enter-keyup', this.onEnter.bind(this));
 
+      this.refresh();
     },
 
     onFocus: function(elem) {
       elem.focus();
-      this._scrollTo(elem);
+      if (elem.classList.contains('app-button')) {
+        this._scrollTo(elem);
+      }
     },
 
     onUnfocus: function(elem) {
     },
 
     onEnter: function(elem) {
-
     },
 
     _scrollTo: function ad_scrollTo(elem) {
@@ -78,126 +75,54 @@
       label.className = 'name';
       appButton.appendChild(label);
 
-      //this._fillAppButtonIcon(app, appButton);
 
       return appButton;
     },
 
     show: function() {
+      this.refresh();
       this.container.classList.remove('hidden');
-      this._spatialNavigator.focus();
     },
 
     hide: function() {
       this.container.classList.add('hidden');
-      Home.focus();
+      this._onfinish && this._onfinish();
+    },
+
+    refresh: function() {
+      this._cardManager.getCardList()
+        .then(this._refreshCardButtons.bind(this))
+        .then(() => {
+          this._spatialNavigator.setCollection(
+                            this.appButtons.concat(this.navigableElements));
+          this._spatialNavigator.focus(this.appButtons[0]);
+        });
+    },
+
+    _refreshCardButtons: function(cardList, options) {
+      this.appButtons = [];
+      this.gridView.innerHTML = '';
+
+      cardList.forEach(card => {
+        if(card instanceof Folder || card instanceof Deck) {
+          return;
+        }
+
+        var appButton = CardUtil.createCardButton(card);
+        this.gridView.appendChild(appButton);
+        this.appButtons.push(appButton);
+      });
+      return true;
     },
 
     focus: function() {
+      this._spatialNavigator.focus();
+    },
 
+    get isShown() {
+      return !this.container.classList.contains('hidden');
     }
-  })
+  });
 
-  fakeData = [{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    },{
-      manifestURL: 'http://www.google.com',
-      entryPoint: '/index.html',
-      name: 'google',
-      removable: true
-    }];
   exports.CardPicker = CardPicker;
 }(window));
