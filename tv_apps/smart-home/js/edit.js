@@ -64,6 +64,7 @@
       this.isFolderReady = false;
       // The hovering card
       this._hoveringCard = null;
+      this.mainSection.dataset.mode = '';
     },
     /**
      * State of home app looks like this:

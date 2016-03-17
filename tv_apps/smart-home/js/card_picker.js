@@ -38,6 +38,8 @@
       });
       this._keyNavigationAdapter.on('enter-keyup', this.onEnter.bind(this));
 
+      this._selectedElements = this.gridView.getElementsByClassName('selected');
+
       this.refresh();
     },
 
@@ -65,33 +67,16 @@
       this.gridView.scrollTo(0, scrollY);
     },
 
-    _createCardElement: function cp_createCardElement(card) {
-      var appButton = document.createElement('smart-button');
-      var label = document.createElement('span');
-      appButton.dataset.manifestURL = card.manifestURL;
-      appButton.dataset.entryPoint = card.entryPoint;
-      appButton.dataset.name = card.name;
-      appButton.dataset.removable = card.removable;
-      appButton.setAttribute('type', 'app-button');
-      appButton.setAttribute('app-type', 'app');
-      appButton.classList.add('app-button');
-      appButton.classList.add('navigable');
-      label.textContent = card.name;
-      label.className = 'name';
-      appButton.appendChild(label);
-
-
-      return appButton;
-    },
-
     show: function() {
       this.refresh();
       this.container.classList.remove('hidden');
+      this.focus();
     },
 
     hide: function() {
       this.container.classList.add('hidden');
       this._onfinish && this._onfinish();
+      this.fire('hide');
     },
 
     refresh: function() {
@@ -124,12 +109,33 @@
       this._spatialNavigator.focus();
     },
 
+    saveToNewFolder: function(index) {
+      if (this.selected.length <= 0) {
+        return;
+      }
+
+      var folder = this._cardManager.insertNewFolder(
+          {id: 'new-folder'}, index);
+      this.saveToFolder(folder);
+      return folder;
+    },
+
+    saveToFolder: function(folder) {
+      for (var i = 0; i < this.selected.length; i++) {
+        var card = this._cardManager.findCardFromCardList({
+          cardId: this.selected[i].dataset.cardId
+        });
+        this._cardManager.removeCard(card);
+        folder.addCard(card);
+      }
+    },
+
     get isShown() {
       return !this.container.classList.contains('hidden');
     },
 
-    get selectedElements() {
-      return this.gridView.getElementsByClassName('selected');
+    get selected() {
+      return this._selectedElements;
     }
   });
 

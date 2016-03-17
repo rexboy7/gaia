@@ -175,11 +175,9 @@
 
         that._cardPicker = new CardPicker();
         that._cardPicker.init({
-          cardManager: that.cardManager,
-          onfinish: () => {
-            that.spatialNavigator.focus();
-          }
+          cardManager: that.cardManager
         });
+        that._cardPicker.on('hide', that.onCardPickerHide.bind(that));
       });
     },
 
@@ -257,6 +255,12 @@
                 this.onCardInserted.bind(this, this.folderScrollable));
         card.on('card-removed',
                 this.onCardRemoved.bind(this, this.folderScrollable));
+      }
+
+      if (scrollable === this.folderScrollable && this.edit.mode === '') {
+        // We are using card picker. It should do a whole refresh after all
+        // cards are inserted so we need to do nothing here.
+        return;
       }
 
       var newCardElem = this.createCardNode(card);
@@ -564,15 +568,18 @@
       // Folder expansion is performed on only when user moves cursor onto a
       // folder or hover a folder in edit mode and it finished its focus
       // transition.
+
       if (this.focusScrollable === this.cardScrollable &&
         evt.originalTarget.classList.contains('app-button') &&
         (!this._folderCard ||
           this._folderCard.cardId !== evt.originalTarget.dataset.cardId) &&
         (evt.originalTarget.classList.contains('focused') &&
-          // Listen to 'outline-width' rather than 'transform' here since it
-          // also applies to edit mode when user moves from panel button back
-          // to card.
-          evt.propertyName === 'outline-width' &&
+          (evt.propertyName === 'transform' ||
+          // Also listen to 'outline-width' for edit mode when user moves
+          // from panel button back to card.
+          // outline-width doesn't raise when inserting a new folder since it's
+          // focused from the start.
+           evt.propertyName === 'outline-width') &&
           document.getElementById('main-section').dataset.mode !== 'arrange' ||
           // Folder needs to be expanded when hovered as well.
           evt.originalTarget.classList.contains('hovered'))) {
@@ -638,7 +645,11 @@
 
     openAddFolder: function() {
       this._cardPicker.show();
-      this._cardPicker.focus();
+    },
+
+    onCardPickerHide: function() {
+      this._cardPicker.saveToNewFolder(this.cardScrollable.currentIndex);
+      this.spatialNavigator.focus(this.cardScrollable);
     },
 
     updateClock: function() {
