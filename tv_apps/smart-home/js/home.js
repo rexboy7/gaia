@@ -48,6 +48,8 @@
     searchButton: document.getElementById('search-button'),
     timeElem: document.getElementById('time'),
     fteElem: document.getElementById('fte'),
+    editFolderElem: document.getElementById('edit-folder'),
+    removeCardElem: document.getElementById('remove-card'),
 
 
     init: function() {
@@ -178,6 +180,9 @@
           cardManager: that.cardManager
         });
         that._cardPicker.on('hide', that.onCardPickerHide.bind(that));
+
+        that.editFolderElem.addEventListener(
+                                        'click', that.onEditFolder.bind(that));
       });
     },
 
@@ -648,7 +653,8 @@
     },
 
     onCardPickerHide: function() {
-      this._cardPicker.saveToNewFolder(this.cardScrollable.currentIndex);
+      this._cardPicker.updateFolder();
+      //this._cardPicker.saveToNewFolder(this.cardScrollable.currentIndex);
       this.spatialNavigator.focus(this.cardScrollable);
     },
 
@@ -681,6 +687,10 @@
     restartClock: function() {
       this.clock.stop();
       this.clock.start(this.updateClock.bind(this));
+    },
+
+    onEditFolder: function() {
+      this._cardPicker.show(this.cardScrollable.currentItem);
     },
 
     get focusElem() {

@@ -414,7 +414,7 @@
 
         if (typeof options.index === 'number') {
           position = options.index;
-        } else if (!newCard.group) {
+        } else if (!newCard.group || options.position === 'end') {
           position = this._cardList.length;
         } else {
           // If the given card belongs to a deck (has type), we assume the deck
