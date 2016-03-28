@@ -15,7 +15,6 @@
     init: function(options) {
       this.appButtons = [];
 
-      this._onfinish = options && options.onfinish;
       this._cardManager = options.cardManager;
       this._folder = null;
 
@@ -27,7 +26,6 @@
 
       this._spatialNavigator = new SpatialNavigator(this.navigableElements);
       this._spatialNavigator.on('focus', this.onFocus.bind(this));
-      this._spatialNavigator.on('unfocus', this.onUnfocus.bind(this));
       this._spatialNavigator.focus();
 
       this.hideCardpickerButton.addEventListener('click', this.hide.bind(this));
@@ -51,9 +49,6 @@
       }
     },
 
-    onUnfocus: function(elem) {
-    },
-
     onEnter: function() {
       var elem = this._spatialNavigator.getFocusedElement();
       if (elem.classList.contains('app-button')) {
@@ -69,14 +64,19 @@
     },
 
     show: function(folderElem) {
-      this.refresh(folderElem);
+      if (folderElem) {
+        this.refresh(folderElem);
+        this._mode = 'update';
+      } else {
+        this._mode = 'add';
+      }
+
       this.container.classList.remove('hidden');
       this.focus();
     },
 
     hide: function() {
       this.container.classList.add('hidden');
-      this._onfinish && this._onfinish();
       this.fire('hide');
     },
 
@@ -96,6 +96,10 @@
                             this.appButtons.concat(this.navigableElements));
           this._spatialNavigator.focus(this.appButtons[0]);
         });
+    },
+
+    focus: function() {
+      this._spatialNavigator.focus();
     },
 
     _refreshCardButtons: function(folderList, cardList, options) {
@@ -130,9 +134,9 @@
       });
     },
 
-    focus: function() {
-      this._spatialNavigator.focus();
-    },
+    /**
+     * Functions for adding and updating to databases
+     */
 
     saveToNewFolder: function(position) {
       if (this.selected.length <= 0) {
@@ -161,7 +165,7 @@
           cardId: button.dataset.cardId
         });
         this._cardManager.removeCard(card);
-        this._folder.addCard(card);
+        this._folder.addCard(card, {silent: true});
       }
     },
 
@@ -183,7 +187,8 @@
           this._folder.removeCard(card);
           this._cardManager.insertCard({
             card: card,
-            position: 'end'
+            position: 'end',
+            silent: true
           });
         }
         return true;
@@ -194,12 +199,20 @@
 
     },
 
+    /**
+     * Properties
+     */
+
     get isShown() {
       return !this.container.classList.contains('hidden');
     },
 
     get selected() {
       return this._selectedElements;
+    },
+
+    get mode() {
+      return this._mode;
     }
   });
 

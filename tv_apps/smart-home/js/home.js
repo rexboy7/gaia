@@ -254,7 +254,7 @@
                               this.restartClock.bind(this));
     },
 
-    onCardInserted: function(scrollable, card, idx, overFolder) {
+    onCardInserted: function(scrollable, card, idx, overFolder, silent) {
       if (card instanceof Folder) {
         card.on('card-inserted',
                 this.onCardInserted.bind(this, this.folderScrollable));
@@ -262,34 +262,32 @@
                 this.onCardRemoved.bind(this, this.folderScrollable));
       }
 
-      if (scrollable === this.folderScrollable && this.edit.mode === '') {
-        // We are using card picker. It should do a whole refresh after all
-        // cards are inserted so we need to do nothing here.
-        return;
-      }
-
       var newCardElem = this.createCardNode(card);
       var newCardButtonElem = newCardElem.firstElementChild;
-      // Initial transition for new card
-      newCardButtonElem.classList.add('new-card');
-      newCardButtonElem.classList.add('new-card-transition');
-      newCardButtonElem.addEventListener('transitionend', function onPinned() {
-        newCardButtonElem.classList.remove('new-card-transition');
-        newCardButtonElem.classList.remove('last-card');
-        newCardButtonElem.removeEventListener('transitionend', onPinned);
-      });
-      // insert new card into cardScrollable
-      this.isNavigable = false;
-      scrollable.on('slideEnd', function() {
-        newCardButtonElem.classList.remove('new-card');
-        if (scrollable.nodes.indexOf(newCardElem) ===
-            scrollable.nodes.length - 1) {
-          newCardButtonElem.classList.add('last-card');
-        }
-        this.isNavigable = true;
-      }.bind(this));
+      if (!silent) {
+        // Initial transition for new card
+        newCardButtonElem.classList.add('new-card');
+        newCardButtonElem.classList.add('new-card-transition');
+        newCardButtonElem.addEventListener('transitionend',
+        function onPinned() {
+          newCardButtonElem.classList.remove('new-card-transition');
+          newCardButtonElem.classList.remove('last-card');
+          newCardButtonElem.removeEventListener('transitionend', onPinned);
+        });
+        // insert new card into cardScrollable
+        this.isNavigable = false;
+        scrollable.on('slideEnd', function() {
+          newCardButtonElem.classList.remove('new-card');
+          if (scrollable.nodes.indexOf(newCardElem) ===
+              scrollable.nodes.length - 1) {
+            newCardButtonElem.classList.add('last-card');
+          }
+          this.isNavigable = true;
+        }.bind(this));
+      }
+
       if (!overFolder) {
-        scrollable.insertNodeBefore(newCardElem, idx);
+        scrollable.insertNodeBefore(newCardElem, idx, {silent: silent});
       } else {
         scrollable.insertNodeOver(newCardElem, idx);
       }
@@ -309,6 +307,13 @@
         }
       }, this);
       scrollable.removeNodes(indices);
+
+      if (scrollable === this.cardScrollable) {
+        // When editing folder by card picker, it's possible that cards prior to
+        // the folder is moved into it, changing folder's position. We should
+        // refresh the position of folderScrollable in this.
+        this.folderScrollable.realignToReferenceElement();
+      }
     },
 
     onArrangeMode: function() {
@@ -653,8 +658,11 @@
     },
 
     onCardPickerHide: function() {
-      this._cardPicker.updateFolder();
-      //this._cardPicker.saveToNewFolder(this.cardScrollable.currentIndex);
+      if (this._cardPicker.mode === 'add') {
+        this._cardPicker.saveToNewFolder(this.cardScrollable.currentIndex);
+      } else if (this._cardPicker.mode === 'update') {
+        this._cardPicker.updateFolder();
+      }
       this.spatialNavigator.focus(this.cardScrollable);
     },
 

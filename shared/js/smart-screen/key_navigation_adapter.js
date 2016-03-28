@@ -51,7 +51,9 @@
         case 'keydown':
         case 'keypress':
           // By default we stop propagating keyevent such that the main logic of
-          // app is not triggered while FTE is working.
+          // app is not triggered. This is useful when we apply
+          // KeyNavigationAdapter to a sub-component such as a modal-dialog like
+          // UI.
           !this.propagateKeyEvent && evt.stopPropagation();
           break;
         case 'click':
@@ -78,7 +80,6 @@
         case 'left':
         case 'right':
           this.fire(evtPrefix + 'move' + evtPostfix, key);
-        break;
           break;
         case 'enter':
           this.fire(evtPrefix + 'enter' + evtPostfix);
